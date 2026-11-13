@@ -16,3 +16,9 @@ Third-party software bundled in release builds:
   Apple Developer Program License Agreement. It is not part of this repository's source and is
   not covered by the Apache License.
 - AndroidX, Jetpack Compose and Media3, (c) The Android Open Source Project, Apache License 2.0.
+
+Foldy Streaman modifications
+Copyright 2026 EyeonFGC
+Foldy Streaman is a personal fork of Foldman. Changed or added files include app/build.gradle.kts,
+app/src/main/res/values/strings.xml, deck/DeckViewModel.kt, deck/Tapes.kt, ui/Cassette.kt,
+ui/Shelf.kt, ui/Panels.kt, ui/FoldmanScreen.kt, ui/TapeEditor.kt and .github/workflows/build-apk.yml.

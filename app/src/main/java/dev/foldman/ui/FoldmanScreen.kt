@@ -126,6 +126,7 @@ fun FoldmanScreen(
             play = vm::playApplePlaylist,
         )
     }
+    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape) }
     val shelfActions = remember(vm) {
         ShelfActions(
             selectSource = vm::selectSource,
@@ -135,6 +136,7 @@ fun FoldmanScreen(
             openApp = vm::openSourceApp,
             installApp = onInstallApp,
             apple = appleActions,
+            tapes = tapeActions,
         )
     }
     val deck = remember(vm) { DeckControls(vm) }
@@ -212,6 +214,7 @@ fun FoldmanScreen(
                             openApp = vm::openSourceApp,
                             installApp = onInstallApp,
                             apple = appleActions,
+                            tapes = tapeActions,
                         ),
                         Modifier.fillMaxWidth().height(sheetHeight),
                     )

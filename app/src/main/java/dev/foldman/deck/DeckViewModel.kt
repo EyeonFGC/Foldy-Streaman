@@ -65,6 +65,12 @@ data class DeckUi(
     val keySounds: Boolean = true,
     val haptics: Boolean = true,
     val apple: AppleUi = AppleUi(),
+    /** Your own tapes on the rack (Foldy Streaman). */
+    val tapes: List<CustomTape> = emptyList(),
+    /** The tape in the deck, when it's one of yours rather than a plain source. */
+    val tape: CustomTape? = null,
+    /** The tape was just put in: PLAY starts its playlist from the top. */
+    val tapeCued: Boolean = false,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -103,6 +109,14 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             Source.APPLE_MUSIC -> appleKit ?: remotes.getValue(source)
             else -> remotes.getValue(source)
         }
+
+    private val tapeStore = TapeStore(prefs)
+    private var tapes: List<CustomTape> = tapeStore.load()
+    private var loadedTape: CustomTape? =
+        if (source == Source.YT_MUSIC) prefs.getString(KEY_TAPE, null)?.let { id -> tapes.firstOrNull { it.id == id } } else null
+    private var tapeCued = false
+    /** When PLAY last started a tape's playlist: YT Music takes a few seconds to open and start. */
+    private var tapeStartAt = -1L
 
     private var tracks: List<LocalTrack> = emptyList()
     private var folderName: String? = null
@@ -146,6 +160,16 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     fun play() {
         if (winding != 0) finishWinding()
+        val tape = loadedTape
+        if (tape != null && tapeCued && source == Source.YT_MUSIC) {
+            tapeCued = false
+            stopped = false
+            playRequestedAt = SystemClock.elapsedRealtime()
+            tapeStartAt = playRequestedAt
+            startPlaylist(tape)
+            tick()
+            return
+        }
         stopped = false
         playRequestedAt = SystemClock.elapsedRealtime()
         backend.play()
@@ -262,7 +286,69 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     // region Sources
 
+    /** Loads a plain source (Local folder, YT Music, Apple Music), taking out any tape of yours. */
     fun selectSource(newSource: Source) {
+        val hadTape = loadedTape != null
+        if (hadTape) {
+            loadedTape = null
+            tapeCued = false
+            prefs.edit { remove(KEY_TAPE) }
+        }
+        switchSource(newSource)
+        if (hadTape) tick()
+    }
+
+    // region Your tapes (Foldy Streaman)
+
+    /** Puts one of your tapes in the deck. PLAY then starts its playlist in YT Music. */
+    fun loadTape(tape: CustomTape) {
+        if (loadedTape?.id == tape.id) return
+        if (winding != 0) finishWinding()
+        if (backend.state.value.isPlaying) backend.pause()
+        switchSource(Source.YT_MUSIC)
+        loadedTape = tape
+        tapeCued = true
+        stopped = true
+        playRequestedAt = 0
+        prefs.edit { putString(KEY_TAPE, tape.id) }
+        tick()
+    }
+
+    /** Adds a new tape or saves changes to an existing one. */
+    fun saveTape(tape: CustomTape) {
+        val old = tapes.firstOrNull { it.id == tape.id }
+        tapes = if (old == null) tapes + tape else tapes.map { if (it.id == tape.id) tape else it }
+        tapeStore.save(tapes)
+        if (loadedTape?.id == tape.id) {
+            loadedTape = tape
+            if (old?.playlistId != tape.playlistId) tapeCued = true
+        }
+        tick()
+    }
+
+    fun deleteTape(id: String) {
+        tapes = tapes.filterNot { it.id == id }
+        tapeStore.save(tapes)
+        if (loadedTape?.id == id) {
+            loadedTape = null
+            tapeCued = false
+            prefs.edit { remove(KEY_TAPE) }
+        }
+        tick()
+    }
+
+    /** Asks YT Music to play the tape's playlist (beside this app when the phone is unfolded). */
+    private fun startPlaylist(tape: CustomTape) {
+        val app = getApplication<Application>()
+        val base = Intent(Intent.ACTION_VIEW, Uri.parse(tape.playUrl))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
+        runCatching { app.startActivity(Intent(base).setPackage(Source.YT_MUSIC.packageName)) }
+            .recoverCatching { app.startActivity(base) }
+    }
+
+    // endregion
+
+    private fun switchSource(newSource: Source) {
         if (newSource == source) return
         if (winding != 0) finishWinding()
         // One tape in the deck at a time: ejecting stops the old one.
@@ -499,7 +585,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             stopped = false
             playRequestedAt = 0
         }
-        val playPending = now - playRequestedAt < 1500
+        // A tape's playlist needs YT Music to open first, so give it longer before the key pops up.
+        val playPending = now - playRequestedAt < if (playRequestedAt == tapeStartAt) 10_000 else 1500
         val transport = when {
             winding < 0 -> Transport.REWINDING
             winding > 0 -> Transport.FAST_FORWARDING
@@ -536,6 +623,9 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             keySounds = prefs.getBoolean(KEY_SOUNDS, true),
             haptics = prefs.getBoolean(KEY_HAPTICS, true),
             apple = apple.value,
+            tapes = tapes,
+            tape = loadedTape,
+            tapeCued = tapeCued,
         )
     }
 
@@ -577,6 +667,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         private const val KEY_SOURCE = "source"
+        private const val KEY_TAPE = "custom_tape_in_deck"
         private const val KEY_FOLDER = "folder"
         private const val KEY_SOUNDS = "key_sounds"
         private const val KEY_HAPTICS = "haptics"

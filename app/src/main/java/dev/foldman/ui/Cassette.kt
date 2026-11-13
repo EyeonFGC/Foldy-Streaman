@@ -64,7 +64,7 @@ const val TAPE_WINDOW_ASPECT = 84f / 36f
 @Composable
 fun TapeWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, vertical: Boolean = false) {
     val measurer = rememberTextMeasurer()
-    val shell by androidx.compose.animation.animateColorAsState(DeckColors.shell(ui.source), tween(600), label = "shell")
+    val shell by androidx.compose.animation.animateColorAsState(shellColor(ui), tween(600), label = "shell")
     Canvas(
         modifier
             .quarterTurn(vertical)
@@ -162,7 +162,7 @@ private fun DrawScope.drawCassette(ui: DeckUi, reels: ReelMotion, shell: Color, 
     }
     drawPath(windowPath, Color.Black.copy(alpha = 0.55f), style = Stroke(0.5f))
 
-    drawLabel(ui, ui.label, measurer, windowRR, u)
+    drawLabel(ui, ui.tape?.let(::tapePalette) ?: ui.label, measurer, windowRR, u)
     drawBottomBridge(shell, light)
 
     listOf(Offset(4.4f, 4.4f), Offset(95.6f, 4.4f), Offset(4.4f, 59.6f), Offset(95.6f, 59.6f), Offset(50f, 55.5f))
@@ -237,7 +237,8 @@ private fun DrawScope.drawLabel(ui: DeckUi, palette: LabelPalette, measurer: Tex
         addRoundRect(labelRect)
         addRoundRect(RoundRect(window.left - 1f, window.top - 1f, window.right + 1f, window.bottom + 1f, CornerRadius(4f)))
     }
-    val art = ui.artwork
+    // Your own tapes show the label you designed, not the album cover.
+    val art = if (ui.tape != null) null else ui.artwork
     clipPath(labelPath) {
         if (art != null) {
             drawCroppedImage(art, Rect(labelRect.left, labelRect.top, labelRect.right, labelRect.bottom))
@@ -271,7 +272,8 @@ private fun DrawScope.drawLabel(ui: DeckUi, palette: LabelPalette, measurer: Tex
     val print = TextStyle(fontFamily = FontFamily.SansSerif, color = ink, fontWeight = FontWeight.Bold, letterSpacing = (0.3f * u).toSp())
     text("A", 12.75f, 14.4f, 3.6f, 5f, print)
     val title = ui.title.ifBlank { placeholderTitle(ui) }
-    val line = listOf(title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ")
+    val line = ui.tape?.title?.ifBlank { "my tape" }
+        ?: listOf(title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ")
     text(line, 17.5f, 13.0f, 4.6f, 71f, hand)
 
     val tag = TextStyle(fontFamily = FontFamily.SansSerif, color = if (art != null) Color.White else ink, fontWeight = FontWeight.Black)
@@ -321,3 +323,14 @@ private fun DrawScope.drawBottomBridge(shell: Color, light: Boolean) {
 }
 
 private fun Color.luminance(): Float = 0.2126f * red + 0.7152f * green + 0.0722f * blue
+
+/** The shell colour: your tape's, or the source's. (Foldy Streaman) */
+fun shellColor(ui: DeckUi): Color = ui.tape?.let { Color(it.shell) } ?: DeckColors.shell(ui.source)
+
+/** Label colours for one of your tapes: your label colour, striped with the shell colour. (Foldy Streaman) */
+fun tapePalette(tape: dev.foldman.deck.CustomTape): LabelPalette {
+    val paper = Color(tape.label)
+    val shell = Color(tape.shell)
+    val ink = if (paper.luminance() > 0.45f) DeckColors.Ink else Color(0xFFF2EBDC)
+    return LabelPalette(paper = paper, stripe = shell, stripe2 = lerp(shell, Color.White, 0.45f), ink = ink)
+}

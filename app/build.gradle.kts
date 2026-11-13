@@ -19,11 +19,11 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "0.1.2"
-val appVersionCode = 3
+val appVersionName = "0.2.0"
+val appVersionCode = 4
 
 base {
-    archivesName = "Foldman-$appVersionName"
+    archivesName = "FoldyStreaman-$appVersionName"
 }
 
 android {
@@ -31,7 +31,8 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "dev.foldman"
+        // Foldy Streaman: its own ID so it installs beside the real Foldman.
+        applicationId = "dev.foldman.streaman"
         minSdk = 30
         targetSdk = 36
         versionCode = appVersionCode
@@ -50,6 +51,15 @@ android {
                 storePassword = signingProps.getProperty("storePassword")
                 keyAlias = signingProps.getProperty("keyAlias")
                 keyPassword = signingProps.getProperty("keyPassword")
+            }
+        } else if (System.getenv("FOLDY_KEYSTORE") != null) {
+            // Foldy Streaman: GitHub builds sign with a key kept in the repo's Actions secrets, so
+            // each new APK installs as an update over the last one.
+            create("release") {
+                storeFile = file(System.getenv("FOLDY_KEYSTORE"))
+                storePassword = System.getenv("FOLDY_KEY_PASSWORD")
+                keyAlias = System.getenv("FOLDY_KEY_ALIAS") ?: "foldy"
+                keyPassword = System.getenv("FOLDY_KEY_PASSWORD")
             }
         }
     }

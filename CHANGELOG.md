@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.2.0] — 2026-11-13 (Foldy Streaman)
+
+### Added
+- **Your own tapes.** "+ New tape" on the tape rack: paste a YouTube Music playlist link, write a title on the label, and pick the shell and label colours. Tap EDIT to change a tape or throw it away.
+- **Tape in, PLAY, playlist plays.** Load one of your tapes and press PLAY: YT Music starts that playlist, and the keys, reels and counter control it like before.
+- The cassette in the deck shows your tape's colours and handwritten title.
+
+### Changed
+- Renamed to **Foldy Streaman** with its own app ID, so it installs beside the original Foldman.
+
 ## [0.1.2] — 2026-10-21
 
 ### Changed

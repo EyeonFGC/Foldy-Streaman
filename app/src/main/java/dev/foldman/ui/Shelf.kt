@@ -40,6 +40,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import dev.foldman.deck.CustomTape
 import dev.foldman.deck.DeckUi
 import dev.foldman.deck.Source
 import dev.foldman.deck.SourceStatus
@@ -55,6 +63,7 @@ class ShelfActions(
     val openApp: () -> Unit,
     val installApp: (Source) -> Unit,
     val apple: AppleActions,
+    val tapes: TapeActions,
 )
 
 /**
@@ -70,10 +79,22 @@ fun TapeShelf(ui: DeckUi, actions: ShelfActions, modifier: Modifier = Modifier) 
     ) {
         Text("TAPES", style = EngravedCaps.copy(color = Color(0xFFB59B80), fontSize = 10.sp, letterSpacing = 3.sp))
         Spacer(Modifier.height(10.dp))
-        Source.entries.forEach { s ->
-            TapeSpine(s, inDeck = s == ui.source, onClick = { actions.selectSource(s) })
-            Spacer(Modifier.height(8.dp))
+        // Foldy Streaman: the rack scrolls once you have more tapes than fit.
+        var editing by remember { mutableStateOf<CustomTape?>(null) }
+        var creating by remember { mutableStateOf(false) }
+        Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
+            Source.entries.forEach { s ->
+                TapeSpine(s, inDeck = s == ui.source && ui.tape == null, onClick = { actions.selectSource(s) })
+                Spacer(Modifier.height(8.dp))
+            }
+            ui.tapes.forEach { t ->
+                CustomTapeSpine(t, inDeck = ui.tape?.id == t.id, onLoad = { actions.tapes.load(t) }, onEdit = { editing = t })
+                Spacer(Modifier.height(8.dp))
+            }
+            NewTapeButton { creating = true }
         }
+        if (creating) TapeEditorDialog(null, actions.tapes) { creating = false }
+        editing?.let { t -> TapeEditorDialog(t, actions.tapes) { editing = null } }
         Spacer(Modifier.height(8.dp))
         JCard(ui, actions, Modifier.weight(1f).fillMaxWidth())
     }
@@ -110,6 +131,45 @@ private fun TapeSpine(source: Source, inDeck: Boolean, onClick: () -> Unit) {
             if (inDeck) "IN DECK" else "LOAD",
             style = EngravedCaps.copy(color = if (inDeck) DeckColors.Accent else Color.White.copy(alpha = 0.7f), fontSize = 8.sp),
         )
+    }
+}
+
+@Composable
+private fun CustomTapeSpine(tape: CustomTape, inDeck: Boolean, onLoad: () -> Unit, onEdit: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TapeSpineView(
+            title = tape.title.ifBlank { "my tape" },
+            shell = Color(tape.shell),
+            label = Color(tape.label),
+            trailing = if (inDeck) "IN DECK" else "LOAD",
+            trailingColor = if (inDeck) DeckColors.Accent else Color.White.copy(alpha = 0.7f),
+            modifier = Modifier
+                .weight(1f)
+                .offset(x = if (inDeck) 10.dp else 0.dp)
+                .shadow(if (inDeck) 10.dp else 3.dp, RoundedCornerShape(4.dp))
+                .clickable(onClick = onLoad),
+        )
+        Spacer(Modifier.width(if (inDeck) 14.dp else 4.dp))
+        Text(
+            "EDIT",
+            style = EngravedCaps.copy(color = Color(0xFFB59B80), fontSize = 9.sp),
+            modifier = Modifier.clickable(onClick = onEdit).padding(horizontal = 6.dp, vertical = 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun NewTapeButton(onClick: () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(4.dp))
+            .border(1.5.dp, Color(0xFFB59B80).copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("+  NEW TAPE FROM A PLAYLIST", style = EngravedCaps.copy(color = Color(0xFFB59B80), fontSize = 10.sp))
     }
 }
 
@@ -234,11 +294,16 @@ private fun RemoteCard(ui: DeckUi, actions: ShelfActions) {
         }
         SourceStatus.NotInstalled -> Prompt("$app isn't installed on this phone.", "Get $app", { actions.installApp(ui.source) })
         SourceStatus.AppNotRunning -> Prompt(
-            "$app isn't playing anything yet. Press PLAY to resume its last queue, or open it and pick something.",
+            if (ui.tape != null) "Tape \"${ui.tape.title.ifBlank { "my tape" }}\" is in. Press PLAY to start its playlist in $app."
+            else "$app isn't playing anything yet. Press PLAY to resume its last queue, or open it and pick something.",
             "Open $app", actions.openApp,
         )
         else -> Column {
-            Text("Playing through $app.", style = Hand)
+            when {
+                ui.tape != null && ui.tapeCued -> Text("Tape \"${ui.tape.title.ifBlank { "my tape" }}\" is in. Press PLAY to start it.", style = Hand)
+                ui.tape != null -> Text("Playing tape \"${ui.tape.title.ifBlank { "my tape" }}\" through $app.", style = Hand)
+                else -> Text("Playing through $app.", style = Hand)
+            }
             Text(
                 "Keys, REW/FF and the counter work here; pick songs and playlists in $app.",
                 style = Typed.copy(fontSize = 11.sp, color = DeckColors.Ink.copy(alpha = 0.65f)),

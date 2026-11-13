@@ -31,6 +31,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,7 +82,7 @@ fun LibraryBand(ui: DeckUi, actions: ShelfActions, onPlayQueue: (Long) -> Unit, 
             Text("Sources", style = Header)
             Spacer(Modifier.height(6.dp))
             Source.entries.forEach { s ->
-                val selected = s == ui.source
+                val selected = s == ui.source && ui.tape == null
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -98,6 +100,50 @@ fun LibraryBand(ui: DeckUi, actions: ShelfActions, onPlayQueue: (Long) -> Unit, 
                     }
                 }
             }
+            // Foldy Streaman: your own tapes, each one a YouTube Music playlist.
+            var editing by remember { mutableStateOf<dev.foldman.deck.CustomTape?>(null) }
+            var creating by remember { mutableStateOf(false) }
+            Spacer(Modifier.height(10.dp))
+            Text("My tapes", style = Header)
+            Spacer(Modifier.height(6.dp))
+            ui.tapes.forEach { t ->
+                val selected = ui.tape?.id == t.id
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (selected) Color.White.copy(alpha = 0.09f) else Color.Transparent)
+                        .clickable { actions.tapes.load(t) }
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ColorTile(Color(t.shell), Modifier.size(30.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(t.title.ifBlank { "my tape" }, style = Title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            when {
+                                selected && ui.tapeCued -> "In deck · press PLAY"
+                                selected -> "In deck"
+                                else -> "Tap to load"
+                            },
+                            style = Sub, maxLines = 1,
+                        )
+                    }
+                    Text(
+                        "Edit",
+                        style = Sub.copy(color = DeckColors.Accent, fontWeight = FontWeight.SemiBold),
+                        modifier = Modifier.clickable { editing = t }.padding(6.dp),
+                    )
+                }
+            }
+            Text(
+                "+ New tape",
+                style = Sub.copy(color = DeckColors.Accent, fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.clickable { creating = true }.padding(horizontal = 6.dp, vertical = 8.dp),
+            )
+            if (creating) TapeEditorDialog(null, actions.tapes) { creating = false }
+            editing?.let { t -> TapeEditorDialog(t, actions.tapes) { editing = null } }
         }
         Column(Modifier.weight(0.36f).fillMaxHeight()) {
             when (ui.source) {
@@ -131,8 +177,10 @@ private fun statusLine(ui: DeckUi): String = when (val s = ui.status) {
 }
 
 @Composable
-private fun SourceTile(source: Source, modifier: Modifier) {
-    val shell = DeckColors.shell(source)
+private fun SourceTile(source: Source, modifier: Modifier) = ColorTile(DeckColors.shell(source), modifier)
+
+@Composable
+private fun ColorTile(shell: Color, modifier: Modifier) {
     Box(
         modifier
             .clip(RoundedCornerShape(7.dp))
