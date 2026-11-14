@@ -241,8 +241,7 @@ private fun KeyPanel(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
                 ChromeKey(KeySymbol.STOP, "STOP·EJ", false, deck.stop, keyH, Modifier.fillMaxWidth())
             }
             Spacer(Modifier.height(12.dp))
-            Text("VOL", style = caption)
-            VolumeWheelSlot(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f), marker = CherryRed.Yellow, dark = true)
+            VolumeWheelSlot(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f), ink = Color(0xFFD9D9DC), marker = CherryRed.Yellow)
             Spacer(Modifier.height(6.dp))
             Text("PHONES", style = caption.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))

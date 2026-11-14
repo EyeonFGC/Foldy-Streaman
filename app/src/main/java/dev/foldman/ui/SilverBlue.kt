@@ -247,8 +247,7 @@ private fun SlantKeyStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
                 SlantKey(KeySymbol.STOP, "STOP·EJECT", false, deck.stop, keyH, Modifier.fillMaxWidth(), edge = SilverBlue.Blue)
             }
             Spacer(Modifier.height(12.dp))
-            Text("VOLUME", style = caption)
-            VolumeWheelSlot(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f), marker = SilverBlue.Blue)
+            VolumeWheelSlot(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f), ink = SilverBlue.Ink, marker = SilverBlue.Blue)
             Spacer(Modifier.height(6.dp))
             Text("PHONES", style = caption.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))

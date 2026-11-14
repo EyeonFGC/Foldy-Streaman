@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.14.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- The volume thumbwheel now looks like the real thing: a dark, finely knurled wheel in a recessed slot, VOLUME printed upright beside it, and the numbers 1 to 10 printed next to the wheel, rolling with it as it turns.
+
 ## [0.14.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
