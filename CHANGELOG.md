@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.8.0] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **No play keys inside any more.** Like a real cassette player: open the phone to change the tape, close it to play and control the music. The deck gets the extra room.
+
 ## [0.7.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

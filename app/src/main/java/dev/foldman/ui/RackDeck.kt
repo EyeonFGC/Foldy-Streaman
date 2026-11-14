@@ -349,9 +349,8 @@ internal fun RackDeckLayout(
                     style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp),
                     maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                 )
-                Spacer(Modifier.height(10.dp))
-                // Keys too, for playing with the phone open.
-                TransportKeys(ui, deck.stop, deck.rewind, deck.play, deck.fastForward, deck.pause, Modifier.fillMaxWidth(), keyHeight = 46.dp)
+                // No keys in here: like a real player, you open it to change the tape and close it to play.
+                Spacer(Modifier.height(6.dp))
             }
         }
 
