@@ -156,7 +156,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         prefs.getString(KEY_TAPE, null)?.let { id -> tapes.firstOrNull { it.id == id && it.source == source } }
     private var tapeCued = false
     private var deckEmpty = prefs.getBoolean(KEY_EMPTY, false)
-    private var theme = runCatching { DeckTheme.valueOf(prefs.getString(KEY_THEME, null) ?: "") }.getOrDefault(DeckTheme.ORIGINAL)
+    private var theme = runCatching { DeckTheme.valueOf(prefs.getString(KEY_THEME, null) ?: "") }.getOrDefault(DeckTheme.SPORT_YELLOW)
     private var phoneMode = false
     private var deckOpen = prefs.getBoolean(KEY_DECK_OPEN, false)
 

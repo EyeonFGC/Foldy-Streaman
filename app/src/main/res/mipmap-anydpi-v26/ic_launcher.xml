@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Layers are named foldman_icon_* rather than ic_launcher_*: MusicKit's auth AAR ships a template
-     drawable-v24/ic_launcher_foreground (the Android robot) that would otherwise replace ours. -->
+<!-- Foldy Streaman's own icon: the Sport Yellow window piece with a tape in it. The foreground is a
+     picture made from the app's own preview drawing. Layers are named foldy_icon_* / foldman_icon_*
+     rather than ic_launcher_*: MusicKit's auth AAR ships a template drawable-v24/ic_launcher_foreground
+     (the Android robot) that would otherwise replace ours. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/foldman_icon_background" />
-    <foreground android:drawable="@drawable/foldman_icon_foreground" />
+    <background android:drawable="@drawable/foldy_icon_background" />
+    <foreground android:drawable="@drawable/foldy_icon_foreground" />
     <monochrome android:drawable="@drawable/foldman_icon_monochrome" />
 </adaptive-icon>

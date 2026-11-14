@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.25.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **New app icon:** the Sport Yellow grey window with a tape in it, lying on its side on a yellow background, with FOLDY underneath.
+- **Sport Yellow is now the theme a fresh install starts with.** If you've already picked a theme, yours stays as it is.
+
 ## [0.25.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
