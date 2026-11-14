@@ -53,13 +53,14 @@ android {
                 keyPassword = signingProps.getProperty("keyPassword")
             }
         } else if (System.getenv("FOLDY_KEYSTORE") != null) {
-            // Foldy Streaman: GitHub builds sign with a key kept in the repo's Actions secrets, so
-            // each new APK installs as an update over the last one.
+            // Foldy Streaman: GitHub builds sign with Foldy's own key, kept in the repo's Actions
+            // secret FOLDY_KEYSTORE_B64, so every new APK installs as an update over the last one.
+            // The key file is the secret; its password is Android's standard one for this kind of key.
             create("release") {
                 storeFile = file(System.getenv("FOLDY_KEYSTORE"))
-                storePassword = System.getenv("FOLDY_KEY_PASSWORD")
-                keyAlias = System.getenv("FOLDY_KEY_ALIAS") ?: "foldy"
-                keyPassword = System.getenv("FOLDY_KEY_PASSWORD")
+                storePassword = System.getenv("FOLDY_KEY_PASSWORD") ?: "android"
+                keyAlias = System.getenv("FOLDY_KEY_ALIAS") ?: "androiddebugkey"
+                keyPassword = System.getenv("FOLDY_KEY_PASSWORD") ?: "android"
             }
         }
     }

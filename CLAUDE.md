@@ -15,6 +15,13 @@ pictures land in `app/build/shots/`.
 
 ## Building
 
+- **Signing:** installed copies are signed with Foldy's own key (alias `androiddebugkey`, Android's
+  standard debug password, valid to 2056, SHA-256 77:AA:F4:64...:FD:C2). GitHub builds use it from the
+  Actions secret `FOLDY_KEYSTORE_B64`. A new cloud session makes its own different key, so **don't
+  hand the owner an APK built locally in a new session** (it won't install over his copy): push and
+  give him the GitHub Actions APK instead, or ask him for his saved `foldy-signing-key.txt` and decode it
+  to `~/.android/debug.keystore` (`base64 -d`) before building. Never commit the key.
+
 - Every push to `main` builds an APK on GitHub Actions (`.github/workflows/build-apk.yml`).
 - Bump `appVersionName` / `appVersionCode` in `app/build.gradle.kts` and add a CHANGELOG entry
   with each change.
