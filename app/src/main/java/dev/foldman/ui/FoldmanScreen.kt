@@ -93,7 +93,7 @@ fun FoldmanScreen(
     val feel by rememberUpdatedState(ui)
 
     // A new tape drops into the deck whenever the source changes (and when the app opens).
-    LaunchedEffect(ui.source) {
+    LaunchedEffect(ui.source, ui.tape?.id) {
         anim.insert.snapTo(1f)
         anim.insert.animateTo(0f, spring(dampingRatio = 0.62f, stiffness = 220f))
         if (feel.keySounds) sounds.autoStop()
@@ -165,14 +165,11 @@ fun FoldmanScreen(
             when (posture) {
                 // The cover screen is the player itself: edge to edge, system bars hidden.
                 Posture.Cover -> CoverWalkman(ui, anim, deck, onTapes = { shelfOpen = true }, modifier = Modifier.fillMaxSize())
-                Posture.Unfolded -> Column(
-                    Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    LibraryBand(ui, shelfActions, vm::playQueueItem, Modifier.fillMaxWidth().weight(if (landscape) 0.31f else 0.27f))
-                    DeckBand(ui, anim, deck, vm, Modifier.fillMaxWidth().weight(if (landscape) 0.44f else 0.46f))
-                    NowPlayingBand(ui, vm::playQueueItem, Modifier.fillMaxWidth().weight(if (landscape) 0.25f else 0.27f))
-                }
+                // Foldy Streaman: open to pick a tape, close to play.
+                Posture.Unfolded -> RackDeckLayout(
+                    ui, anim, deck, shelfActions,
+                    Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+                )
                 Posture.Tabletop -> {
                     val (topH, gap) = with(density) {
                         fold!!.bounds.top.toDp() to (fold.bounds.bottom - fold.bounds.top).toDp()
@@ -240,15 +237,17 @@ private fun android.view.View.showSystemBars(show: Boolean) {
 }
 
 /** Key actions, bundled so the layouts don't each need the view model. */
-private class DeckControls(vm: DeckViewModel) {
-    val play = vm::play
-    val pause = vm::pauseKey
-    val stop = vm::stop
-    val rewind = vm::rewind
-    val fastForward = vm::fastForward
-    val next = vm::next
-    val previous = vm::previous
-    val volume = vm::setVolume
+internal class DeckControls(
+    val play: () -> Unit,
+    val pause: () -> Unit,
+    val stop: () -> Unit,
+    val rewind: () -> Unit,
+    val fastForward: () -> Unit,
+    val next: () -> Unit,
+    val previous: () -> Unit,
+    val volume: (Float) -> Unit,
+) {
+    constructor(vm: DeckViewModel) : this(vm::play, vm::pauseKey, vm::stop, vm::rewind, vm::fastForward, vm::next, vm::previous, vm::setVolume)
 }
 
 private val Serif = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Black, color = Color(0xFFF1F3F6), letterSpacing = 2.sp)
@@ -256,7 +255,7 @@ private val OnEnamel = EngravedCaps.copy(color = Color(0xFFDCE6F2))
 
 /** The folded phone: an upright portable player. */
 @Composable
-private fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onTapes: () -> Unit, modifier: Modifier) {
+internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onTapes: () -> Unit, modifier: Modifier) {
     BoxWithConstraints(modifier) {
         val capH = maxHeight * 0.12f
         Row(Modifier.fillMaxSize().paintedBody(Enamel, capHeight = capH, corner = 0.dp, framed = false)) {
@@ -285,12 +284,12 @@ private fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, o
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ").ifBlank { "NO TAPE" }.uppercase(),
+                    listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ").ifBlank { ui.tape?.title?.ifBlank { "my tape" } ?: "NO TAPE" }.uppercase(),
                     style = OnEnamel.copy(fontSize = 9.sp, letterSpacing = 1.5.sp),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(10.dp))
-                Wordmark("FOLDMAN", 40.sp)
+                Wordmark("STREAMAN", 40.sp)
                 Spacer(Modifier.height(20.dp))
             }
             SideStrip(ui, deck, Modifier.weight(0.27f).fillMaxHeight())
@@ -343,7 +342,7 @@ private fun DeckBand(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, vm: D
                 Spacer(Modifier.weight(1f))
                 Text("FM-F8 · STEREO CASSETTE PLAYER", style = OnEnamel.copy(fontSize = 8.sp))
                 Spacer(Modifier.width(16.dp))
-                Wordmark("FOLDMAN", 26.sp)
+                Wordmark("STREAMAN", 26.sp)
             }
             Spacer(Modifier.height(10.dp))
             Row(Modifier.weight(1f).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

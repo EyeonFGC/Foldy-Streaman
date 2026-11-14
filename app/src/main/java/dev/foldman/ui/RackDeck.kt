@@ -1,0 +1,382 @@
+// Foldy Streaman addition (not in the original Foldman): the unfolded phone as a tape rack beside
+// an open deck. Hold a tape to drag it into the deck, then close the phone and press PLAY.
+package dev.foldman.ui
+
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import dev.foldman.deck.CustomTape
+import dev.foldman.deck.DeckUi
+import dev.foldman.deck.Source
+import dev.foldman.deck.SourceStatus
+import dev.foldman.deck.Transport
+import kotlin.math.roundToInt
+
+/** Something on the rack: one of the built-in sources, or a tape you made. */
+private sealed interface RackItem {
+    val key: String
+
+    data class Src(val source: Source) : RackItem {
+        override val key get() = "src:${source.name}"
+    }
+
+    data class Mine(val tape: CustomTape) : RackItem {
+        override val key get() = "tape:${tape.id}"
+    }
+}
+
+private fun RackItem.title(): String = when (this) {
+    is RackItem.Src -> when (source) {
+        Source.LOCAL -> "My music files"
+        Source.YT_MUSIC -> "YT Music adapter"
+        Source.APPLE_MUSIC -> "Apple Music adapter"
+    }
+    is RackItem.Mine -> tape.title.ifBlank { "my tape" }
+}
+
+private fun RackItem.shell(): Color = when (this) {
+    is RackItem.Src -> DeckColors.shell(source)
+    is RackItem.Mine -> Color(tape.shell)
+}
+
+private fun RackItem.label(): Color = when (this) {
+    is RackItem.Src -> DeckColors.Paper
+    is RackItem.Mine -> Color(tape.label)
+}
+
+private fun RackItem.inDeck(ui: DeckUi): Boolean = when (this) {
+    is RackItem.Src -> ui.tape == null && ui.source == source
+    is RackItem.Mine -> ui.tape?.id == tape.id
+}
+
+private val Typewriter = TextStyle(fontFamily = FontFamily.Monospace, color = Color(0xFFB9B2A8), fontSize = 11.sp)
+
+/**
+ * The unfolded phone: the cassette rack on the left, the open deck on the right. Tap a tape to read
+ * its card; hold it and drag it into the deck to load it. Closing the phone shows the portable
+ * player with that tape in, ready for PLAY.
+ */
+@Composable
+internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, actions: ShelfActions, modifier: Modifier = Modifier) {
+    val view = LocalView.current
+    val density = LocalDensity.current
+    var boxOrigin by remember { mutableStateOf(Offset.Zero) }
+    var deckBounds by remember { mutableStateOf(Rect.Zero) }
+    var dragging by remember { mutableStateOf<RackItem?>(null) }
+    var dragPos by remember { mutableStateOf(Offset.Zero) }
+    var spineWidth by remember { mutableStateOf(0) }
+    var card by remember { mutableStateOf<RackItem?>(null) }
+    var editing by remember { mutableStateOf<CustomTape?>(null) }
+    var creating by remember { mutableStateOf(false) }
+    val overDeck = dragging != null && deckBounds.contains(dragPos)
+
+    fun load(item: RackItem) {
+        when (item) {
+            is RackItem.Src -> actions.selectSource(item.source)
+            is RackItem.Mine -> actions.tapes.load(item.tape)
+        }
+    }
+
+    val items = remember(ui.tapes) { Source.entries.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) } }
+
+    Box(modifier.onGloballyPositioned { boxOrigin = it.positionInRoot() }) {
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // The rack.
+            Column(Modifier.weight(0.46f).fillMaxHeight()) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("CASSETTE RACK", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 13.sp, letterSpacing = 2.sp), modifier = Modifier.weight(1f))
+                    Text("${items.size} TAPES", style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp))
+                }
+                Spacer(Modifier.height(10.dp))
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFF0E0D0C))
+                        .verticalScroll(rememberScrollState())
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp),
+                ) {
+                    items.forEach { item ->
+                        RackSpine(
+                            item = item,
+                            inDeck = item.inDeck(ui),
+                            beingDragged = dragging?.key == item.key,
+                            onWidth = { spineWidth = it },
+                            onTap = { card = item },
+                            onDragStart = { pos ->
+                                view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                dragging = item
+                                dragPos = pos
+                            },
+                            onDrag = { delta -> dragPos += delta },
+                            onDragEnd = {
+                                val item2 = dragging
+                                if (item2 != null && deckBounds.contains(dragPos)) {
+                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                    load(item2)
+                                }
+                                dragging = null
+                            },
+                        )
+                    }
+                    // A blank tape: make a new one from a YouTube Music playlist.
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Brush.verticalGradient(listOf(Color(0xFF34322F), Color(0xFF22201E))))
+                            .clickable { creating = true },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("BLANK TAPE  ·  MAKE ONE FROM A PLAYLIST", style = EngravedCaps.copy(color = Color(0xFF9C958B), fontSize = 9.sp))
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "TAP A TAPE TO READ IT  ·  HOLD TO DRAG IT IN",
+                    style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 8.sp),
+                    maxLines = 2,
+                )
+            }
+
+            // The open deck.
+            Column(Modifier.weight(0.54f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Brush.verticalGradient(listOf(Color(0xFF1B1A19), Color(0xFF0B0B0B))))
+                        .border(
+                            if (overDeck) 3.dp else 1.dp,
+                            if (overDeck) DeckColors.Accent else Color.White.copy(alpha = 0.08f),
+                            RoundedCornerShape(14.dp),
+                        )
+                        .onGloballyPositioned { deckBounds = it.boundsInRoot() }
+                        .padding(18.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    FullCassette(ui, anim, vertical = true)
+                    if (overDeck) {
+                        Text(
+                            "DROP TO LOAD",
+                            style = EngravedCaps.copy(color = DeckColors.Accent, fontSize = 12.sp),
+                            modifier = Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text("LOAD A TAPE  ·  CLOSE LID TO PLAY", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 12.sp, letterSpacing = 2.sp))
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    deckStatus(ui),
+                    style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(10.dp))
+                // Keys too, for playing with the phone open.
+                TransportKeys(ui, deck.stop, deck.rewind, deck.play, deck.fastForward, deck.pause, Modifier.fillMaxWidth(), keyHeight = 46.dp)
+            }
+        }
+
+        // The tape following your finger while you drag it.
+        val d = dragging
+        if (d != null && spineWidth > 0) {
+            val w = with(density) { spineWidth.toDp() }
+            val local = dragPos - boxOrigin
+            TapeSpineView(
+                title = d.title(),
+                shell = d.shell(),
+                label = d.label(),
+                trailing = null,
+                modifier = Modifier
+                    .width(w)
+                    .offset { IntOffset((local.x - spineWidth / 2f).roundToInt(), (local.y - with(density) { 22.dp.toPx() }).roundToInt()) }
+                    .rotate(if (overDeck) 0f else -3f)
+                    .shadow(16.dp, RoundedCornerShape(4.dp)),
+            )
+        }
+    }
+
+    card?.let { item ->
+        TapeCardDialog(
+            item = item,
+            ui = ui,
+            actions = actions,
+            onLoad = { load(item); card = null },
+            onEdit = { if (item is RackItem.Mine) editing = item.tape; card = null },
+            onDismiss = { card = null },
+        )
+    }
+    if (creating) TapeEditorDialog(null, actions.tapes) { creating = false }
+    editing?.let { t -> TapeEditorDialog(t, actions.tapes) { editing = null } }
+}
+
+private fun deckStatus(ui: DeckUi): String {
+    val name = ui.tape?.title?.ifBlank { "my tape" }
+    val time = if (ui.durationMs > 0) "${formatTime(ui.positionMs)} / ${formatTime(ui.durationMs)}" else null
+    val state = when {
+        ui.status == SourceStatus.NeedsAccess -> "NEEDS NOTIFICATION ACCESS (TAP THE TAPE IN THE RACK)"
+        ui.tape != null && ui.tapeCued -> "PRESS PLAY TO START"
+        ui.transport == Transport.PLAYING -> "PLAYING"
+        ui.transport == Transport.PAUSED -> "PAUSED"
+        else -> "STOPPED"
+    }
+    val song = listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString(" — ").takeIf { ui.tape == null || !ui.tapeCued }
+    return listOfNotNull(name, song?.ifBlank { null }, time, state).joinToString("  ·  ").uppercase()
+}
+
+@Composable
+private fun RackSpine(
+    item: RackItem,
+    inDeck: Boolean,
+    beingDragged: Boolean,
+    onWidth: (Int) -> Unit,
+    onTap: () -> Unit,
+    onDragStart: (Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+) {
+    var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val gestures = Modifier
+        .onGloballyPositioned { coords = it; onWidth(it.size.width) }
+        .pointerInput(item.key) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { off -> onDragStart(coords?.localToRoot(off) ?: off) },
+                onDrag = { change, amount -> change.consume(); onDrag(amount) },
+                onDragEnd = onDragEnd,
+                onDragCancel = onDragEnd,
+            )
+        }
+        .pointerInput(item.key) { detectTapGestures(onTap = { onTap() }) }
+
+    if (inDeck) {
+        // The slot the tape came out of: an empty gap in the rack.
+        Box(
+            gestures
+                .fillMaxWidth()
+                .height(46.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Brush.horizontalGradient(listOf(Color(0xFF1C1A18), Color(0xFF3A342C), Color(0xFF1C1A18)))),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text("  IN DECK  ·  ${item.title().uppercase()}", style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp), maxLines = 1)
+        }
+    } else {
+        TapeSpineView(
+            title = item.title(),
+            shell = item.shell(),
+            label = item.label(),
+            trailing = if (item is RackItem.Src && item.source != Source.LOCAL) "AUX" else null,
+            modifier = gestures.alpha(if (beingDragged) 0.25f else 1f).shadow(3.dp, RoundedCornerShape(4.dp)),
+        )
+    }
+}
+
+/** The J-card: what's on the tape, and buttons to load or change it. */
+@Composable
+private fun TapeCardDialog(
+    item: RackItem,
+    ui: DeckUi,
+    actions: ShelfActions,
+    onLoad: () -> Unit,
+    onEdit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val hand = TextStyle(fontFamily = FontFamily.Cursive, fontSize = 26.sp)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(item.title(), style = hand) },
+        text = {
+            Column {
+                when (item) {
+                    is RackItem.Mine -> {
+                        Text("SIDE A", style = Typewriter.copy(color = DeckColors.AccentDeep))
+                        Text("YouTube Music playlist", style = Typewriter.copy(color = Color.Unspecified, fontSize = 13.sp))
+                        Text(item.tape.playlistId, style = Typewriter.copy(color = Color.Gray, fontSize = 10.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Spacer(Modifier.height(10.dp))
+                        Text("Drop it in the deck (or tap Put in deck), close the phone and press PLAY. YT Music starts this playlist.", style = Typewriter.copy(color = Color.Unspecified, fontSize = 12.sp))
+                    }
+                    is RackItem.Src -> {
+                        Text(
+                            when (item.source) {
+                                Source.LOCAL -> "Plays the music files in a folder on this phone."
+                                else -> "An adapter: controls whatever ${item.source.label} is playing. Pick songs in ${item.source.label} itself."
+                            },
+                            style = Typewriter.copy(color = Color.Unspecified, fontSize = 12.sp),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        if (item.source == Source.LOCAL) {
+                            if (ui.folderName != null) Text("Folder: ${ui.folderName} · ${ui.tracks.size} songs", style = Typewriter.copy(color = Color.Gray))
+                            TextButton(onClick = actions.pickFolder) { Text(if (ui.folderName == null) "Choose music folder" else "Change folder") }
+                        } else {
+                            TextButton(onClick = actions.openAccess) { Text("Notification access settings") }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onLoad, enabled = !item.inDeck(ui)) { Text(if (item.inDeck(ui)) "In the deck" else "Put in deck") }
+        },
+        dismissButton = {
+            Row {
+                if (item is RackItem.Mine) TextButton(onClick = onEdit) { Text("Edit") }
+                TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        },
+    )
+}

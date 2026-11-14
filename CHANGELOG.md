@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.3.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Open to pick, close to play.** Unfolded, the phone is now a cassette rack beside an open deck. Tap a tape to read its card; hold a tape and drag it into the deck to load it. Close the phone and press PLAY on the front-screen player.
+- Tape cards: what's on the tape, with Put in deck and Edit. The built-in sources sit on the rack too (My music files, YT Music adapter, Apple Music adapter).
+- "Blank tape" at the bottom of the rack makes a new tape from a playlist.
+
+### Changed
+- The front-screen player shows the tape's name before a song starts, and reads STREAMAN.
+
 ## [0.2.0] — 2026-11-13 (Foldy Streaman)
 
 ### Added

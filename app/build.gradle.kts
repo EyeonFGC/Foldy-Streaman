@@ -19,8 +19,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "0.2.0"
-val appVersionCode = 4
+val appVersionName = "0.3.0"
+val appVersionCode = 5
 
 base {
     archivesName = "FoldyStreaman-$appVersionName"
@@ -76,6 +76,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.all {
+            it.systemProperty("roborazzi.test.record", "true")
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -90,6 +97,13 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    // Screen previews drawn on a computer (Robolectric + Roborazzi): ./gradlew :app:testDebugUnitTest
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.18")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.79.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.79.0")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.activity:activity-compose:1.13.0")

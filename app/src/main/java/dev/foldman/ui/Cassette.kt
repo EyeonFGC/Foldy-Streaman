@@ -334,3 +334,23 @@ fun tapePalette(tape: dev.foldman.deck.CustomTape): LabelPalette {
     val ink = if (paper.luminance() > 0.45f) DeckColors.Ink else Color(0xFFF2EBDC)
     return LabelPalette(paper = paper, stripe = shell, stripe2 = lerp(shell, Color.White, 0.45f), ink = ink)
 }
+
+/**
+ * Foldy Streaman: the whole cassette, not just the part seen through a window. [vertical] stands
+ * it on end, label to the left, as it sits in the open deck on the unfolded phone.
+ */
+@Composable
+fun FullCassette(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, vertical: Boolean = true) {
+    val measurer = rememberTextMeasurer()
+    val shell by androidx.compose.animation.animateColorAsState(shellColor(ui), tween(600), label = "shell")
+    Canvas(modifier.quarterTurn(vertical).aspectRatio(100f / 64f)) {
+        val u = size.width / 100f
+        // Slides in from above (the right of the canvas once stood on end) when a tape is loaded.
+        val slide = anim.insert.value
+        translate(0f, -slide * size.height * 1.2f - anim.pop.value * u * 5f) {
+            withTransform({ scale(u, u, Offset.Zero) }) {
+                drawCassette(ui, anim.reels, shell, measurer, u)
+            }
+        }
+    }
+}
