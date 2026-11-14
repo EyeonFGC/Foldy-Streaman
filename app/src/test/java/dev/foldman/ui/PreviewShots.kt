@@ -390,4 +390,21 @@ class PreviewShots {
     }
 
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideRedChrome() = inside(DeckTheme.RED_CHROME, "inside-redchrome")
+
+    /** Every theme with PLAY latched down, to compare raised keys with a pressed one. */
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun keysOriginal() { val u = ui.copy(tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING); rule.setContent { CoverWalkman(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-1.png") }
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun keysBlackGold() { val u = gold.copy(transport = dev.foldman.deck.Transport.PLAYING); rule.setContent { CoverBlackGold(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-2.png") }
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun keysCherry() { val u = ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING, title = "I Don't Mind", artist = "Lloyd"); rule.setContent { CoverCherryRed(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-3.png") }
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun keysSilver() { val u = ui.copy(theme = DeckTheme.SILVER_BLUE, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING); rule.setContent { CoverSilverBlue(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-4.png") }
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun keysRedChrome() { val u = ui.copy(theme = DeckTheme.RED_CHROME, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING); rule.setContent { CoverRedChrome(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-5.png") }
 }

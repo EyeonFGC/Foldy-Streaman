@@ -137,10 +137,10 @@ internal fun CoverCherryRed(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                 "AUTO REVERSE",
                 style = TextStyle(
                     fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Black, fontStyle = FontStyle.Normal,
-                    fontSize = 30.sp, letterSpacing = 0.5.sp, color = Color.White,
-                    drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.2f),
+                    fontSize = 35.sp, letterSpacing = 0.5.sp, color = Color.White,
+                    drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.6f),
                 ),
-                maxLines = 1,
+                maxLines = 1, softWrap = false,
             )
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -272,10 +272,10 @@ private fun ChromeKey(
     val depth by animateFloatAsState(
         when {
             pressed -> 1f
-            latched -> 0.7f
+            latched -> 0.92f
             else -> 0f
         },
-        spring(dampingRatio = 0.5f, stiffness = 2200f), label = "chromeKey",
+        spring(dampingRatio = 0.8f, stiffness = 420f), label = "chromeKey",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(caption, style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Color(0xFFD9D9DC), fontSize = 7.sp, letterSpacing = 1.sp), maxLines = 1)
@@ -297,21 +297,21 @@ private fun ChromeKey(
                         sounds?.keyUp()
                     })
                 },
-        ) { drawChromeKey(symbol, depth, play) }
+        ) { keyWell(depth, CornerRadius(size.height * 0.12f)) { drawChromeKey(symbol, depth, play) } }
     }
 }
 
 private fun DrawScope.drawChromeKey(symbol: KeySymbol, depth: Float, play: Boolean) {
     val w = size.width
     val h = size.height
-    val travel = h * 0.14f
-    val top = travel * depth
-    val faceH = h - travel
+    val box = keyBox(depth)
+    val top = box.top
+    val faceH = box.faceH
     val r = CornerRadius(h * 0.12f)
-    // The slot in the black panel.
-    drawRoundRect(Color.Black, topLeft = Offset(-2f, -2f), size = Size(w + 4f, h + 4f), cornerRadius = r)
+    // The well in the black panel, and the cap's front edge while it stands proud.
+    drawKeyLip(box, r, listOf(Color(0xFF7B7F86), Color(0xFF3C3F44)))
     // Chrome cap: bright band, dark band, bright again, like polished metal.
-    val shade = 0.14f * depth
+    val shade = 0.2f * depth
     drawRoundRect(
         Brush.verticalGradient(
             listOf(Color(0xFFFFFFFF), Color(0xFFC9CCD1), Color(0xFF7D8187), Color(0xFFD7DADE), Color(0xFF9DA1A7)).map { lerpBlack(it, shade) },

@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.19.0] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Keys on every theme are raised and press down into the casing.** Raised, the dark of the well shows below the key; pressed (or held down, like PLAY while a tape runs) the key slides down into it, its bottom tucks under the rim, the dark shows above it and a shadow falls across its top. The slanted Silver & Blue keys are flatter, with borders twice as thick. The Black & Gold knobs fill their ring when raised and shrink into it when pressed.
+- **Pressing and releasing a key is a smooth movement.**
+- **Cherry Red:** AUTO REVERSE is bigger and fills the width of the body.
+
+### Fixed
+- **STOP no longer leaves PAUSE down.** Pressing STOP while music plays pops every key up; only the PAUSE key pauses. After STOP, press PLAY to start again.
+
 ## [0.18.5] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

@@ -120,10 +120,10 @@ fun DeckKey(
     val depth by animateFloatAsState(
         when {
             pressed -> 1f
-            latched -> 0.72f
+            latched -> 0.92f
             else -> 0f
         },
-        spring(dampingRatio = 0.5f, stiffness = 2200f), label = "key",
+        spring(dampingRatio = 0.8f, stiffness = 420f), label = "key",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -152,7 +152,7 @@ fun DeckKey(
                         sounds?.keyUp()
                     })
                 },
-        ) { if (red) drawRedKey(symbol, depth) else drawKey(symbol, depth, accent, latched, mark) }
+        ) { keyWell(depth, CornerRadius(size.width * 0.09f)) { if (red) drawRedKey(symbol, depth) else drawKey(symbol, depth, accent, latched, mark) } }
     }
 }
 
@@ -163,12 +163,11 @@ fun DeckKey(
 private fun DrawScope.drawRedKey(symbol: KeySymbol, depth: Float) {
     val w = size.width
     val h = size.height
-    val travel = h * 0.16f
-    val front = h * 0.17f * (1f - depth * 0.85f)
-    val top = travel * depth
-    val faceH = h - travel - h * 0.17f
+    val box = keyBox(depth)
+    val front = box.lip
+    val top = box.top
+    val faceH = box.faceH
     val r = CornerRadius(w * 0.09f)
-    drawRoundRect(Color.Black.copy(alpha = 0.7f), topLeft = Offset(-1f, top + 2f), size = Size(w + 2f, faceH + front + 2f), cornerRadius = r)
     drawRoundRect(
         Brush.verticalGradient(listOf(Color(0xFF8E2A22), Color(0xFF5A1712)), top + faceH - r.x, top + faceH + front),
         topLeft = Offset(0f, top + faceH - r.x), size = Size(w, front + r.x), cornerRadius = r,
@@ -193,13 +192,12 @@ private fun DrawScope.drawRedKey(symbol: KeySymbol, depth: Float) {
 private fun DrawScope.drawKey(symbol: KeySymbol, depth: Float, accent: Boolean, latched: Boolean, mark: Color?) {
     val w = size.width
     val h = size.height
-    val travel = h * 0.16f
-    val front = h * 0.17f * (1f - depth * 0.85f)
-    val top = travel * depth
-    val faceH = h - travel - h * 0.17f
+    val box = keyBox(depth)
+    val front = box.lip
+    val top = box.top
+    val faceH = box.faceH
     val r = CornerRadius(w * 0.09f)
     // Slot shadow under the key.
-    drawRoundRect(Color.Black.copy(alpha = 0.7f), topLeft = Offset(-1f, top + 2f), size = Size(w + 2f, faceH + front + 2f), cornerRadius = r)
     // Front edge, seen as the key stands proud of the slot.
     drawRoundRect(
         Brush.verticalGradient(listOf(Color(0xFF8D9095), Color(0xFF55585C)), top + faceH - r.x, top + faceH + front),

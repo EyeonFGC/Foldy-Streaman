@@ -191,6 +191,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     /** STOP was pressed (or the tape ended): show STOPPED rather than PAUSED while not playing. */
     private var stopped = true
+    /** When STOP was last pressed: every key stays up while the other app winds down. */
+    private var stopRequestedAt = 0L
     /** Play was just pressed; keep the play key down while the player catches up. */
     private var playRequestedAt = 0L
     /** -1 rewinding, +1 fast-forwarding, 0 neither. */
@@ -254,6 +256,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun startPlaying() {
         if (deckEmpty) return
+        stopRequestedAt = 0
         if (winding != 0) finishWinding()
         val tape = loadedTape
         if (tape != null && tapeCued && source == tape.source) {
@@ -306,7 +309,10 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
                     openDeck()
                 }
             }
-            else -> backend.pause()
+            else -> {
+                backend.pause()
+                stopRequestedAt = SystemClock.elapsedRealtime()
+            }
         }
         stopped = true
         playRequestedAt = 0
@@ -980,7 +986,9 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (winding != 0) windStep(state)
         maybeComeBack(state, now)
         if (state.ended) stopped = true
-        if (state.isPlaying && winding == 0) {
+        // Just after STOP the other app may still say "playing" for a moment: don't let that undo the stop.
+        val stopping = now - stopRequestedAt < 2500
+        if (state.isPlaying && winding == 0 && !stopping) {
             stopped = false
             playRequestedAt = 0
         }
@@ -989,6 +997,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         val transport = when {
             winding < 0 -> Transport.REWINDING
             winding > 0 -> Transport.FAST_FORWARDING
+            stopping -> Transport.STOPPED
             state.isPlaying || playPending -> Transport.PLAYING
             stopped -> Transport.STOPPED
             else -> Transport.PAUSED

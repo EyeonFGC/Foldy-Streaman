@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
@@ -280,10 +281,10 @@ private fun SlantKey(
     val depth by animateFloatAsState(
         when {
             pressed -> 1f
-            latched -> 0.7f
+            latched -> 0.92f
             else -> 0f
         },
-        spring(dampingRatio = 0.5f, stiffness = 2200f), label = "slantKey",
+        spring(dampingRatio = 0.8f, stiffness = 420f), label = "slantKey",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(caption, style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = SilverBlue.Ink, fontSize = 7.sp, letterSpacing = 1.sp), maxLines = 1)
@@ -312,36 +313,48 @@ private fun SlantKey(
 private fun DrawScope.drawSlantKey(symbol: KeySymbol, depth: Float, edge: Color?) {
     val w = size.width
     val h = size.height
+    // Small keys (the skip pair) get a proportionally thinner outline.
+    val k = (h / 130f).coerceIn(0.5f, 1f)
+    val pad = 18f * k
     val lean = w * 0.1f
-    val travel = h * 0.16f
-    // Room round the face for its outline.
-    val pad = 9f
-    val top = pad + travel * depth
-    val bottom = h - pad
-    // The slanted face: a parallelogram leaning back to the right. It sinks when pressed.
-    val face = Path().apply {
-        moveTo(pad + lean, top); lineTo(w - pad, top); lineTo(w - pad - lean, bottom); lineTo(pad, bottom); close()
+    val wellH = h - pad * 2
+    // The slanted outline of the well: a parallelogram leaning back to the right.
+    fun xL(y: Float) = pad + lean * (1f - (y - pad) / wellH)
+    fun xR(y: Float) = w - pad - lean * ((y - pad) / wellH)
+    fun slab(y0: Float, y1: Float) = Path().apply { moveTo(xL(y0), y0); lineTo(xR(y0), y0); lineTo(xR(y1), y1); lineTo(xL(y1), y1); close() }
+    val well = slab(pad, h - pad)
+    // The border, twice as thick as before: dark for most keys, coloured for PLAY (green) and
+    // STOP·EJECT (blue). Inside it is the dark well the key sinks into.
+    drawPath(well, edge ?: Color(0xFF3B3E44), style = Stroke((if (edge == null) 32f else 22f) * k, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+    drawPath(well, Color(0xFF121214))
+    // These keys are flatter: raised, the cap has a thin front edge and just a sliver of the
+    // dark well under it. Pressed, it slides down into that dark (its bottom tucking under the
+    // border), the dark shows above it, and the border's shadow falls across its top.
+    val lip = wellH * 0.07f
+    val sliver = wellH * 0.08f
+    val shift = (lip + sliver + 2f) * depth
+    val top = pad + shift
+    val faceBottom = top + (wellH - lip - sliver)
+    val shade = 0.2f * depth
+    clipPath(well) {
+        drawPath(slab(faceBottom - 1f, faceBottom + lip), Brush.verticalGradient(listOf(Color(0xFF8B9097), Color(0xFF4E5258)), faceBottom, faceBottom + lip))
+        drawPath(
+            slab(top, faceBottom),
+            Brush.verticalGradient(
+                listOf(Color(0xFFFFFFFF), Color(0xFFD5D8DD), Color(0xFF9CA1A8), Color(0xFFCDD0D5)).map { Color(it.red * (1 - shade), it.green * (1 - shade), it.blue * (1 - shade)) },
+                top, faceBottom,
+            ),
+        )
+        // A bright top edge while raised, and fine ridges across the face for grip.
+        drawLine(Color.White.copy(alpha = 0.9f * (1f - depth)), Offset(xL(pad) + 2f, top + 1.5f), Offset(xR(pad) - 2f, top + 1.5f), 2.5f)
+        for (i in 1..3) {
+            val y = top + (faceBottom - top) * (0.18f * i)
+            drawLine(Color.Black.copy(alpha = 0.10f), Offset(xL(pad) + w * 0.08f, y), Offset(xR(h - pad) - w * 0.08f, y), 1f)
+        }
+        if (depth > 0.01f) {
+            val reach = (faceBottom - top) * 0.4f
+            drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f * depth), Color.Transparent), top, top + reach), topLeft = Offset(0f, top), size = Size(w, reach))
+        }
     }
-    // Outline in the same slanted shape, a couple of pixels bigger: dark for most keys,
-    // a thinner coloured one for PLAY (green) and STOP·EJECT (blue).
-    if (edge == null) {
-        drawPath(face, Color(0xFF3B3E44), style = Stroke(16f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-    } else {
-        drawPath(face, edge, style = Stroke(11f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-    }
-    val shade = 0.12f * depth
-    drawPath(
-        face,
-        Brush.verticalGradient(
-            listOf(Color(0xFFFFFFFF), Color(0xFFD5D8DD), Color(0xFF9CA1A8), Color(0xFFCDD0D5)).map { Color(it.red * (1 - shade), it.green * (1 - shade), it.blue * (1 - shade)) },
-            top, bottom,
-        ),
-    )
-    // Fine ridges across the face for grip.
-    for (i in 1..3) {
-        val y = top + (bottom - top) * (0.16f * i)
-        val inset = lean * (1f - (y - top) / (bottom - top))
-        drawLine(Color.Black.copy(alpha = 0.10f), Offset(pad + inset + w * 0.08f, y), Offset(w - pad - (lean - inset) - w * 0.08f, y), 1f)
-    }
-    drawSymbol(symbol, Offset(w / 2f, top + (bottom - top) * 0.55f), minOf(w, bottom - top) * 0.2f, Color(0xFF2A2D33))
+    drawSymbol(symbol, Offset(w / 2f, top + (faceBottom - top) * 0.55f), minOf(w, faceBottom - top) * 0.24f, Color(0xFF2A2D33))
 }

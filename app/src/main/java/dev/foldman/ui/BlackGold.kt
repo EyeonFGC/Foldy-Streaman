@@ -275,10 +275,10 @@ private fun KnobKey(
     val depth by animateFloatAsState(
         when {
             pressed -> 1f
-            latched -> 0.65f
+            latched -> 0.92f
             else -> 0f
         },
-        spring(dampingRatio = 0.5f, stiffness = 2200f), label = "knob",
+        spring(dampingRatio = 0.8f, stiffness = 420f), label = "knob",
     )
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (showSymbol) {
@@ -306,7 +306,10 @@ private fun KnobKey(
 }
 
 private fun DrawScope.drawKnob(depth: Float, gold: Boolean) {
-    val r = size.minDimension / 2f * 0.92f
+    // The knob sits in a dark well in the gold band and sinks into it when pressed.
+    drawCircle(Color(0xFF14110A), size.minDimension / 2f * 0.98f, center)
+    drawCircle(Color.Black.copy(alpha = 0.5f), size.minDimension / 2f * 0.98f, center, style = Stroke(1.5f))
+    val r = size.minDimension / 2f * (0.93f - 0.14f * depth)
     val c = center
     val drop = r * 0.18f * (1f - depth * 0.8f)
     // Shadow on the band, shorter as the knob goes in.

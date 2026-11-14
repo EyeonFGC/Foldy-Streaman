@@ -347,10 +347,10 @@ private fun SilverKey(
     val depth by animateFloatAsState(
         when {
             pressed -> 1f
-            latched -> 0.7f
+            latched -> 0.92f
             else -> 0f
         },
-        spring(dampingRatio = 0.5f, stiffness = 2200f), label = "silverKey",
+        spring(dampingRatio = 0.8f, stiffness = 420f), label = "silverKey",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(caption, style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 7.sp, letterSpacing = 1.sp), maxLines = 1)
@@ -372,20 +372,20 @@ private fun SilverKey(
                         sounds?.keyUp()
                     })
                 },
-        ) { drawSilverKey(symbol, depth, green) }
+        ) { keyWell(depth, CornerRadius(size.height * 0.14f)) { drawSilverKey(symbol, depth, green) } }
     }
 }
 
 private fun DrawScope.drawSilverKey(symbol: KeySymbol, depth: Float, green: Boolean) {
     val w = size.width
     val h = size.height
-    val travel = h * 0.14f
-    val top = travel * depth
-    val faceH = h - travel
+    val box = keyBox(depth)
+    val top = box.top
+    val faceH = box.faceH
     val r = CornerRadius(h * 0.14f)
-    // The slot in the body.
-    drawRoundRect(Color.Black.copy(alpha = 0.75f), topLeft = Offset(-2f, -2f), size = Size(w + 4f, h + 4f), cornerRadius = r)
-    val shade = 1f - 0.14f * depth
+    // The well in the body, and the cap's front edge while it stands proud.
+    drawKeyLip(box, r, if (green) listOf(Color(0xFF1C7A31), Color(0xFF0F4A1C)) else listOf(Color(0xFF8F949B), Color(0xFF4A4E54)))
+    val shade = 1f - 0.2f * depth
     val cap = if (green) listOf(Color(0xFF7BE08E), RedChrome.Green, Color(0xFF1C7A31)) else listOf(Color(0xFFFFFFFF), Color(0xFFCDD0D5), Color(0xFF8F949B))
     drawRoundRect(
         Brush.verticalGradient(cap.map { Color(it.red * shade, it.green * shade, it.blue * shade) }, top, top + faceH),
