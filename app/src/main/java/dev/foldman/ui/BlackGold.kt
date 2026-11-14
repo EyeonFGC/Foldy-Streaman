@@ -130,7 +130,8 @@ internal fun CoverBlackGold(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
             } else {
                 Text(changeTapesHint(ui), style = print.copy(fontSize = 7.sp))
             }
-            Spacer(Modifier.weight(1f))
+            // Locked: a gold padlock centred between the top line and the round window.
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { LockBadgeHere(ui, BlackGold.Gold) }
             Porthole(ui, anim, Modifier.fillMaxWidth(0.94f))
             Spacer(Modifier.height(22.dp))
             Text(

@@ -2,6 +2,13 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.34.4] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- Lock screen padlock moved clear of other things: centred above the window on Sport Yellow (on the grey) and Silver & Blue (on the blue, now white), centred above the window on Cherry Red and Black & Gold, and in the middle of the black triangle on Red Chrome.
+- Red Chrome: AUTO REVERSE sits a little lower and further left.
+- Cherry Red: AUTO REVERSE is a clean outline now, without the lines where the letters' parts overlapped.
+
 ## [0.34.3] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

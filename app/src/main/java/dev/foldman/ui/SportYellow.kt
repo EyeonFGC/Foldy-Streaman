@@ -343,6 +343,8 @@ internal fun WindowSurround(ui: DeckUi, anim: DeckAnimations, modifier: Modifier
                     drawRoundRect(Color.White.copy(alpha = 0.16f), Offset(wx - wall, wy - wall), Size(ww + wall * 2, wh + wall * 2), CornerRadius(wr + wall), style = Stroke(1.dp.toPx()))
                 },
         ) {
+            // Locked: a white padlock on the rubber, centred above the window.
+            LockBadgeHere(ui, Color.White, Modifier.offset(x = winX + winW / 2 - 12.dp, y = (winY - 8.dp) / 2 - 12.dp))
             Box(
                 Modifier
                     .padding(start = winX, top = winY)

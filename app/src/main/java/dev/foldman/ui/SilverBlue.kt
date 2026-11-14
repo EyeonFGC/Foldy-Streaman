@@ -164,6 +164,8 @@ private fun PillWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                 .background(Brush.horizontalGradient(listOf(SilverBlue.BlueLo, SilverBlue.BlueHi, SilverBlue.Blue, SilverBlue.BlueLo))),
             contentAlignment = Alignment.Center,
         ) {
+            // Locked: a white padlock on the blue, centred above the window.
+            LockBadgeHere(ui, Color.White, Modifier.align(Alignment.TopCenter).offset(y = (frameH - winH) / 2 * 0.55f - 12.dp))
             val glass = RoundedCornerShape(winW * 0.12f)
             Box(
                 Modifier

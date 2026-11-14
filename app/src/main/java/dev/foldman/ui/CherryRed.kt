@@ -41,6 +41,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.asComposePath
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
@@ -125,14 +129,10 @@ internal fun CoverCherryRed(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
             SmokedWindow(ui, anim, Modifier.fillMaxWidth().weight(1f))
             Spacer(Modifier.height(14.dp))
             // The big outlined lettering across the front.
-            Text(
+            OutlinedLettering(
                 "AUTO REVERSE",
-                style = TextStyle(
-                    fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Black, fontStyle = FontStyle.Normal,
-                    fontSize = 35.sp, letterSpacing = 0.5.sp, color = Color.White,
-                    drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(width = 3.6f),
-                ),
-                maxLines = 1, softWrap = false,
+                TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Black, fontStyle = FontStyle.Normal, fontSize = 35.sp, letterSpacing = 0.5.sp, color = Color.White),
+                outline = 3.6f,
             )
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -168,6 +168,8 @@ private fun SmokedWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
         val w = minOf(maxWidth, maxHeight * 0.86f)
         val h = w / 0.86f
         val shape = RoundedCornerShape(10.dp)
+        // Locked: a yellow padlock centred between the top line and the window.
+        LockBadgeHere(ui, CherryRed.Yellow, Modifier.align(Alignment.TopCenter).offset(y = ((maxHeight - h) / 2 - 14.dp) / 2 - 12.dp))
         Box(
             Modifier
                 .size(w, h)
@@ -329,3 +331,30 @@ private fun DrawScope.drawChromeKey(symbol: KeySymbol, depth: Float, play: Boole
 }
 
 private fun lerpBlack(c: Color, t: Float) = Color(c.red * (1 - t), c.green * (1 - t), c.blue * (1 - t), c.alpha)
+
+/**
+ * Lettering drawn as a clean outline only. The phone's own bold font builds its letters from
+ * overlapping pieces, so simply outlining them shows the joins inside. Here the letters' shapes are
+ * first merged into single outlines, and only then drawn as a line.
+ */
+@Composable
+internal fun OutlinedLettering(text: String, style: TextStyle, outline: Float, modifier: Modifier = Modifier) {
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val shape = remember(text, style, density) {
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, style.fontWeight?.weight ?: 900, false)
+            textSize = with(density) { style.fontSize.toPx() }
+            letterSpacing = style.letterSpacing.value / style.fontSize.value
+        }
+        val raw = android.graphics.Path()
+        val fm = paint.fontMetrics
+        paint.getTextPath(text, 0, text.length, outline + 1f, -fm.ascent, raw)
+        // Merging the path with nothing makes Android work out the single outer outline.
+        val merged = android.graphics.Path()
+        if (!merged.op(raw, android.graphics.Path.Op.UNION)) merged.set(raw)
+        Triple(merged.asComposePath(), paint.measureText(text) + (outline + 1f) * 2, fm.descent - fm.ascent)
+    }
+    Canvas(modifier.size(with(density) { shape.second.toDp() }, with(density) { shape.third.toDp() })) {
+        drawPath(shape.first, style.color, style = androidx.compose.ui.graphics.drawscope.Stroke(width = outline, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+    }
+}

@@ -88,28 +88,23 @@ private fun rememberLockedWake(): Int {
     return wake
 }
 
-/** Where each theme wears its padlock (as a fraction of the front screen) and in what colour. */
-private class LockSpot(val x: Float, val y: Float, val color: Color)
-
-private fun lockSpot(theme: DeckTheme): LockSpot = when (theme) {
-    // On the grey rubber surround, under the window.
-    DeckTheme.SPORT_YELLOW -> LockSpot(0.045f, 0.715f, Color.White)
-    // On the black glass, in its clear top-right corner.
-    DeckTheme.RED_CHROME -> LockSpot(0.60f, 0.165f, Color.White)
-    DeckTheme.BLACK_GOLD -> LockSpot(0.05f, 0.035f, BlackGold.Gold)
-    DeckTheme.CHERRY_RED -> LockSpot(0.045f, 0.105f, CherryRed.Yellow)
-    DeckTheme.SILVER_BLUE -> LockSpot(0.045f, 0.10f, SilverBlue.Blue)
-    DeckTheme.ORIGINAL -> LockSpot(0.05f, 0.165f, Color.White)
+/**
+ * The padlock, placed by a theme inside its own artwork (so it stays put whatever the screen's
+ * size). Shows only while "Show the player on the lock screen" is on and the phone is locked.
+ */
+@Composable
+fun LockBadgeHere(ui: DeckUi, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
+    if (!ui.lockScreen) return
+    val wake = rememberLockedWake()
+    if (wake != 0) LockBadge(wake, color, modifier, size)
 }
 
-/** The padlock for the current theme, shown only while the player is up over the lock screen. */
+/** The Original theme's padlock: white, beside STEREO. (The other themes place their own.) */
 @Composable
 fun LockBadgeFor(ui: DeckUi) {
-    val wake = rememberLockedWake()
-    if (wake == 0) return
-    val spot = lockSpot(ui.theme)
+    if (ui.theme != DeckTheme.ORIGINAL) return
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        LockBadge(wake, spot.color, Modifier.offset(x = maxWidth * spot.x, y = maxHeight * spot.y))
+        LockBadgeHere(ui, Color.White, Modifier.offset(x = maxWidth * 0.05f, y = maxHeight * 0.165f))
     }
 }
 

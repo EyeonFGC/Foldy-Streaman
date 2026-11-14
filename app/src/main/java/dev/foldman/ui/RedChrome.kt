@@ -213,8 +213,15 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // A white wedge with a thin blue edge above the window, hugging the top-left corner.
-            Canvas(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 8.dp)) {
-                drawWedge(Path().apply { moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(0f, size.height); close() })
+            BoxWithConstraints(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 8.dp)) {
+                Canvas(Modifier.fillMaxSize()) {
+                    drawWedge(Path().apply { moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(0f, size.height); close() })
+                }
+                // Locked: a white padlock in the middle of the black triangle left beside the wedge
+                // (the centre of the biggest circle that fits in it).
+                val r = (maxWidth + maxHeight - kotlin.math.hypot(maxWidth.value, maxHeight.value).dp) / 2
+                val lock = minOf(24.dp, r * 1.25f)
+                LockBadgeHere(ui, Color.White, Modifier.align(Alignment.BottomEnd).offset(x = -(r - lock / 2), y = -(r - lock / 2)), size = lock)
             }
             Spacer(Modifier.height(6.dp))
             Box(
@@ -264,7 +271,7 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                         drawStyle = Stroke(width = 2.6f, join = androidx.compose.ui.graphics.StrokeJoin.Round),
                     ),
                     maxLines = 1, softWrap = false,
-                    modifier = Modifier.offset(x = (-24).dp, y = (-9).dp).rotate(-slope),
+                    modifier = Modifier.offset(x = (-36).dp, y = 0.dp).rotate(-slope),
                 )
             }
         }
