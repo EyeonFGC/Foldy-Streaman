@@ -58,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowLayoutInfo
 import dev.foldman.deck.DeckEvent
+import dev.foldman.deck.DeckTheme
 import dev.foldman.deck.DeckUi
 import dev.foldman.deck.DeckViewModel
 import dev.foldman.deck.Source
@@ -103,6 +104,11 @@ fun FoldmanScreen(
     }
     LaunchedEffect(vm) {
         vm.events.collect { e ->
+            if (e == DeckEvent.KeyClick) {
+                if (feel.keySounds) sounds.keyDown()
+                if (feel.haptics) view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_PRESS)
+                return@collect
+            }
             if (feel.keySounds) sounds.autoStop()
             when (e) {
                 DeckEvent.TapeEnd -> if (feel.haptics) view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
@@ -113,6 +119,7 @@ fun FoldmanScreen(
                         anim.pop.animateTo(0f, spring(dampingRatio = 0.4f, stiffness = 500f))
                     }
                 }
+                DeckEvent.KeyClick -> Unit
             }
         }
     }
@@ -142,6 +149,17 @@ fun FoldmanScreen(
         )
     }
     val deck = remember(vm) { DeckControls(vm) }
+    val settingsActions = remember(vm) {
+        SettingsActions(
+            setTheme = vm::setTheme,
+            setKeySounds = vm::setKeySounds,
+            setHaptics = vm::setHaptics,
+            openAccess = vm::openAccessSettings,
+            pickFolder = onPickFolder,
+            appleSignIn = onAppleSignIn,
+            appleSignOut = vm::signOutOfApple,
+        )
+    }
     val fold = windowLayout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull()
 
     CompositionLocalProvider(
@@ -162,14 +180,21 @@ fun FoldmanScreen(
                 maxWidth >= 600.dp && maxWidth > maxHeight * 0.7f -> Posture.Unfolded
                 else -> Posture.Cover
             }
-            LaunchedEffect(posture) { view.showSystemBars(posture != Posture.Cover) }
+            LaunchedEffect(posture) {
+                view.showSystemBars(posture != Posture.Cover)
+                vm.setCoverShown(posture == Posture.Cover)
+            }
             when (posture) {
                 // The cover screen is the player itself: edge to edge, system bars hidden.
-                Posture.Cover -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize())
+                Posture.Cover -> when (ui.theme) {
+                    DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize())
+                    DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize())
+                }
                 // Foldy Streaman: open to pick a tape, close to play.
                 Posture.Unfolded -> RackDeckLayout(
                     ui, anim, deck, shelfActions,
                     Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+                    settings = settingsActions,
                 )
                 Posture.Tabletop -> {
                     val (topH, gap) = with(density) {
@@ -250,7 +275,9 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                 Box(Modifier.fillMaxWidth().height(capH)) {
                     // Inset from the corner so the display's rounded corner doesn't clip it.
                     // Foldy Streaman: tapes live in the rack, which opens with the phone.
-                    Text("UNFOLD TO CHANGE TAPES", style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopStart).padding(top = 30.dp, start = 10.dp))
+                    // The yellow hotline button, as on the original players: just for the look now.
+                    HotlineButton({}, Modifier.align(Alignment.TopStart).padding(top = 18.dp, start = 8.dp).size(60.dp, 30.dp))
+                    Text("UNFOLD TO CHANGE TAPES", style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopEnd).padding(top = 30.dp, end = 4.dp))
                 }
                 Spacer(Modifier.height(18.dp))
                 Text("STEREO", style = Serif.copy(fontSize = 30.sp))

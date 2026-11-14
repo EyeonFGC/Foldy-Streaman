@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -66,6 +67,23 @@ class MainActivity : ComponentActivity() {
         vm.onScreenShown(true)
         // Notification access may have just been granted in Settings, or the streaming app started.
         vm.refresh()
+    }
+
+    // Foldy Streaman: on the front screen, volume up = PLAY and volume down = PAUSE.
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (vm.coverShown && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            // Holding the button counts as one press.
+            if (event.repeatCount == 0) {
+                if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) vm.volumeKeyPlay() else vm.volumeKeyPause()
+            }
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (vm.coverShown && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) return true
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun onPause() {

@@ -7,7 +7,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
+import dev.foldman.deck.DeckTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -133,7 +135,11 @@ internal fun RackDeckLayout(
     modifier: Modifier = Modifier,
     /** Screen previews only: pretend rack item N is being dragged, over the deck or not. */
     previewDrag: Pair<Int, Boolean>? = null,
+    settings: SettingsActions = SettingsActions.None,
+    /** Screen previews only: open with the Settings page showing. */
+    previewSettings: Boolean = false,
 ) {
+    var showSettings by remember { mutableStateOf(previewSettings) }
     val view = LocalView.current
     val density = LocalDensity.current
     var boxOrigin by remember { mutableStateOf(Offset.Zero) }
@@ -162,8 +168,12 @@ internal fun RackDeckLayout(
     }
     // The deck glows light blue while a tape is held: faintly, then fully when it's over the deck.
     val glow by animateFloatAsState(if (overDeck) 1f else if (dragging != null) 0.3f else 0f, tween(200), label = "glow")
+    // A full deck won't take another tape: it glows red instead, and the tape goes back to the rack.
+    val blocked = overDeck && !ui.empty
+    val glowLight by animateColorAsState(if (blocked) BlockedLight else glowLightFor(ui.theme), tween(160), label = "glowLight")
+    val glowEdge by animateColorAsState(if (blocked) BlockedEdge else glowEdgeFor(ui.theme), tween(160), label = "glowEdge")
     // Over the deck the cassette turns upright to match the one standing in it.
-    val turn by animateFloatAsState(if (overDeck) -90f else -4f, tween(260), label = "turn")
+    val turn by animateFloatAsState(if (overDeck && !blocked) -90f else -4f, tween(260), label = "turn")
 
     fun load(item: RackItem) {
         when (item) {
@@ -185,7 +195,18 @@ internal fun RackDeckLayout(
             // The rack.
             Column(Modifier.weight(0.46f).fillMaxHeight()) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("CASSETTE RACK", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 13.sp, letterSpacing = 2.sp), modifier = Modifier.weight(1f))
+                    Text("CASSETTE RACK", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 13.sp, letterSpacing = 2.sp))
+                    Spacer(Modifier.width(14.dp))
+                    Text(
+                        "⚙ SETTINGS",
+                        style = EngravedCaps.copy(color = accentFor(ui.theme), fontSize = 10.sp, letterSpacing = 1.5.sp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .border(1.dp, accentFor(ui.theme).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                            .clickable { showSettings = true }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                    Spacer(Modifier.weight(1f))
                     Text("${items.size} TAPES", style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp))
                 }
                 Spacer(Modifier.height(10.dp))
@@ -215,8 +236,13 @@ internal fun RackDeckLayout(
                             onDragEnd = {
                                 val item2 = dragging
                                 if (item2 != null && deckBounds.contains(dragPos)) {
-                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                                    load(item2)
+                                    if (ui.empty) {
+                                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                        load(item2)
+                                    } else {
+                                        // Deck's full: the tape just goes back on the rack.
+                                        view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                                    }
                                 }
                                 dragging = null
                             },
@@ -261,17 +287,19 @@ internal fun RackDeckLayout(
                     Box(
                         Modifier
                             .size(tapeW + gap * 2, tapeH + gap * 2)
-                            .deckGlow(glow)
+                            .deckGlow(glow, glowLight)
                             .background(Brush.verticalGradient(listOf(Color(0xFF151413), Color(0xFF050505))), RoundedCornerShape(SlotCorner))
                             .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(SlotCorner))
-                            .deckGlowInside(glow),
+                            .deckGlowInside(glow, glowLight, glowEdge),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (ui.empty) {
+                            // The bare inside of the deck: spindles, a screw, and a small hint.
+                            EmptyDeckInterior(Modifier.size(tapeW, tapeH))
                             Text(
-                                "EMPTY\n\nHOLD A TAPE IN THE RACK\nAND DRAG IT HERE",
-                                style = EngravedCaps.copy(color = Color(0xFF6E6860), fontSize = 10.sp, letterSpacing = 2.sp),
-                                textAlign = TextAlign.Center,
+                                "DRAG A TAPE IN",
+                                style = EngravedCaps.copy(color = Color(0xFF5E5951), fontSize = 9.sp, letterSpacing = 2.sp),
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 34.dp),
                             )
                         } else {
                             FullCassette(
@@ -307,8 +335,8 @@ internal fun RackDeckLayout(
                     }
                     if (overDeck) {
                         Text(
-                            "DROP TO LOAD",
-                            style = EngravedCaps.copy(color = GlowBlue, fontSize = 12.sp),
+                            if (blocked) "EJECT THE TAPE FIRST" else "DROP TO LOAD",
+                            style = EngravedCaps.copy(color = if (blocked) BlockedLight else glowLight, fontSize = 12.sp),
                             modifier = Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
                         )
                     }
@@ -377,12 +405,19 @@ internal fun RackDeckLayout(
         }
     }
 
+    if (showSettings) {
+        // Settings sits over the rack and deck, in the same dark style.
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)).clickable(enabled = false) {}.then(modifier)) {
+            SettingsPanel(ui, settings, onClose = { showSettings = false }, modifier = Modifier.fillMaxSize())
+        }
+    }
+
     card?.let { item ->
         TapeCardDialog(
             item = item,
             ui = ui,
             actions = actions,
-            onLoad = { load(item); card = null },
+            onLoad = { if (ui.empty) load(item); card = null },
             onEdit = { if (item is RackItem.Mine) editing = item.tape; card = null },
             onDismiss = { card = null },
         )
@@ -497,7 +532,15 @@ private fun TapeCardDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onLoad, enabled = !item.inDeck(ui)) { Text(if (item.inDeck(ui)) "In the deck" else "Put in deck") }
+            TextButton(onClick = onLoad, enabled = !item.inDeck(ui) && ui.empty) {
+                Text(
+                    when {
+                        item.inDeck(ui) -> "In the deck"
+                        !ui.empty -> "Eject the tape first"
+                        else -> "Put in deck"
+                    },
+                )
+            }
         },
         dismissButton = {
             Row {
@@ -511,6 +554,19 @@ private fun TapeCardDialog(
 /** The app's light blue (the front player's enamel, lightened) for the glowing drop area. */
 private val GlowBlue = Color(0xFF8CC4FF)
 private val GlowEdge = Color(0xFF4A9BFF)
+private val BlockedLight = Color(0xFFFF7A6E)
+private val BlockedEdge = Color(0xFFE53935)
+
+/** The drop glow follows the theme: light blue for Original, gold for Black & Gold. */
+private fun glowLightFor(theme: DeckTheme) = when (theme) {
+    DeckTheme.ORIGINAL -> GlowBlue
+    DeckTheme.BLACK_GOLD -> BlackGold.GoldHi
+}
+
+private fun glowEdgeFor(theme: DeckTheme) = when (theme) {
+    DeckTheme.ORIGINAL -> GlowEdge
+    DeckTheme.BLACK_GOLD -> BlackGold.Gold
+}
 private val HeldCassetteWidth = 230.dp
 /** Room around the tape in its slot: about a millimetre on the Fold's screen. */
 private val SlotGap = 7.dp
@@ -518,18 +574,18 @@ private val SlotCorner = 10.dp
 
 /** What the held cassette shows: the tape's own label, not the song that's playing. */
 private fun heldTapeUi(ui: DeckUi, item: RackItem): DeckUi = when (item) {
-    is RackItem.Mine -> ui.copy(source = Source.YT_MUSIC, tape = item.tape, title = "", artist = "", artwork = null, label = LabelPalette.Default)
-    is RackItem.Src -> ui.copy(source = item.source, tape = null, title = "", artist = "", artwork = null, label = LabelPalette.Default)
+    is RackItem.Mine -> ui.copy(source = Source.YT_MUSIC, tape = item.tape, title = "", artist = "", artwork = null, label = LabelPalette.Default, empty = false)
+    is RackItem.Src -> ui.copy(source = item.source, tape = null, title = "", artist = "", artwork = null, label = LabelPalette.Default, empty = false)
 }
 
 /** A soft light-blue halo around the deck, strongest when a tape is over it. */
-private fun Modifier.deckGlow(glow: Float): Modifier = drawBehind {
+private fun Modifier.deckGlow(glow: Float, light: Color): Modifier = drawBehind {
     if (glow <= 0f) return@drawBehind
     val r = SlotCorner.toPx()
     for (i in 1..6) {
         val spread = i * 3.dp.toPx()
         drawRoundRect(
-            GlowBlue.copy(alpha = 0.28f * glow * (1f - i / 7f)),
+            light.copy(alpha = 0.28f * glow * (1f - i / 7f)),
             topLeft = Offset(-spread, -spread),
             size = Size(size.width + spread * 2, size.height + spread * 2),
             cornerRadius = CornerRadius(r + spread),
@@ -539,17 +595,17 @@ private fun Modifier.deckGlow(glow: Float): Modifier = drawBehind {
 }
 
 /** Inside the deck: a light-blue wash and a bright blue outline over everything. */
-private fun Modifier.deckGlowInside(glow: Float): Modifier = drawWithContent {
+private fun Modifier.deckGlowInside(glow: Float, light: Color, edge: Color): Modifier = drawWithContent {
     drawContent()
     if (glow <= 0f) return@drawWithContent
     val r = CornerRadius(SlotCorner.toPx())
     drawRoundRect(
         Brush.radialGradient(
-            listOf(GlowBlue.copy(alpha = 0.5f * glow), GlowBlue.copy(alpha = 0.22f * glow)),
+            listOf(light.copy(alpha = 0.5f * glow), light.copy(alpha = 0.22f * glow)),
             center = center, radius = size.maxDimension * 0.7f,
         ),
         cornerRadius = r,
     )
-    drawRoundRect(GlowBlue.copy(alpha = 0.55f * glow), cornerRadius = r, style = Stroke(14.dp.toPx()))
-    drawRoundRect(GlowEdge.copy(alpha = glow), cornerRadius = r, style = Stroke(4.dp.toPx()))
+    drawRoundRect(light.copy(alpha = 0.55f * glow), cornerRadius = r, style = Stroke(14.dp.toPx()))
+    drawRoundRect(edge.copy(alpha = glow), cornerRadius = r, style = Stroke(4.dp.toPx()))
 }

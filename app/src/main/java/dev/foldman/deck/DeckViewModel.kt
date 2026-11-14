@@ -42,6 +42,12 @@ data class LabelPalette(val paper: Color, val stripe: Color, val stripe2: Color,
     }
 }
 
+/** Foldy Streaman: how the player looks. */
+enum class DeckTheme(val label: String) {
+    ORIGINAL("Original"),
+    BLACK_GOLD("Black & Gold"),
+}
+
 data class DeckUi(
     val source: Source = Source.LOCAL,
     val transport: Transport = Transport.STOPPED,
@@ -73,6 +79,7 @@ data class DeckUi(
     val tapeCued: Boolean = false,
     /** Nothing in the deck: the tape was swiped out. */
     val empty: Boolean = false,
+    val theme: DeckTheme = DeckTheme.ORIGINAL,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -83,6 +90,8 @@ sealed interface DeckEvent {
     data object TapeEnd : DeckEvent
     /** STOP pressed while already stopped: the cassette door pops. */
     data object Eject : DeckEvent
+    /** A phone volume button pressed a key on the front screen: click and buzz like a tap. */
+    data object KeyClick : DeckEvent
 }
 
 class DeckViewModel(app: Application) : AndroidViewModel(app) {
@@ -118,6 +127,10 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (source == Source.YT_MUSIC) prefs.getString(KEY_TAPE, null)?.let { id -> tapes.firstOrNull { it.id == id } } else null
     private var tapeCued = false
     private var deckEmpty = prefs.getBoolean(KEY_EMPTY, false)
+    private var theme = runCatching { DeckTheme.valueOf(prefs.getString(KEY_THEME, null) ?: "") }.getOrDefault(DeckTheme.ORIGINAL)
+    /** The folded front screen is showing (volume buttons become PLAY / PAUSE there). */
+    var coverShown = false
+        private set
     /** When PLAY last started a tape's playlist: YT Music takes a few seconds to open and start. */
     private var tapeStartAt = -1L
 
@@ -324,6 +337,28 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Swipes the tape out of the deck: the music stops and the slot is left empty. */
+    fun setTheme(t: DeckTheme) {
+        theme = t
+        prefs.edit { putString(KEY_THEME, t.name) }
+        tick()
+    }
+
+    fun setCoverShown(shown: Boolean) {
+        coverShown = shown
+    }
+
+    /** Volume up on the front screen. */
+    fun volumeKeyPlay() {
+        _events.tryEmit(DeckEvent.KeyClick)
+        play()
+    }
+
+    /** Volume down on the front screen: pause only (never un-pauses). */
+    fun volumeKeyPause() {
+        _events.tryEmit(DeckEvent.KeyClick)
+        if (_ui.value.transport == Transport.PLAYING) pauseKey()
+    }
+
     fun ejectTape() {
         if (winding != 0) finishWinding()
         if (backend.state.value.isPlaying) backend.pause()
@@ -711,6 +746,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             tape = loadedTape,
             tapeCued = tapeCued,
             empty = deckEmpty,
+            theme = theme,
         )
     }
 
@@ -754,6 +790,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_SOURCE = "source"
         private const val KEY_TAPE = "custom_tape_in_deck"
         private const val KEY_EMPTY = "deck_empty"
+        private const val KEY_THEME = "theme"
         private const val KEY_FOLDER = "folder"
         private const val KEY_SOUNDS = "key_sounds"
         private const val KEY_HAPTICS = "haptics"

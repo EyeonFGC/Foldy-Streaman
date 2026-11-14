@@ -297,7 +297,7 @@ fun HotlineButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val depth by animateFloatAsState(if (down) 1f else 0f, spring(stiffness = 2500f), label = "hotline")
     Canvas(
         modifier
-            .semantics { role = Role.Button; contentDescription = "Tapes" }
+            .semantics { role = Role.Button; contentDescription = "Hotline button" }
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
                     down = true

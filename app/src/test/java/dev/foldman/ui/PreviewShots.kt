@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.foldman.deck.CustomTape
+import dev.foldman.deck.DeckTheme
 import dev.foldman.deck.DeckUi
 import dev.foldman.deck.Source
 import dev.foldman.deck.SourceStatus
@@ -97,5 +98,50 @@ class PreviewShots {
             CoverWalkman(ui.copy(status = SourceStatus.NeedsAccess), anim(), deck, {}, Modifier.fillMaxSize().background(Color.Black))
         }
         rule.onRoot().captureRoboImage("build/shots/folded-access.png")
+    }
+
+    private val gold = ui.copy(theme = DeckTheme.BLACK_GOLD, tapeCued = false)
+
+    @Test
+    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    fun foldedBlackGold() {
+        rule.setContent { CoverBlackGold(gold, anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-blackgold.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    fun foldedBlackGoldEmpty() {
+        rule.setContent { CoverBlackGold(gold.copy(empty = true, tape = null), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-blackgold-empty.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    fun draggingOverFullDeck() {
+        rule.setContent {
+            RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to true)
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/drag-full-deck.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    fun draggingIntoEmptyGold() {
+        rule.setContent {
+            RackDeckLayout(gold.copy(empty = true, tape = null), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to true)
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/drag-empty-gold.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    fun settings() {
+        rule.setContent {
+            RackDeckLayout(gold, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewSettings = true)
+        }
+        rule.onRoot().captureRoboImage("build/shots/settings.png")
     }
 }

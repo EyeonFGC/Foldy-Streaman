@@ -2,6 +2,21 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.7.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Settings** (unfolded, next to "Cassette rack"): theme, click sounds, haptics, notification access, Apple Music sign-in and the music folder.
+- **Themes.** Original (blue) and the new **Black & Gold**: matte black body, the tape seen through a round window, a brushed-gold band with round black knobs and a gold PLAY knob on top. The drop glow is gold in this theme.
+- **Volume buttons on the front screen:** volume up = PLAY, volume down = PAUSE (with the key click). Unfolded they still change the volume.
+- **The empty deck looks like the inside of a real one:** two spindles, a screw and two guide pins.
+
+### Changed
+- **A full deck won't take another tape:** it glows red with "Eject the tape first", and the tape goes back to the rack. The card's "Put in deck" button says the same.
+- The yellow button is back on the Original front screen, a bit bigger (decoration only).
+
+### Fixed
+- The tape you pick up was blank when the deck was empty.
+
 ## [0.6.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
