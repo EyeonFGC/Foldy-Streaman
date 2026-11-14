@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.34.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- Notifications on the player moved and given snappier movement: they come in fast with a small bounce as they land, and dip slightly before shooting back out.
+  - Original and Cherry Red: a dark panel drops into the top of the tape window.
+  - Red Chrome: a dark panel rises into the bottom of the window.
+  - Silver & Blue: slides in from the right, lettered up the window.
+  - Black & Gold: zooms out from the middle of the round window.
+  - Sport Yellow: as before (the dial strip swaps), now with the bounce.
+
 ## [0.34.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

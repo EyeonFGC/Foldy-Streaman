@@ -230,7 +230,7 @@ private fun DialStrip(top: String, bottom: String, modifier: Modifier) {
         Column(
             Modifier
                 .fillMaxSize()
-                .graphicsLayer { translationY = t * size.height; alpha = 1f - t }
+                .graphicsLayer { translationY = t * size.height; alpha = (1f - t).coerceIn(0f, 1f) }
                 .drawBehind {
                     // The dark line through the middle, with rounded ends.
                     val inset = size.height * 0.55f
@@ -258,7 +258,7 @@ private fun DialStrip(top: String, bottom: String, modifier: Modifier) {
             Row(
                 Modifier
                     .fillMaxSize()
-                    .graphicsLayer { translationY = -(1f - t) * size.height; alpha = t }
+                    .graphicsLayer { translationY = -(1f - t) * size.height; alpha = t.coerceIn(0f, 1f) }
                     .padding(horizontal = 18.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

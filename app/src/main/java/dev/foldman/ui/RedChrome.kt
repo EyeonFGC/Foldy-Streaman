@@ -252,8 +252,8 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                         Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.09f), Color.Transparent), 0f, size.width * 0.8f),
                     )
                 }
-                // A notification, when one arrives, comes in over the darkened window.
-                NoticeOverlay(NoticeStyle.WINDOW, Modifier.fillMaxSize())
+                // A notification, when one arrives, rises into the bottom of the window.
+                NoticeOverlay(NoticeStyle.BOTTOM, Modifier.fillMaxSize(), share = 0.30f)
             }
             Spacer(Modifier.height(6.dp))
             // The matching wedge below, hugging the bottom-right corner, with AUTO REVERSE lettered

@@ -368,8 +368,8 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                 Row(Modifier.weight(1f).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                         TapeWindow(ui, anim, vertical = true)
-                        // A notification, when one arrives, comes in over the window (same shape, stood on end).
-                        NoticeOverlay(NoticeStyle.WINDOW, Modifier.originalWindowOnEnd())
+                        // A notification, when one arrives, drops into the top of the window (same shape, stood on end).
+                        NoticeOverlay(NoticeStyle.TOP, Modifier.originalWindowOnEnd(), share = 0.36f)
                     }
                 }
                 Spacer(Modifier.height(14.dp))

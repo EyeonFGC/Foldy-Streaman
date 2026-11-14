@@ -204,8 +204,8 @@ private fun SmokedWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                 )
                 drawRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.10f), Color.Transparent), 0f, size.height * 0.25f))
             }
-            // A notification, when one arrives, comes in over the darkened window.
-            NoticeOverlay(NoticeStyle.WINDOW, Modifier.fillMaxSize())
+            // A notification, when one arrives, drops into the top of the window.
+            NoticeOverlay(NoticeStyle.TOP, Modifier.fillMaxSize(), share = 0.32f)
         }
     }
 }
