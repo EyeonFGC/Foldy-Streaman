@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.23.1] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- The buzz when a dragged tape passes another tape was too faint to feel; it is now a proper click, the same strength as a key press.
+
 ## [0.23.0] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed

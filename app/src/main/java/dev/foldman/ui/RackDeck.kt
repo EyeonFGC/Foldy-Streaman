@@ -230,8 +230,8 @@ internal fun RackDeckLayout(
         val next = others.take(at) + d.key + others.drop(at)
         if (next != current) {
             liveOrder = next
-            // A small tick each time the tape passes another one.
-            if (hapticsOn) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+            // A click each time the tape passes another one (the lighter "tick" couldn't be felt mid-drag).
+            if (hapticsOn) view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
         }
     }
     LaunchedEffect(previewReorder, rackBounds) {
