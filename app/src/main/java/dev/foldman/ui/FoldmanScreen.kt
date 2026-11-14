@@ -165,6 +165,7 @@ fun FoldmanScreen(
             appleSignOut = vm::signOutOfApple,
             setStopOnOpen = vm::setStopOnOpen,
             setVolumeKeys = vm::setVolumeKeys,
+            setLockScreen = vm::setLockScreen,
             spotifyLogin = vm::spotifyLogin,
             spotifyLogout = vm::spotifyLogout,
             setSpotifyClientId = vm::setSpotifyClientId,

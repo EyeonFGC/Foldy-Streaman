@@ -60,6 +60,17 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(deckUi.phoneMode, deckUi.deckOpen) {
                 if (deckUi.phoneMode) applyPhoneOrientation(deckUi.deckOpen)
             }
+            // Foldy Streaman: with "Show the player on the lock screen" on, the front player stays
+            // up over the lock screen. Only the player: the inside (tapes, settings) asks for the
+            // phone to be unlocked first.
+            LaunchedEffect(deckUi.lockScreen) { setShowWhenLocked(deckUi.lockScreen) }
+            LaunchedEffect(deckUi.lockScreen, deckUi.coverShown) {
+                // A moment's grace: while the screen is still working out which side is showing,
+                // don't ask for the unlock by mistake.
+                kotlinx.coroutines.delay(500)
+                val guard = getSystemService(android.app.KeyguardManager::class.java)
+                if (deckUi.lockScreen && !deckUi.coverShown && guard?.isKeyguardLocked == true) guard.requestDismissKeyguard(this@MainActivity, null)
+            }
             // Foldy Streaman: a picture for a tape's J-card, from Android's photo picker.
             var photoForTape by rememberSaveable { mutableStateOf<String?>(null) }
             val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->

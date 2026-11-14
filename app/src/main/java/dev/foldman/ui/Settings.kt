@@ -48,6 +48,7 @@ class SettingsActions(
     val appleSignOut: () -> Unit,
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setVolumeKeys: (Boolean) -> Unit = {},
+    val setLockScreen: (Boolean) -> Unit = {},
     val spotifyLogin: () -> Unit = {},
     val spotifyLogout: () -> Unit = {},
     val setSpotifyClientId: (String) -> Unit = {},
@@ -139,6 +140,11 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     "A TAPES button on the player, to change tapes without opening it",
                     ui.frontShelf, accent,
                 ) { actions.setFrontShelf(!ui.frontShelf) }
+                ToggleRow(
+                    "Show the player on the lock screen",
+                    "If Foldy is the app you had open, waking the phone shows the player and its keys work without unlocking. Opening the tapes or leaving Foldy asks you to unlock",
+                    ui.lockScreen, accent,
+                ) { actions.setLockScreen(!ui.lockScreen) }
                 ComeBackRow(accent)
                 ToggleRow("Volume buttons work the player", "On the front screen: up = play, down = pause, double-tap to skip or stop. Off = normal volume", ui.volumeKeys, accent) { actions.setVolumeKeys(!ui.volumeKeys) }
                 if (!ui.phoneMode) {

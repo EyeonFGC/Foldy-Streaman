@@ -99,6 +99,10 @@ data class DeckUi(
     val stopOnOpen: Boolean = false,
     /** Front screen: the volume buttons work the player (play, pause, skip) instead of the volume. */
     val volumeKeys: Boolean = true,
+    /** Show the front player over the lock screen (Settings). */
+    val lockScreen: Boolean = false,
+    /** The folded front screen (the player) is what's showing, not the inside. */
+    val coverShown: Boolean = false,
     /** The logged-in Spotify account's name, or null when not logged in. */
     val spotifyName: String? = null,
     /** The Spotify app's Client ID as Foldy has it (blank = not set up yet). */
@@ -223,6 +227,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
     var volumeKeysOn = prefs.getBoolean(KEY_VOLUME_KEYS, true)
         private set
+    private var lockScreen = prefs.getBoolean(KEY_LOCK_SCREEN, false)
     private var spotifyName: String? = SpotifyApi.name(app)
     private var spotifyClientId: String = SpotifyApi.clientId(app)
     private var spotifyMessage: String? = null
@@ -473,7 +478,15 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setCoverShown(shown: Boolean) {
+        if (coverShown == shown) return
         coverShown = shown
+        tick()
+    }
+
+    fun setLockScreen(on: Boolean) {
+        lockScreen = on
+        prefs.edit { putBoolean(KEY_LOCK_SCREEN, on) }
+        tick()
     }
 
     private var volumeUpTaps = 0
@@ -529,6 +542,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         .put("haptics", prefs.getBoolean(KEY_HAPTICS, true))
         .put("stopOnOpen", stopOnOpen)
         .put("volumeKeys", volumeKeysOn)
+        .put("lockScreen", lockScreen)
         .put("frontShelf", frontShelf)
         .put("hiddenSources", org.json.JSONArray(hiddenSources.map { it.name }))
         .put("hinges", hingeStyle.name)
@@ -569,6 +583,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (o.has("haptics")) prefs.edit { putBoolean(KEY_HAPTICS, o.optBoolean("haptics", true)) }
         if (o.has("stopOnOpen")) setStopOnOpen(o.optBoolean("stopOnOpen"))
         if (o.has("volumeKeys")) setVolumeKeys(o.optBoolean("volumeKeys"))
+        if (o.has("lockScreen")) setLockScreen(o.optBoolean("lockScreen"))
         if (o.has("frontShelf")) setFrontShelf(o.optBoolean("frontShelf"))
         o.optJSONArray("hiddenSources")?.let { arr ->
             hiddenSources = List(arr.length()) { arr.optString(it) }.mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
@@ -1249,6 +1264,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             deckOpen = phoneMode && deckOpen,
             stopOnOpen = stopOnOpen,
             volumeKeys = volumeKeysOn,
+            lockScreen = lockScreen,
+            coverShown = coverShown,
             spotifyName = spotifyName,
             spotifyClientId = spotifyClientId,
             spotifyMessage = spotifyMessage,
@@ -1307,6 +1324,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
         private const val KEY_VOLUME_KEYS = "volume_keys"
+        private const val KEY_LOCK_SCREEN = "lock_screen"
         private const val KEY_FRONT_SHELF = "front_shelf"
         private const val KEY_JCARD_DARK = "jcard_dark"
         private const val KEY_HIDDEN_SOURCES = "hidden_sources"

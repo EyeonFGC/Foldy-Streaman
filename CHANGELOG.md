@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.32.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Settings > Show the player on the lock screen.** When Foldy is the app you had open and the phone locks, waking it shows the front player (tape turning, keys working) instead of the lock screen. Opening the phone to the tapes, or leaving Foldy, asks you to unlock as normal. Android doesn't let an app replace the lock screen itself, so this only shows when Foldy was the last app on screen.
+
 ## [0.31.0] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed
