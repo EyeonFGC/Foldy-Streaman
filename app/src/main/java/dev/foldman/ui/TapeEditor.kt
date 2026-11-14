@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.foldman.deck.CustomTape
 import dev.foldman.deck.TapeColors
-import dev.foldman.deck.playlistIdFrom
+import dev.foldman.deck.parsePlaylist
 
 /** What the rack needs to make, load, change and remove your tapes. */
 class TapeActions(
@@ -64,11 +64,11 @@ private val HandFont = TextStyle(fontFamily = FontFamily.Cursive, fontWeight = F
 @Composable
 fun TapeEditorDialog(tape: CustomTape?, actions: TapeActions, onDismiss: () -> Unit) {
     var title by remember { mutableStateOf(tape?.title ?: "") }
-    var link by remember { mutableStateOf(tape?.let { "https://music.youtube.com/playlist?list=${it.playlistId}" } ?: "") }
+    var link by remember { mutableStateOf(tape?.shareUrl ?: "") }
     var shell by remember { mutableLongStateOf(tape?.shell ?: TapeColors.shells[1]) }
     var label by remember { mutableLongStateOf(tape?.label ?: TapeColors.labels[0]) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val playlistId = playlistIdFrom(link)
+    val found = parsePlaylist(link)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -95,16 +95,16 @@ fun TapeEditorDialog(tape: CustomTape?, actions: TapeActions, onDismiss: () -> U
                 OutlinedTextField(
                     value = link,
                     onValueChange = { link = it },
-                    label = { Text("YouTube Music playlist link") },
+                    label = { Text("YouTube Music or Spotify playlist link") },
                     placeholder = { Text("Share → Copy link, then paste here") },
                     singleLine = true,
-                    isError = link.isNotBlank() && playlistId == null,
+                    isError = link.isNotBlank() && found == null,
                     supportingText = {
                         Text(
                             when {
-                                link.isBlank() -> "In YT Music open the playlist, tap ⋮ → Share → Copy link."
-                                playlistId == null -> "That doesn't look like a playlist link (it needs list=… in it)."
-                                else -> "Playlist found ✓"
+                                link.isBlank() -> "In YT Music or Spotify open the playlist, tap ⋮ or ··· → Share → Copy link."
+                                found == null -> "That doesn't look like a YouTube Music or Spotify playlist link."
+                                else -> "${found.service.label} playlist found ✓"
                             },
                         )
                     },
@@ -131,11 +131,11 @@ fun TapeEditorDialog(tape: CustomTape?, actions: TapeActions, onDismiss: () -> U
         },
         confirmButton = {
             TextButton(
-                enabled = playlistId != null,
+                enabled = found != null,
                 onClick = {
-                    val id = playlistId ?: return@TextButton
-                    val saved = (tape ?: CustomTape(title = "", playlistId = id, shell = shell, label = label))
-                        .copy(title = title.trim(), playlistId = id, shell = shell, label = label)
+                    val ref = found ?: return@TextButton
+                    val saved = (tape ?: CustomTape(title = "", playlistId = ref.id, shell = shell, label = label))
+                        .copy(title = title.trim(), playlistId = ref.id, service = ref.service, shell = shell, label = label)
                     actions.save(saved)
                     onDismiss()
                 },

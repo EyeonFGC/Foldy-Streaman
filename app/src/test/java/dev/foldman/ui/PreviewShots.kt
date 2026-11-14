@@ -261,4 +261,25 @@ class PreviewShots {
         rule.waitForIdle()
         rule.onRoot().captureRoboImage("build/shots/phone-open-playing.png")
     }
+
+    @Test
+    @Config(qualifiers = "w720dp-h900dp-xxhdpi")
+    fun buttonStyles() {
+        rule.setContent {
+            androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().background(Color(0xFF141210)).padding(12.dp)) {
+                listOf(JButtonStyle.METAL, JButtonStyle.ENAMEL, JButtonStyle.STAMP).forEachIndexed { i, st ->
+                    androidx.compose.material3.Text(
+                        "${'A' + i}: " + listOf("Metal keys", "Enamel badges", "Rubber stamp")[i],
+                        color = Color.White, fontSize = androidx.compose.ui.unit.TextUnit(16f, androidx.compose.ui.unit.TextUnitType.Sp),
+                        modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
+                    )
+                    androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                        CardButtonSample(st, DeckTheme.ORIGINAL, Modifier.weight(1f))
+                        CardButtonSample(st, DeckTheme.BLACK_GOLD, Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        rule.onRoot().captureRoboImage("build/shots/button-styles.png")
+    }
 }

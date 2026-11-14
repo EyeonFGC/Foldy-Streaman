@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -61,7 +62,8 @@ import dev.foldman.deck.TapeColors
 import dev.foldman.deck.TapeFont
 import dev.foldman.deck.TapePhotos
 import dev.foldman.deck.Transport
-import dev.foldman.deck.playlistIdFrom
+import dev.foldman.deck.PlaylistRef
+import dev.foldman.deck.parsePlaylist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -217,7 +219,7 @@ fun JCardSheet(
         Spacer(Modifier.height(12.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text("SIDE A", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp))
-            Text("YouTube Music playlist", style = Typed.copy(fontSize = 13.sp))
+            Text("${tape.service.label} playlist", style = Typed.copy(fontSize = 13.sp))
             Text(
                 when {
                     inDeck && ui.transport == Transport.PLAYING -> "In the deck · playing"
@@ -268,7 +270,7 @@ fun JCardSheet(
 
     when (edit) {
         JEdit.LABEL -> TextDialog("Write on the label", tape.title, onDismiss = { edit = null }) { actions.save(tape.copy(title = it.trim().take(40))) }
-        JEdit.PLAYLIST -> PlaylistDialog(tape, onDismiss = { edit = null }) { id -> actions.save(tape.copy(playlistId = id)) }
+        JEdit.PLAYLIST -> PlaylistDialog(tape, onDismiss = { edit = null }) { ref -> actions.save(tape.copy(playlistId = ref.id, service = ref.service)) }
         JEdit.FONT -> FontDialog(tape, onDismiss = { edit = null }) { f -> actions.save(tape.copy(font = f)) }
         JEdit.COLOURS -> ColoursDialog(tape, onDismiss = { edit = null }) { s, l -> actions.save(tape.copy(shell = s, label = l)) }
         JEdit.PHOTO_MENU -> AlertDialog(
@@ -299,24 +301,83 @@ private fun MenuRow(text: String, onClick: () -> Unit) {
     Text(text, style = TextStyle(fontSize = 16.sp), modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp))
 }
 
-/** A chunky square key printed on the card. */
+/** Looks for the J-card buttons (being chosen: see the preview pictures). */
+enum class JButtonStyle { PLAIN, METAL, ENAMEL, STAMP }
+
+/** A chunky square key printed on the card, styled to match [theme]. */
 @Composable
-private fun CardButton(icon: String, label: String, modifier: Modifier, onClick: () -> Unit) {
+internal fun CardButton(
+    icon: String,
+    label: String,
+    modifier: Modifier,
+    style: JButtonStyle = JButtonStyle.PLAIN,
+    theme: dev.foldman.deck.DeckTheme = dev.foldman.deck.DeckTheme.ORIGINAL,
+    onClick: () -> Unit,
+) {
+    val gold = theme == dev.foldman.deck.DeckTheme.BLACK_GOLD
+    val shape = RoundedCornerShape(if (style == JButtonStyle.ENAMEL) 25.dp else 6.dp)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .shadow(3.dp, RoundedCornerShape(6.dp))
-                .clip(RoundedCornerShape(6.dp))
-                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF45444A), Color(0xFF2A292E))))
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(icon, style = TextStyle(color = Color(0xFFEDE6D8), fontSize = 20.sp, fontWeight = FontWeight.Bold))
+        val base = Modifier.fillMaxWidth().height(50.dp)
+        val iconColor: Color
+        val face: Modifier
+        when (style) {
+            JButtonStyle.PLAIN -> {
+                face = base.shadow(3.dp, shape).clip(shape)
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF45444A), Color(0xFF2A292E))))
+                iconColor = Color(0xFFEDE6D8)
+            }
+            // Like the keys on the front: brushed metal caps (silver, or black for Black & Gold)
+            // with a coloured stripe along the bottom edge.
+            JButtonStyle.METAL -> {
+                val cap = if (gold) listOf(Color(0xFF3A3A3E), Color(0xFF1C1C1F), Color(0xFF0E0E10)) else listOf(Color(0xFFF7F8F9), Color(0xFFD3D5D9), Color(0xFFA6A9AE))
+                val stripe = if (gold) BlackGold.Gold else DeckColors.Accent
+                face = base.shadow(4.dp, shape).clip(shape)
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(cap))
+                    .drawBehind {
+                        for (i in 1..3) drawLine(Color.Black.copy(alpha = 0.08f), Offset(size.width * 0.12f, size.height * 0.1f * i), Offset(size.width * 0.88f, size.height * 0.1f * i), 1f)
+                        drawRoundRect(stripe, topLeft = Offset(size.width * 0.2f, size.height * 0.84f), size = androidx.compose.ui.geometry.Size(size.width * 0.6f, size.height * 0.05f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height))
+                    }
+                    .border(1.dp, Color.White.copy(alpha = if (gold) 0.12f else 0.8f), shape)
+                iconColor = if (gold) BlackGold.GoldHi else DeckColors.Engrave
+            }
+            // Pill-shaped enamel badges in the player's paint, with a chrome (or gold) rim.
+            JButtonStyle.ENAMEL -> {
+                val paint = if (gold) listOf(Color(0xFF2A2A2D), Color(0xFF121214)) else listOf(Color(0xFF5B92D0), Color(0xFF2F6FB5), Color(0xFF214F86))
+                face = base.shadow(4.dp, shape).clip(shape)
+                    .background(androidx.compose.ui.graphics.Brush.verticalGradient(paint))
+                    .border(2.dp, androidx.compose.ui.graphics.Brush.verticalGradient(if (gold) listOf(BlackGold.GoldHi, BlackGold.GoldLo) else listOf(Color(0xFFF4F5F7), Color(0xFF8C9096))), shape)
+                iconColor = if (gold) BlackGold.Gold else Color.White
+            }
+            // Printed onto the card like a rubber stamp: an inked outline and icon, no button body.
+            JButtonStyle.STAMP -> {
+                val ink = if (gold) Color(0xFF8A6408) else JRed
+                face = base.border(2.dp, ink, RoundedCornerShape(4.dp)).padding(3.dp).border(0.8.dp, ink.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
+                iconColor = ink
+            }
+        }
+        Box(face.clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+            Text(icon, style = TextStyle(color = iconColor, fontSize = 20.sp, fontWeight = FontWeight.Bold))
         }
         Spacer(Modifier.height(4.dp))
-        Text(label, style = Typed.copy(fontSize = 10.sp, letterSpacing = 1.sp))
+        Text(label, style = Typed.copy(fontSize = 10.sp, letterSpacing = 1.sp, color = if (style == JButtonStyle.STAMP) (if (gold) Color(0xFF8A6408) else JRed) else JInk))
+    }
+}
+
+/** Screen previews only: one row of buttons in a given style and theme, on J-card paper. */
+@Composable
+internal fun CardButtonSample(style: JButtonStyle, theme: dev.foldman.deck.DeckTheme, modifier: Modifier = Modifier) {
+    Column(modifier.background(JPaper).padding(14.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CardButton("✎", "LABEL", Modifier.weight(1f), style, theme) {}
+            CardButton("▣", "PHOTO", Modifier.weight(1f), style, theme) {}
+            CardButton("Aa", "FONT", Modifier.weight(1f), style, theme) {}
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CardButton("◐", "COLOURS", Modifier.weight(1f), style, theme) {}
+            CardButton("♫", "PLAYLIST", Modifier.weight(1f), style, theme) {}
+            CardButton("✕", "DELETE", Modifier.weight(1f), style, theme) {}
+        }
     }
 }
 
@@ -333,17 +394,17 @@ private fun TextDialog(title: String, start: String, onDismiss: () -> Unit, onSa
 }
 
 @Composable
-private fun PlaylistDialog(tape: CustomTape, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var link by remember { mutableStateOf("https://music.youtube.com/playlist?list=${tape.playlistId}") }
-    val id = playlistIdFrom(link)
+private fun PlaylistDialog(tape: CustomTape, onDismiss: () -> Unit, onSave: (PlaylistRef) -> Unit) {
+    var link by remember { mutableStateOf(tape.shareUrl) }
+    val id = parsePlaylist(link)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Playlist") },
         text = {
             OutlinedTextField(
                 link, { link = it }, singleLine = true, isError = id == null,
-                label = { Text("YouTube Music playlist link") },
-                supportingText = { Text(if (id == null) "That doesn't look like a playlist link (it needs list=… in it)." else "Playlist found ✓") },
+                label = { Text("YouTube Music or Spotify playlist link") },
+                supportingText = { Text(if (id == null) "That doesn't look like a YouTube Music or Spotify playlist link." else "${id.service.label} playlist found ✓") },
                 modifier = Modifier.fillMaxWidth(),
             )
         },

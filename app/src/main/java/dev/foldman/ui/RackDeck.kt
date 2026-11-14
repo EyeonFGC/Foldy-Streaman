@@ -99,6 +99,7 @@ private fun RackItem.title(): String = when (this) {
     is RackItem.Src -> when (source) {
         Source.LOCAL -> "My music files"
         Source.YT_MUSIC -> "YT Music adapter"
+        Source.SPOTIFY -> "Spotify adapter"
         Source.APPLE_MUSIC -> "Apple Music adapter"
     }
     is RackItem.Mine -> tape.title.ifBlank { "my tape" }
@@ -546,7 +547,12 @@ private fun RackSpine(
             label = item.label(),
             font = item.font(),
             photoOf = (item as? RackItem.Mine)?.tape,
-            trailing = if (item is RackItem.Src && item.source != Source.LOCAL) "AUX" else null,
+            // Adapters say AUX; your tapes say which app plays them.
+            trailing = when {
+                item is RackItem.Mine -> item.tape.service.short
+                item is RackItem.Src && item.source != Source.LOCAL -> "AUX"
+                else -> null
+            },
             modifier = gestures.alpha(if (beingDragged) 0.25f else 1f).shadow(3.dp, RoundedCornerShape(4.dp)),
         )
     }
@@ -571,7 +577,7 @@ private fun TapeCardDialog(
                 when (item) {
                     is RackItem.Mine -> {
                         Text("SIDE A", style = Typewriter.copy(color = DeckColors.AccentDeep))
-                        Text("YouTube Music playlist", style = Typewriter.copy(color = Color.Unspecified, fontSize = 13.sp))
+                        Text("${item.tape.service.label} playlist", style = Typewriter.copy(color = Color.Unspecified, fontSize = 13.sp))
                         Text(item.tape.playlistId, style = Typewriter.copy(color = Color.Gray, fontSize = 10.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Spacer(Modifier.height(10.dp))
                         Text("Drop it in the deck (or tap Put in deck), close the phone and press PLAY. YT Music starts this playlist.", style = Typewriter.copy(color = Color.Unspecified, fontSize = 12.sp))
@@ -638,7 +644,7 @@ private val SlotCorner = 10.dp
 
 /** What the held cassette shows: the tape's own label, not the song that's playing. */
 private fun heldTapeUi(ui: DeckUi, item: RackItem): DeckUi = when (item) {
-    is RackItem.Mine -> ui.copy(source = Source.YT_MUSIC, tape = item.tape, title = "", artist = "", artwork = null, label = LabelPalette.Default, empty = false)
+    is RackItem.Mine -> ui.copy(source = item.tape.source, tape = item.tape, title = "", artist = "", artwork = null, label = LabelPalette.Default, empty = false)
     is RackItem.Src -> ui.copy(source = item.source, tape = null, title = "", artist = "", artwork = null, label = LabelPalette.Default, empty = false)
 }
 

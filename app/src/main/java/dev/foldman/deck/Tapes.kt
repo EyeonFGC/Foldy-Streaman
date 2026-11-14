@@ -16,6 +16,8 @@ data class CustomTape(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
     val playlistId: String,
+    /** Which app plays this tape's playlist. */
+    val service: TapeService = TapeService.YT_MUSIC,
     val shell: Long,
     val label: Long,
     /** The writing on the label, spine and J-card. */
@@ -27,7 +29,40 @@ data class CustomTape(
     val photoY: Float = 0f,
     val photoZoom: Float = 1f,
 ) {
-    val playUrl: String get() = "https://music.youtube.com/watch?list=$playlistId"
+    /** The link that opens and plays the playlist in its app. */
+    val playUrl: String get() = when (service) {
+        TapeService.YT_MUSIC -> "https://music.youtube.com/watch?list=$playlistId"
+        TapeService.SPOTIFY -> "spotify:playlist:$playlistId"
+    }
+
+    /** A normal web link to the playlist (what the editor shows). */
+    val shareUrl: String get() = when (service) {
+        TapeService.YT_MUSIC -> "https://music.youtube.com/playlist?list=$playlistId"
+        TapeService.SPOTIFY -> "https://open.spotify.com/playlist/$playlistId"
+    }
+
+    val source: Source get() = service.source
+}
+
+/** The streaming apps a tape can play from. */
+enum class TapeService(val label: String, val short: String, val source: Source) {
+    YT_MUSIC("YouTube Music", "YT", Source.YT_MUSIC),
+    SPOTIFY("Spotify", "SP", Source.SPOTIFY),
+}
+
+/** A playlist found in a pasted link. */
+data class PlaylistRef(val service: TapeService, val id: String)
+
+/**
+ * Reads a pasted link: YouTube / YouTube Music (list=…), Spotify (open.spotify.com/playlist/… or
+ * spotify:playlist:…), or a bare YouTube playlist ID.
+ */
+fun parsePlaylist(text: String): PlaylistRef? {
+    val t = text.trim()
+    if (t.isEmpty()) return null
+    Regex("spotify:playlist:([A-Za-z0-9]+)").find(t)?.let { return PlaylistRef(TapeService.SPOTIFY, it.groupValues[1]) }
+    Regex("spotify\\.com/(?:[a-z-]+/)?playlist/([A-Za-z0-9]+)").find(t)?.let { return PlaylistRef(TapeService.SPOTIFY, it.groupValues[1]) }
+    return playlistIdFrom(t)?.let { PlaylistRef(TapeService.YT_MUSIC, it) }
 }
 
 /** Fonts for the label, spine and J-card. */
@@ -73,6 +108,7 @@ class TapeStore(private val prefs: SharedPreferences) {
                 id = o.getString("id"),
                 title = o.optString("title"),
                 playlistId = o.getString("playlist"),
+                service = runCatching { TapeService.valueOf(o.optString("service")) }.getOrDefault(TapeService.YT_MUSIC),
                 shell = o.optLong("shell", TapeColors.shells[1]),
                 label = o.optLong("label", TapeColors.labels[0]),
                 font = runCatching { TapeFont.valueOf(o.optString("font")) }.getOrDefault(TapeFont.CLASSIC),
@@ -92,6 +128,7 @@ class TapeStore(private val prefs: SharedPreferences) {
                     .put("id", t.id)
                     .put("title", t.title)
                     .put("playlist", t.playlistId)
+                    .put("service", t.service.name)
                     .put("shell", t.shell)
                     .put("label", t.label)
                     .put("font", t.font.name)

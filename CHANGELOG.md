@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.11.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Spotify playlists.** Paste a Spotify playlist link (Share → Copy link) on a new tape or in its J-card. Load the tape, close the phone and press PLAY: Spotify starts the playlist, and the keys, reels, volume buttons and song name work as with YouTube Music. Needs the Spotify app, signed in.
+- A **Spotify adapter** tape on the rack, and your tapes say **YT** or **SP** on their spine. Spotify tapes are marked "SP ∞" on the cassette.
+
 ## [0.10.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

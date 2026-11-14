@@ -113,6 +113,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var appleJob: Job? = null
     private val remotes = mapOf(
         Source.YT_MUSIC to RemoteBackend(app, Source.YT_MUSIC),
+        Source.SPOTIFY to RemoteBackend(app, Source.SPOTIFY),
         Source.APPLE_MUSIC to RemoteBackend(app, Source.APPLE_MUSIC),
     )
 
@@ -132,7 +133,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private val tapeStore = TapeStore(prefs)
     private var tapes: List<CustomTape> = tapeStore.load()
     private var loadedTape: CustomTape? =
-        if (source == Source.YT_MUSIC) prefs.getString(KEY_TAPE, null)?.let { id -> tapes.firstOrNull { it.id == id } } else null
+        prefs.getString(KEY_TAPE, null)?.let { id -> tapes.firstOrNull { it.id == id && it.source == source } }
     private var tapeCued = false
     private var deckEmpty = prefs.getBoolean(KEY_EMPTY, false)
     private var theme = runCatching { DeckTheme.valueOf(prefs.getString(KEY_THEME, null) ?: "") }.getOrDefault(DeckTheme.ORIGINAL)
@@ -223,7 +224,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (deckEmpty) return
         if (winding != 0) finishWinding()
         val tape = loadedTape
-        if (tape != null && tapeCued && source == Source.YT_MUSIC) {
+        if (tape != null && tapeCued && source == tape.source) {
             tapeCued = false
             stopped = false
             playRequestedAt = SystemClock.elapsedRealtime()
@@ -511,7 +512,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (winding != 0) finishWinding()
         if (backend.state.value.isPlaying) backend.pause()
         setEmpty(false)
-        switchSource(Source.YT_MUSIC)
+        switchSource(tape.source)
         loadedTape = tape
         tapeCued = true
         stopped = true
@@ -550,11 +551,11 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
      * soon as it starts playing.
      */
     private fun startPlaylist(tape: CustomTape) {
-        if (remotes[Source.YT_MUSIC]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
+        if (remotes[tape.source]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
         val app = getApplication<Application>()
         val base = Intent(Intent.ACTION_VIEW, Uri.parse(tape.playUrl))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
-        runCatching { app.startActivity(Intent(base).setPackage(Source.YT_MUSIC.packageName)) }
+        runCatching { app.startActivity(Intent(base).setPackage(tape.source.packageName)) }
             .recoverCatching { app.startActivity(base) }
         comeBackWhenPlaying()
     }
@@ -588,7 +589,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             comeBackBy = 0L
             return
         }
-        val canSee = remotes[Source.YT_MUSIC]?.hasSession == true
+        val canSee = remotes[source]?.hasSession == true
         if (!state.isPlaying && (canSee || now < comeBackAnywayAt)) return
         comeBackBy = 0L
         val app = getApplication<Application>()

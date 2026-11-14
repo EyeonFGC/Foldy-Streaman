@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 enum class Source(val label: String, val packageName: String?) {
     LOCAL("Local folder", null),
     YT_MUSIC("YT Music", "com.google.android.apps.youtube.music"),
+    SPOTIFY("Spotify", "com.spotify.music"),
     APPLE_MUSIC("Apple Music", "com.apple.android.music"),
 }
 
