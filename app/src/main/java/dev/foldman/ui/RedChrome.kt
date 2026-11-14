@@ -199,7 +199,8 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
         val shape = RoundedCornerShape(8.dp)
         // The part of the upright tape the window shows, in the tape's own 64 x 100 units.
         val showL = 11f
-        val showR = 64f
+        // The right edge comes in past the tape's label, cutting off its outer part.
+        val showR = 58f
         val showT = 10f
         val showB = 95f
         val aspect = (showR - showL) / (showB - showT)
@@ -215,34 +216,11 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                 .padding(vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // The white printed label, slightly askew like a sticker.
-            Column(
-                Modifier
-                    .align(Alignment.Start)
-                    .padding(start = 12.dp)
-                    .rotate(-4f)
-                    .background(Color(0xFFF4F4F2), RoundedCornerShape(1.dp))
-                    .padding(horizontal = 6.dp, vertical = 3.dp),
-            ) {
-                Text("STEREO", style = TextStyle(color = Color(0xFF16171A), fontSize = 7.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp))
-                Text("CASSETTE PLAYER", style = TextStyle(color = Color(0xFF16171A), fontSize = 6.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
+            // A white wedge with a thin blue edge above the window, hugging the top-left corner.
+            Canvas(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 8.dp)) {
+                drawWedge(Path().apply { moveTo(0f, 0f); lineTo(size.width, 0f); lineTo(0f, size.height); close() })
             }
-            Spacer(Modifier.weight(1f))
-            // The two triangles, lined up with the sides of the tape's own window (units 21 and 43).
-            Canvas(Modifier.size(winW, 11.dp)) {
-                val t = size.height * 0.85f
-                fun tri(cx: Float, down: Boolean) = Path().apply {
-                    if (down) { moveTo(cx - t * 0.6f, 0f); lineTo(cx + t * 0.6f, 0f); lineTo(cx, t) }
-                    else { moveTo(cx - t * 0.6f, t); lineTo(cx + t * 0.6f, t); lineTo(cx, 0f) }
-                    close()
-                }
-                val x1 = (21f - showL) * u.toPx()
-                val x2 = (43f - showL) * u.toPx()
-                drawPath(tri(x1, down = true), Color.White)
-                drawPath(tri(x2, down = true), Color.Black)
-                drawPath(tri(x2, down = true), Color.White.copy(alpha = 0.75f), style = Stroke(1.4f))
-            }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             Box(
                 Modifier
                     .size(winW, winH)
@@ -271,14 +249,29 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                     )
                 }
             }
-            Spacer(Modifier.weight(1f))
-            Text(
-                "AUTO REVERSE",
-                style = TextStyle(fontFamily = FontFamily.Serif, color = Color.White.copy(alpha = 0.92f), fontSize = 12.sp, letterSpacing = 1.sp, fontStyle = FontStyle.Italic),
-                modifier = Modifier.align(Alignment.End).padding(end = 12.dp),
-            )
+            Spacer(Modifier.height(6.dp))
+            // The matching wedge below, hugging the bottom-right corner, with AUTO REVERSE lettered
+            // along its slanted edge, right by the tape.
+            BoxWithConstraints(Modifier.fillMaxWidth().weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                val slope = Math.toDegrees(kotlin.math.atan2(maxHeight.value.toDouble(), maxWidth.value.toDouble())).toFloat()
+                Canvas(Modifier.fillMaxSize()) {
+                    drawWedge(Path().apply { moveTo(size.width, size.height); lineTo(0f, size.height); lineTo(size.width, 0f); close() })
+                }
+                Text(
+                    "AUTO REVERSE",
+                    style = TextStyle(fontFamily = FontFamily.Serif, color = Color.White, fontSize = 17.sp, letterSpacing = 1.sp),
+                    maxLines = 1, softWrap = false,
+                    modifier = Modifier.offset(x = (-8).dp, y = (-14).dp).rotate(-slope),
+                )
+            }
         }
     }
+}
+
+/** One of the white printed wedges on the glass: off-white with a thin light-blue edge. */
+private fun DrawScope.drawWedge(path: Path) {
+    drawPath(path, Brush.linearGradient(listOf(Color(0xFFFDFDFC), Color(0xFFDDE3E8)), Offset.Zero, Offset(size.width, size.height)))
+    drawPath(path, Color(0xFF6FB2DC), style = Stroke(2.2f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
 }
 
 /** The side strip: red body with a chrome edge, silver keys (a green one for PLAY), wheel and socket. */

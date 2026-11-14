@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.18.3] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Red Chrome glass panel:** two big white wedges with a thin blue edge, above and below the tape window, like the printed panels on the original; AUTO REVERSE is bigger and runs along the lower wedge right by the tape; the small sticker and small triangles are gone; the window's right edge comes in, cutting off the outer part of the tape.
+
 ## [0.18.2] — 2026-11-14 (Foldy Streaman)
 
 ### Changed
