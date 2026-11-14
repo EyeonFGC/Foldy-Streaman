@@ -55,6 +55,7 @@ fun accentFor(theme: DeckTheme): Color = when (theme) {
     DeckTheme.ORIGINAL -> DeckColors.Accent
     DeckTheme.BLACK_GOLD -> BlackGold.Gold
     DeckTheme.CHERRY_RED -> Color(0xFFFF6F84)
+    DeckTheme.SILVER_BLUE -> Color(0xFF6F8CFF)
 }
 
 private val Label = TextStyle(fontFamily = FontFamily.Monospace, color = Color(0xFFD9D2C8), fontSize = 13.sp)
@@ -81,9 +82,15 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
         Spacer(Modifier.height(16.dp))
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(22.dp)) {
             Section("THEME") {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DeckTheme.entries.forEach { t ->
-                        ThemeCard(t, selected = ui.theme == t, accent = accent, onClick = { actions.setTheme(t) }, modifier = Modifier.weight(1f))
+                // Two themes to a row, so the cards stay big enough to see.
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DeckTheme.entries.chunked(2).forEach { pair ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            pair.forEach { t ->
+                                ThemeCard(t, selected = ui.theme == t, accent = accent, onClick = { actions.setTheme(t) }, modifier = Modifier.weight(1f))
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
                 Spacer(Modifier.height(6.dp))
@@ -154,9 +161,15 @@ private fun ThemeCard(theme: DeckTheme, selected: Boolean, accent: Color, onClic
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF5B92D0), Color(0xFF2F6FB5), Color(0xFF214F86)))))
                     Box(Modifier.weight(0.28f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFFB7BABF), Color(0xFFE4E5E7), Color(0xFFB0B3B8)))))
                 }
+                DeckTheme.SILVER_BLUE -> {
+                    Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFFB7BABF), Color(0xFFE4E5E7), Color(0xFFB0B3B8)))), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxSize(0.55f).clip(RoundedCornerShape(50)).background(SilverBlue.Blue))
+                    }
+                    Box(Modifier.weight(0.28f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFF9EA2A9), Color(0xFFD7D9DD)))))
+                }
                 DeckTheme.CHERRY_RED -> {
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(CherryRed.BodyHi, CherryRed.Body, CherryRed.BodyLo))))
-                    Box(Modifier.weight(0.28f).fillMaxSize().background(CherryRed.Trim))
+                    Box(Modifier.weight(0.28f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFF2E2D31), Color(0xFF3C3B40)))))
                 }
                 DeckTheme.BLACK_GOLD -> {
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF2A2A2D), Color(0xFF121214)))))

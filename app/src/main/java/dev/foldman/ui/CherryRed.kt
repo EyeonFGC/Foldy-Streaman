@@ -242,7 +242,7 @@ private fun KeyPanel(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             }
             Spacer(Modifier.height(12.dp))
             Text("VOL", style = caption)
-            VolumeSlider(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f))
+            VolumeWheelSlot(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f), marker = CherryRed.Yellow, dark = true)
             Spacer(Modifier.height(6.dp))
             Text("PHONES", style = caption.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))

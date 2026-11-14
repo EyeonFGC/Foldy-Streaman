@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.14.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **New theme: Silver & Blue**, after an early-80s aluminium player: brushed silver body and side strip, a long pill-shaped clear window in a thick royal-blue frame, blue printing, and slanted silver keys with a dark outline in their own shape (thin green round PLAY, blue round STOP·EJECT). The clear window sits tight round the tape, with flat sides and rounded corners inside the blue pill.
+
+- **Volume thumbwheel** on Cherry Red and Silver & Blue: a ribbed grey wheel with 1 to 10 printed round it. Roll it up or down; it ticks at each number. Original and Black & Gold keep their sliders.
+
+### Changed
+- Settings shows the themes two to a row.
+
 ## [0.13.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

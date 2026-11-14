@@ -320,4 +320,11 @@ class PreviewShots {
         rule.setContent { CoverCherryRed(ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, audioElsewhere = true), anim(), deck, {}, Modifier.fillMaxSize()) }
         rule.onRoot().captureRoboImage("build/shots/folded-cherry-plugged.png")
     }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun foldedSilverBlue() {
+        rule.setContent { CoverSilverBlue(ui.copy(theme = DeckTheme.SILVER_BLUE, tapeCued = false, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-silverblue.png")
+    }
 }

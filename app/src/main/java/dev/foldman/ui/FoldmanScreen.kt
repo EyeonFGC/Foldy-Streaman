@@ -201,6 +201,7 @@ fun FoldmanScreen(
                 Posture.Cover -> when (ui.theme) {
                     DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                     DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                    DeckTheme.SILVER_BLUE -> CoverSilverBlue(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                     DeckTheme.CHERRY_RED -> CoverCherryRed(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                 }
                 // Foldy Streaman: open to pick a tape, close to play.
