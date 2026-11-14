@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Foldy Streaman: "Appear on top". Foldy draws nothing over other apps; Android only lets an
+         app bring its own screen back to the front (after YT Music or Spotify has started a tape)
+         when the owner has allowed this. Off until switched on in Settings. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- The streaming apps Foldman can drive through their media sessions. -->
     <queries>

@@ -20,6 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -132,6 +136,7 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     "A TAPES button on the player, to change tapes without opening it",
                     ui.frontShelf, accent,
                 ) { actions.setFrontShelf(!ui.frontShelf) }
+                ComeBackRow(accent)
                 ToggleRow("Volume buttons work the player", "On the front screen: up = play, down = pause, double-tap to skip or stop. Off = normal volume", ui.volumeKeys, accent) { actions.setVolumeKeys(!ui.volumeKeys) }
                 if (!ui.phoneMode) {
                     ToggleRow("Stop the music when I open the phone", "Like opening the lid of a real player", ui.stopOnOpen, accent) { actions.setStopOnOpen(!ui.stopOnOpen) }
@@ -238,6 +243,36 @@ private fun ThemeCard(theme: DeckTheme, selected: Boolean, accent: Color, onClic
         }
         Spacer(Modifier.height(8.dp))
         Text(theme.label.uppercase(), style = EngravedCaps.copy(color = if (selected) accent else Color(0xFFD9D2C8), fontSize = 10.sp, letterSpacing = 2.sp))
+    }
+}
+
+/**
+ * Coming back to Foldy by itself after the music app has started a tape. Newer Android versions only
+ * let an app bring itself back to the front if the owner has allowed "Appear on top" for it, so this
+ * row shows whether that is allowed and opens the phone's page for it.
+ */
+@Composable
+private fun ComeBackRow(accent: Color) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var allowed by remember { mutableStateOf(android.provider.Settings.canDrawOverlays(context)) }
+    // Check again each time you come back from the phone's settings page.
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val watch = androidx.lifecycle.LifecycleEventObserver { _, e ->
+            if (e == androidx.lifecycle.Lifecycle.Event.ON_RESUME) allowed = android.provider.Settings.canDrawOverlays(context)
+        }
+        owner.lifecycle.addObserver(watch)
+        onDispose { owner.lifecycle.removeObserver(watch) }
+    }
+    ToggleRow(
+        "Come back here after a tape starts",
+        if (allowed) "On: Foldy returns by itself once YT Music or Spotify starts the tape"
+        else "Tap, find Foldy Streaman in the list and allow \"Appear on top\"",
+        allowed, accent,
+    ) {
+        val page = android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + context.packageName))
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(page) }
     }
 }
 

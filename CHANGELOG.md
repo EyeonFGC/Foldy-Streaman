@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.29.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Settings > Come back here after a tape starts.** Newer Android versions stop an app bringing itself back to the front unless you allow "Appear on top" for it, which is why Foldy stayed in Spotify after starting a tape. Tap the row, allow it for Foldy Streaman, and Foldy returns by itself. Foldy does not draw anything over other apps.
+- Needs: "Appear on top" allowed for Foldy Streaman (the row opens the right page).
+
 ## [0.28.1] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed
