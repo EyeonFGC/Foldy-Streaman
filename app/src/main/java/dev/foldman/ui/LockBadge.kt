@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -117,24 +117,32 @@ fun LockBadgeFor(ui: DeckUi) {
 @Composable
 fun LockBadge(wake: Int, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
     val sounds = LocalMechSounds.current
-    val shut = remember { Animatable(if (wake < 0) 1f else 0f) }
+    // turn: 0 = the shackle swung round to the far side, 1 = back over the body.
+    // drop: 0 = popped up, 1 = pushed home.
+    val turn = remember { Animatable(if (wake < 0) 1f else 0f) }
+    val drop = remember { Animatable(if (wake < 0) 1f else 0f) }
     val flash = remember { Animatable(0f) }
     LaunchedEffect(wake) {
         if (wake < 0) return@LaunchedEffect
-        shut.snapTo(0f)
-        delay(350)
-        // Swing down with a little snap at the end, then the click and a flash of the glow.
-        shut.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 520f))
+        turn.snapTo(0f)
+        drop.snapTo(0f)
+        // Held open long enough for the screen to come on and the open padlock to be seen.
+        delay(1500)
+        // Like a real padlock: the popped-up shackle swings round over the body...
+        turn.animateTo(1f, tween(380, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        delay(60)
+        // ...then is pushed down and clicks, with a flash of the glow.
+        drop.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 900f))
         sounds?.keyDown()
         flash.snapTo(1f)
         flash.animateTo(0f, tween(700))
     }
     Canvas(modifier.size(size).semantics { contentDescription = "The phone is locked" }) {
-        drawPadlock(color, shut.value.coerceIn(0f, 1.15f), flash.value)
+        drawPadlock(color, turn.value, drop.value.coerceIn(0f, 1.2f), flash.value)
     }
 }
 
-private fun DrawScope.drawPadlock(color: Color, shut: Float, flash: Float) {
+private fun DrawScope.drawPadlock(color: Color, turn: Float, drop: Float, flash: Float) {
     val w = size.width
     val h = size.height
     // Glow: a soft halo behind, brighter for a moment when it clicks.
@@ -148,17 +156,18 @@ private fun DrawScope.drawPadlock(color: Color, shut: Float, flash: Float) {
     val legR = left + bodyW * 0.8f
     val arcTop = h * 0.10f
     val radius = (legR - legL) / 2f
-    // The shackle: shut, both legs sit in the body. Open, it is lifted and swung up about its
-    // right leg, so the left leg stands clear.
-    val open = 1f - shut
-    val lift = h * 0.10f * open
+    // The shackle. Open, it has popped straight up and been swung round on its long (right) leg
+    // to the far side; seen from the front that is the arch flipped over to the right. Swinging
+    // back, it narrows to edge-on and opens out again over the body, then drops home.
+    val lift = h * 0.16f * (1f - drop)
+    val facing = kotlin.math.cos(Math.PI * (1f - turn)).toFloat()
     val shackle = Path().apply {
-        moveTo(legL, bodyTop + stroke - lift)
+        moveTo(legL, bodyTop + stroke * 0.4f - lift)
         lineTo(legL, arcTop + radius - lift)
         arcTo(androidx.compose.ui.geometry.Rect(legL, arcTop - lift, legR, arcTop + radius * 2 - lift), 180f, 180f, false)
         lineTo(legR, bodyTop + stroke - lift)
     }
-    rotate(38f * open, pivot = Offset(legR, bodyTop)) {
+    scale(scaleX = if (kotlin.math.abs(facing) < 0.08f) 0.08f else facing, scaleY = 1f, pivot = Offset(legR, bodyTop)) {
         for (i in 3 downTo 1) drawPath(shackle, color.copy(alpha = 0.10f * glow), style = Stroke(stroke + i * w * 0.07f, cap = StrokeCap.Round))
         drawPath(shackle, color, style = Stroke(stroke, cap = StrokeCap.Round))
     }

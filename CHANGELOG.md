@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.34.2] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- The lock screen padlock now waits open for about a second and a half after the phone wakes, so you see it before it moves. It opens like a real padlock: the shackle starts popped up and swung round to the far side, swings back over the body, then pushes down and clicks.
+
 ## [0.34.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed
