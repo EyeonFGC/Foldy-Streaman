@@ -45,7 +45,7 @@ class PreviewShots {
     private fun anim() = DeckAnimations().also { runBlocking { it.insert.snapTo(0f) } }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun unfolded() {
         rule.setContent {
             RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp))
@@ -54,7 +54,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun unfoldedEmpty() {
         rule.setContent {
             RackDeckLayout(ui.copy(empty = true, tape = null), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp))
@@ -63,7 +63,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun draggingOverRack() {
         rule.setContent {
             RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to false)
@@ -73,7 +73,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun draggingOverDeck() {
         rule.setContent {
             RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to true)
@@ -83,7 +83,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun folded() {
         rule.setContent {
             CoverWalkman(ui.copy(tapeCued = false), anim(), deck, {}, Modifier.fillMaxSize().background(Color.Black))
@@ -92,7 +92,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun foldedNeedsAccess() {
         rule.setContent {
             CoverWalkman(ui.copy(status = SourceStatus.NeedsAccess), anim(), deck, {}, Modifier.fillMaxSize().background(Color.Black))
@@ -103,21 +103,21 @@ class PreviewShots {
     private val gold = ui.copy(theme = DeckTheme.BLACK_GOLD, tapeCued = false)
 
     @Test
-    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun foldedBlackGold() {
         rule.setContent { CoverBlackGold(gold, anim(), deck, {}, Modifier.fillMaxSize()) }
         rule.onRoot().captureRoboImage("build/shots/folded-blackgold.png")
     }
 
     @Test
-    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun foldedBlackGoldEmpty() {
         rule.setContent { CoverBlackGold(gold.copy(empty = true, tape = null), anim(), deck, {}, Modifier.fillMaxSize()) }
         rule.onRoot().captureRoboImage("build/shots/folded-blackgold-empty.png")
     }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun draggingOverFullDeck() {
         rule.setContent {
             RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to true)
@@ -127,7 +127,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun draggingIntoEmptyGold() {
         rule.setContent {
             RackDeckLayout(gold.copy(empty = true, tape = null), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to true)
@@ -137,7 +137,7 @@ class PreviewShots {
     }
 
     @Test
-    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun settings() {
         rule.setContent {
             RackDeckLayout(gold, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewSettings = true)
