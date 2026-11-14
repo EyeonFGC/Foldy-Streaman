@@ -138,6 +138,8 @@ internal fun RackDeckLayout(
     settings: SettingsActions = SettingsActions.None,
     /** Screen previews only: open with the Settings page showing. */
     previewSettings: Boolean = false,
+    /** Phones that don't fold: shuts the lid and goes back to the player. Null on a foldable. */
+    onClose: (() -> Unit)? = null,
 ) {
     var showSettings by remember { mutableStateOf(previewSettings) }
     val view = LocalView.current
@@ -342,13 +344,29 @@ internal fun RackDeckLayout(
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                Text(if (ui.empty) "DRAG A TAPE INTO THE DECK" else "CLOSE LID TO PLAY  ·  SWIPE RIGHT TO EJECT", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 12.sp, letterSpacing = 2.sp))
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    deckStatus(ui),
-                    style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            when {
+                                ui.empty -> "DRAG A TAPE INTO THE DECK"
+                                onClose != null -> "CLOSE THE LID TO PLAY  ·  SWIPE RIGHT TO EJECT"
+                                else -> "CLOSE LID TO PLAY  ·  SWIPE RIGHT TO EJECT"
+                            },
+                            style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = if (onClose != null) 10.sp else 12.sp, letterSpacing = 2.sp),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            deckStatus(ui),
+                            style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                        )
+                    }
+                    if (onClose != null) {
+                        Spacer(Modifier.width(14.dp))
+                        CloseLidButton(accentFor(ui.theme), onClose)
+                    }
+                }
                 // No keys in here: like a real player, you open it to change the tape and close it to play.
                 Spacer(Modifier.height(6.dp))
             }
@@ -607,4 +625,22 @@ private fun Modifier.deckGlowInside(glow: Float, light: Color, edge: Color): Mod
     )
     drawRoundRect(light.copy(alpha = 0.55f * glow), cornerRadius = r, style = Stroke(14.dp.toPx()))
     drawRoundRect(edge.copy(alpha = glow), cornerRadius = r, style = Stroke(4.dp.toPx()))
+}
+
+/** Phones only: the lid latch. Shuts the deck and goes back to the player. */
+@Composable
+private fun CloseLidButton(accent: Color, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(Brush.verticalGradient(listOf(Color(0xFF3A3632), Color(0xFF1E1C1A))))
+            .border(1.5.dp, accent, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("▼", style = EngravedCaps.copy(color = accent, fontSize = 11.sp))
+        Spacer(Modifier.width(8.dp))
+        Text("CLOSE", style = EngravedCaps.copy(color = accent, fontSize = 13.sp, letterSpacing = 3.sp))
+    }
 }

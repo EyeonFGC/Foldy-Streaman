@@ -2,6 +2,13 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.9.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Works on phones that don't fold.** The app opens on the player (portrait). Press STOP, then STOP·EJECT again: the cassette pops and the deck opens in landscape. Change tapes, then press **CLOSE** to go back to the player and press PLAY.
+- On those phones the screen is locked: closed stays portrait, open stays landscape. Turning the phone never opens or closes it.
+- Foldables (found by Android's hinge sensor, Samsung Fold / Flip model numbers, or a hinge seen before) work exactly as before, with none of this.
+
 ## [0.8.0] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

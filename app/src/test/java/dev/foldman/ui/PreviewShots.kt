@@ -144,4 +144,39 @@ class PreviewShots {
         }
         rule.onRoot().captureRoboImage("build/shots/settings.png")
     }
+
+    // Normal phone (Samsung Note 20 Ultra): closed = portrait, open = landscape.
+    private val phone = ui.copy(phoneMode = true, tapeCued = false)
+
+    @Test
+    @Config(qualifiers = "w412dp-h883dp-xxhdpi")
+    fun phoneClosed() {
+        rule.setContent { CoverWalkman(phone, anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/phone-closed.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w412dp-h883dp-xxhdpi")
+    fun phoneClosedBlackGold() {
+        rule.setContent { CoverBlackGold(phone.copy(theme = DeckTheme.BLACK_GOLD), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/phone-closed-blackgold.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w883dp-h412dp-land-xxhdpi")
+    fun phoneOpen() {
+        rule.setContent {
+            RackDeckLayout(phone.copy(deckOpen = true), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(12.dp), onClose = {})
+        }
+        rule.onRoot().captureRoboImage("build/shots/phone-open.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w883dp-h412dp-land-xxhdpi")
+    fun phoneOpenEmpty() {
+        rule.setContent {
+            RackDeckLayout(phone.copy(deckOpen = true, empty = true, tape = null), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(12.dp), onClose = {})
+        }
+        rule.onRoot().captureRoboImage("build/shots/phone-open-empty.png")
+    }
 }

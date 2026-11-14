@@ -123,7 +123,7 @@ internal fun CoverBlackGold(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                 .padding(horizontal = 18.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("UNFOLD TO CHANGE TAPES", style = print.copy(fontSize = 7.sp))
+            Text(changeTapesHint(ui), style = print.copy(fontSize = 7.sp))
             Spacer(Modifier.weight(1f))
             Porthole(ui, anim, Modifier.fillMaxWidth(0.94f))
             Spacer(Modifier.height(22.dp))
@@ -354,3 +354,6 @@ private fun DrawScope.drawScrewHead(c: Offset, r: Float, metal: Color) {
     }
     drawPath(slot, Color(0xFF1A1A1C), style = Stroke(r * 0.22f))
 }
+
+/** The hint at the top of the front screen: unfold on a foldable, EJECT on a normal phone. */
+fun changeTapesHint(ui: DeckUi): String = if (ui.phoneMode) "PRESS EJECT TO CHANGE TAPES" else "UNFOLD TO CHANGE TAPES"

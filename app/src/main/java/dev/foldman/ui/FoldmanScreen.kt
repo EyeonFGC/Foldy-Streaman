@@ -175,13 +175,16 @@ fun FoldmanScreen(
             // Held sideways the inner screen is short, so the library gets a bigger share.
             val landscape = maxWidth > maxHeight
             val posture = when {
+                // A phone that doesn't fold: EJECT opens the deck, CLOSE shuts it.
+                ui.phoneMode -> if (ui.deckOpen) Posture.Unfolded else Posture.Cover
                 fold != null && fold.state == FoldingFeature.State.HALF_OPENED && fold.orientation == FoldingFeature.Orientation.HORIZONTAL -> Posture.Tabletop
                 fold != null && fold.orientation == FoldingFeature.Orientation.VERTICAL -> Posture.Unfolded
                 maxWidth >= 600.dp && maxWidth > maxHeight * 0.7f -> Posture.Unfolded
                 else -> Posture.Cover
             }
             LaunchedEffect(posture) {
-                view.showSystemBars(posture != Posture.Cover)
+                // Phones: the open deck in landscape is short, so it gets the whole screen too.
+                view.showSystemBars(posture != Posture.Cover && !ui.phoneMode)
                 vm.setCoverShown(posture == Posture.Cover)
             }
             when (posture) {
@@ -195,6 +198,7 @@ fun FoldmanScreen(
                     ui, anim, deck, shelfActions,
                     Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
                     settings = settingsActions,
+                    onClose = if (ui.phoneMode) vm::closeDeck else null,
                 )
                 Posture.Tabletop -> {
                     val (topH, gap) = with(density) {
@@ -277,7 +281,7 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                     // Foldy Streaman: tapes live in the rack, which opens with the phone.
                     // The yellow hotline button, as on the original players: just for the look now.
                     HotlineButton({}, Modifier.align(Alignment.TopStart).padding(top = 18.dp, start = 8.dp).size(60.dp, 30.dp))
-                    Text("UNFOLD TO CHANGE TAPES", style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopEnd).padding(top = 30.dp, end = 4.dp))
+                    Text(changeTapesHint(ui), style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopEnd).padding(top = 30.dp, end = 4.dp))
                 }
                 Spacer(Modifier.height(18.dp))
                 Text("STEREO", style = Serif.copy(fontSize = 30.sp))

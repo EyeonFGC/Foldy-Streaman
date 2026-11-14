@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
+import android.content.pm.ActivityInfo
+import androidx.window.layout.FoldingFeature
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -32,9 +34,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Foldy Streaman: phones that don't fold get EJECT-to-open and CLOSE-to-play instead.
+        val foldable = isFoldable()
+        vm.setPhoneMode(!foldable)
+        if (!foldable) applyPhoneOrientation(getSharedPreferences("foldman", MODE_PRIVATE).getBoolean("phone_deck_open", false))
         setContent {
             val windowLayout by remember { WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this) }
                 .collectAsStateWithLifecycle<WindowLayoutInfo?>(initialValue = null)
+            // Seeing a hinge at any point means this is a foldable, for good.
+            LaunchedEffect(windowLayout) {
+                if (windowLayout?.displayFeatures?.any { it is FoldingFeature } == true) {
+                    getSharedPreferences("foldman", MODE_PRIVATE).edit().putBoolean(KEY_SEEN_HINGE, true).apply()
+                    vm.setPhoneMode(false)
+                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
+            }
+            val deckUi by vm.ui.collectAsStateWithLifecycle()
+            LaunchedEffect(deckUi.phoneMode, deckUi.deckOpen) {
+                if (deckUi.phoneMode) applyPhoneOrientation(deckUi.deckOpen)
+            }
             val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
                 if (uri != null) {
                     contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -69,6 +87,22 @@ class MainActivity : ComponentActivity() {
         vm.refresh()
     }
 
+    /**
+     * Whether this phone folds: Android's hinge sensor, Samsung's Fold / Flip model numbers, or a
+     * hinge seen before. Foldables keep the open-to-change, close-to-play behaviour.
+     */
+    private fun isFoldable(): Boolean {
+        if (packageManager.hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE)) return true
+        val model = Build.MODEL.uppercase()
+        if (model.startsWith("SM-F9") || model.startsWith("SM-F7")) return true
+        return getSharedPreferences("foldman", MODE_PRIVATE).getBoolean(KEY_SEEN_HINGE, false)
+    }
+
+    /** Phones only: closed = portrait, open = landscape, and turning the phone changes nothing. */
+    private fun applyPhoneOrientation(open: Boolean) {
+        requestedOrientation = if (open) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
     // Foldy Streaman: on the front screen, volume up = PLAY and volume down = PAUSE.
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (vm.coverShown && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
@@ -97,5 +131,9 @@ class MainActivity : ComponentActivity() {
         runCatching { startActivity(market) }.onFailure {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$pkg")))
         }
+    }
+
+    private companion object {
+        const val KEY_SEEN_HINGE = "seen_hinge"
     }
 }

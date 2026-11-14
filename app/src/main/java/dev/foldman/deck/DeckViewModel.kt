@@ -80,6 +80,10 @@ data class DeckUi(
     /** Nothing in the deck: the tape was swiped out. */
     val empty: Boolean = false,
     val theme: DeckTheme = DeckTheme.ORIGINAL,
+    /** A phone that doesn't fold: EJECT opens the deck (landscape), CLOSE shuts it (portrait). */
+    val phoneMode: Boolean = false,
+    /** Phone mode only: the deck is open (rack and deck showing). */
+    val deckOpen: Boolean = false,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -128,6 +132,31 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var tapeCued = false
     private var deckEmpty = prefs.getBoolean(KEY_EMPTY, false)
     private var theme = runCatching { DeckTheme.valueOf(prefs.getString(KEY_THEME, null) ?: "") }.getOrDefault(DeckTheme.ORIGINAL)
+    private var phoneMode = false
+    private var deckOpen = prefs.getBoolean(KEY_DECK_OPEN, false)
+
+    /** Set by MainActivity: true on phones without a hinge. */
+    fun setPhoneMode(on: Boolean) {
+        if (phoneMode == on) return
+        phoneMode = on
+        tick()
+    }
+
+    /** Phone mode: EJECT pops the door open and shows the rack and deck. */
+    private fun openDeck() {
+        deckOpen = true
+        prefs.edit { putBoolean(KEY_DECK_OPEN, true) }
+        tick()
+    }
+
+    /** Phone mode: the CLOSE button shuts the lid and goes back to the player. */
+    fun closeDeck() {
+        _events.tryEmit(DeckEvent.KeyClick)
+        deckOpen = false
+        prefs.edit { putBoolean(KEY_DECK_OPEN, false) }
+        tick()
+    }
+
     /** The folded front screen is showing (volume buttons become PLAY / PAUSE there). */
     var coverShown = false
         private set
@@ -220,7 +249,14 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     fun stop() {
         when {
             winding != 0 -> finishWinding()
-            _ui.value.transport == Transport.STOPPED -> _events.tryEmit(DeckEvent.Eject)
+            _ui.value.transport == Transport.STOPPED -> {
+                _events.tryEmit(DeckEvent.Eject)
+                // On a phone that doesn't fold, EJECT opens the deck once the door has popped.
+                if (phoneMode && !deckOpen) viewModelScope.launch {
+                    delay(380)
+                    openDeck()
+                }
+            }
             else -> backend.pause()
         }
         stopped = true
@@ -747,6 +783,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             tapeCued = tapeCued,
             empty = deckEmpty,
             theme = theme,
+            phoneMode = phoneMode,
+            deckOpen = phoneMode && deckOpen,
         )
     }
 
@@ -791,6 +829,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_TAPE = "custom_tape_in_deck"
         private const val KEY_EMPTY = "deck_empty"
         private const val KEY_THEME = "theme"
+        private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_FOLDER = "folder"
         private const val KEY_SOUNDS = "key_sounds"
         private const val KEY_HAPTICS = "haptics"
