@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.3.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Picking up a tape flips it over into a whole cassette** in your hand. Over the deck it turns upright and grows to fit the slot.
+- **The deck glows light blue with a blue outline** while you hold a tape over it (a faint glow as soon as you pick one up).
+
 ## [0.3.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

@@ -53,6 +53,26 @@ class PreviewShots {
     }
 
     @Test
+    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    fun draggingOverRack() {
+        rule.setContent {
+            RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to false)
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/drag-rack.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    fun draggingOverDeck() {
+        rule.setContent {
+            RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewDrag = 4 to true)
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/drag-deck.png")
+    }
+
+    @Test
     @Config(qualifiers = "w380dp-h860dp-xhdpi")
     fun folded() {
         rule.setContent {

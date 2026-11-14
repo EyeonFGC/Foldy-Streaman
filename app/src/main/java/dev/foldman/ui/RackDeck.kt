@@ -3,7 +3,19 @@
 package dev.foldman.ui
 
 import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import dev.foldman.deck.LabelPalette
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -107,7 +119,15 @@ private val Typewriter = TextStyle(fontFamily = FontFamily.Monospace, color = Co
  * player with that tape in, ready for PLAY.
  */
 @Composable
-internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, actions: ShelfActions, modifier: Modifier = Modifier) {
+internal fun RackDeckLayout(
+    ui: DeckUi,
+    anim: DeckAnimations,
+    deck: DeckControls,
+    actions: ShelfActions,
+    modifier: Modifier = Modifier,
+    /** Screen previews only: pretend rack item N is being dragged, over the deck or not. */
+    previewDrag: Pair<Int, Boolean>? = null,
+) {
     val view = LocalView.current
     val density = LocalDensity.current
     var boxOrigin by remember { mutableStateOf(Offset.Zero) }
@@ -119,6 +139,18 @@ internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
     var editing by remember { mutableStateOf<CustomTape?>(null) }
     var creating by remember { mutableStateOf(false) }
     val overDeck = dragging != null && deckBounds.contains(dragPos)
+    // 0 = still a spine, 1 = flipped over into a whole cassette in your hand.
+    val flip = remember { Animatable(0f) }
+    LaunchedEffect(dragging?.key) {
+        if (dragging != null) {
+            flip.snapTo(0f)
+            flip.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
+        }
+    }
+    // The deck glows light blue while a tape is held: faintly, then fully when it's over the deck.
+    val glow by animateFloatAsState(if (overDeck) 1f else if (dragging != null) 0.3f else 0f, tween(200), label = "glow")
+    // Over the deck the cassette turns upright to match the one standing in it.
+    val turn by animateFloatAsState(if (overDeck) -90f else -4f, tween(260), label = "turn")
 
     fun load(item: RackItem) {
         when (item) {
@@ -128,6 +160,12 @@ internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
     }
 
     val items = remember(ui.tapes) { Source.entries.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) } }
+    LaunchedEffect(previewDrag, deckBounds) {
+        val (i, over) = previewDrag ?: return@LaunchedEffect
+        if (deckBounds == Rect.Zero) return@LaunchedEffect
+        dragging = items[i]
+        dragPos = if (over) deckBounds.center else Offset(deckBounds.left * 0.5f, deckBounds.center.y)
+    }
 
     Box(modifier.onGloballyPositioned { boxOrigin = it.positionInRoot() }) {
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -198,14 +236,12 @@ internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                        .deckGlow(glow)
                         .clip(RoundedCornerShape(14.dp))
                         .background(Brush.verticalGradient(listOf(Color(0xFF1B1A19), Color(0xFF0B0B0B))))
-                        .border(
-                            if (overDeck) 3.dp else 1.dp,
-                            if (overDeck) DeckColors.Accent else Color.White.copy(alpha = 0.08f),
-                            RoundedCornerShape(14.dp),
-                        )
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
                         .onGloballyPositioned { deckBounds = it.boundsInRoot() }
+                        .deckGlowInside(glow)
                         .padding(18.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -213,7 +249,7 @@ internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                     if (overDeck) {
                         Text(
                             "DROP TO LOAD",
-                            style = EngravedCaps.copy(color = DeckColors.Accent, fontSize = 12.sp),
+                            style = EngravedCaps.copy(color = GlowBlue, fontSize = 12.sp),
                             modifier = Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
                         )
                     }
@@ -232,22 +268,53 @@ internal fun RackDeckLayout(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
             }
         }
 
-        // The tape following your finger while you drag it.
+        // The tape following your finger: it flips over from a spine into a whole cassette.
         val d = dragging
         if (d != null && spineWidth > 0) {
-            val w = with(density) { spineWidth.toDp() }
             val local = dragPos - boxOrigin
-            TapeSpineView(
-                title = d.title(),
-                shell = d.shell(),
-                label = d.label(),
-                trailing = null,
-                modifier = Modifier
-                    .width(w)
-                    .offset { IntOffset((local.x - spineWidth / 2f).roundToInt(), (local.y - with(density) { 22.dp.toPx() }).roundToInt()) }
-                    .rotate(if (overDeck) 0f else -3f)
-                    .shadow(16.dp, RoundedCornerShape(4.dp)),
-            )
+            val f = flip.value
+            if (f < 0.5f) {
+                val spineH = with(density) { 46.dp.toPx() }
+                TapeSpineView(
+                    title = d.title(),
+                    shell = d.shell(),
+                    label = d.label(),
+                    trailing = null,
+                    modifier = Modifier
+                        .width(with(density) { spineWidth.toDp() })
+                        .offset { IntOffset((local.x - spineWidth / 2f).roundToInt(), (local.y - spineH / 2f).roundToInt()) }
+                        .graphicsLayer {
+                            rotationX = f * 180f
+                            rotationZ = -4f * f * 2f
+                            cameraDistance = 14f * density.density
+                        }
+                        .shadow(16.dp, RoundedCornerShape(4.dp)),
+                )
+            } else {
+                val heldUi = remember(d, ui.tapes) { heldTapeUi(ui, d) }
+                val heldAnim = remember { DeckAnimations() }
+                LaunchedEffect(heldAnim) { heldAnim.insert.snapTo(0f) }
+                val wPx = with(density) { HeldCassetteWidth.toPx() }
+                val hPx = wPx * 64f / 100f
+                // Over the deck it grows to the size of the slot, ready to drop in.
+                val fitTarget = if (overDeck) ((deckBounds.height - with(density) { 36.dp.toPx() }) * 0.8f / wPx).coerceAtLeast(1f) else 1.06f
+                val fit by animateFloatAsState(fitTarget, tween(260), label = "fit")
+                FullCassette(
+                    heldUi, heldAnim,
+                    modifier = Modifier
+                        .width(HeldCassetteWidth)
+                        .offset { IntOffset((local.x - wPx / 2f).roundToInt(), (local.y - hPx / 2f).roundToInt()) }
+                        .graphicsLayer {
+                            rotationX = (f - 1f) * 180f
+                            rotationZ = turn
+                            scaleX = fit; scaleY = fit
+                            cameraDistance = 14f * density.density
+                            shadowElevation = 24f * density.density
+                            shape = RoundedCornerShape(8.dp)
+                        },
+                    vertical = false,
+                )
+            }
         }
     }
 
@@ -379,4 +446,47 @@ private fun TapeCardDialog(
             }
         },
     )
+}
+
+/** The app's light blue (the front player's enamel, lightened) for the glowing drop area. */
+private val GlowBlue = Color(0xFF8CC4FF)
+private val GlowEdge = Color(0xFF4A9BFF)
+private val HeldCassetteWidth = 230.dp
+
+/** What the held cassette shows: the tape's own label, not the song that's playing. */
+private fun heldTapeUi(ui: DeckUi, item: RackItem): DeckUi = when (item) {
+    is RackItem.Mine -> ui.copy(source = Source.YT_MUSIC, tape = item.tape, title = "", artist = "", artwork = null, label = LabelPalette.Default)
+    is RackItem.Src -> ui.copy(source = item.source, tape = null, title = "", artist = "", artwork = null, label = LabelPalette.Default)
+}
+
+/** A soft light-blue halo around the deck, strongest when a tape is over it. */
+private fun Modifier.deckGlow(glow: Float): Modifier = drawBehind {
+    if (glow <= 0f) return@drawBehind
+    val r = 14.dp.toPx()
+    for (i in 1..6) {
+        val spread = i * 3.dp.toPx()
+        drawRoundRect(
+            GlowBlue.copy(alpha = 0.28f * glow * (1f - i / 7f)),
+            topLeft = Offset(-spread, -spread),
+            size = Size(size.width + spread * 2, size.height + spread * 2),
+            cornerRadius = CornerRadius(r + spread),
+            style = Stroke(3.dp.toPx()),
+        )
+    }
+}
+
+/** Inside the deck: a light-blue wash and a bright blue outline over everything. */
+private fun Modifier.deckGlowInside(glow: Float): Modifier = drawWithContent {
+    drawContent()
+    if (glow <= 0f) return@drawWithContent
+    val r = CornerRadius(14.dp.toPx())
+    drawRoundRect(
+        Brush.radialGradient(
+            listOf(GlowBlue.copy(alpha = 0.5f * glow), GlowBlue.copy(alpha = 0.22f * glow)),
+            center = center, radius = size.maxDimension * 0.7f,
+        ),
+        cornerRadius = r,
+    )
+    drawRoundRect(GlowBlue.copy(alpha = 0.55f * glow), cornerRadius = r, style = Stroke(14.dp.toPx()))
+    drawRoundRect(GlowEdge.copy(alpha = glow), cornerRadius = r, style = Stroke(4.dp.toPx()))
 }
