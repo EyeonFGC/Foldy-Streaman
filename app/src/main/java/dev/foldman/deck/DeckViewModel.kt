@@ -88,6 +88,8 @@ data class DeckUi(
     val stopOnOpen: Boolean = false,
     /** Sound is going to headphones, a speaker or the car rather than this phone: a plug sits in the jack. */
     val audioElsewhere: Boolean = false,
+    /** Settings: a TAPES button on the front screen opens a tape shelf there. */
+    val frontShelf: Boolean = false,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -439,6 +441,13 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     // region Opening the phone, audio output, J-card photos (Foldy Streaman)
 
     private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
+    private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
+
+    fun setFrontShelf(on: Boolean) {
+        frontShelf = on
+        prefs.edit { putBoolean(KEY_FRONT_SHELF, on) }
+        tick()
+    }
 
     fun setStopOnOpen(on: Boolean) {
         stopOnOpen = on
@@ -885,6 +894,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             deckOpen = phoneMode && deckOpen,
             stopOnOpen = stopOnOpen,
             audioElsewhere = audioElsewhere,
+            frontShelf = frontShelf,
         )
     }
 
@@ -932,6 +942,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_THEME = "theme"
         private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
+        private const val KEY_FRONT_SHELF = "front_shelf"
         /** How long to wait for another volume-button tap before acting. */
         private const val MULTI_TAP_MS = 380L
         private const val KEY_FOLDER = "folder"

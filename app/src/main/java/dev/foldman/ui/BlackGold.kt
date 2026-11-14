@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -112,7 +113,7 @@ fun Modifier.brushedGold(): Modifier = drawWithCache {
  * window, and a brushed-gold band down the side with round black knobs (a gold one for PLAY).
  */
 @Composable
-internal fun CoverBlackGold(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onFixAccess: () -> Unit, modifier: Modifier) {
+internal fun CoverBlackGold(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onFixAccess: () -> Unit, modifier: Modifier, onTapes: () -> Unit = {}) {
     val print = TextStyle(fontFamily = FontFamily.SansSerif, color = BlackGold.Print.copy(alpha = 0.7f), fontSize = 8.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium)
     Row(modifier.matteBlack()) {
         Column(
@@ -123,7 +124,21 @@ internal fun CoverBlackGold(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                 .padding(horizontal = 18.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(changeTapesHint(ui), style = print.copy(fontSize = 7.sp))
+            if (ui.frontShelf) {
+                // Settings > Tape shelf on the front screen: a small gold-edged TAPES button.
+                Text(
+                    "TAPES",
+                    style = print.copy(color = BlackGold.Gold, fontSize = 10.sp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.Black.copy(alpha = 0.3f))
+                        .border(1.dp, BlackGold.Gold, RoundedCornerShape(4.dp))
+                        .clickable(onClick = onTapes)
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                )
+            } else {
+                Text(changeTapesHint(ui), style = print.copy(fontSize = 7.sp))
+            }
             Spacer(Modifier.weight(1f))
             Porthole(ui, anim, Modifier.fillMaxWidth(0.94f))
             Spacer(Modifier.height(22.dp))

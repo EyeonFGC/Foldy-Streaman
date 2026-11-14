@@ -235,15 +235,15 @@ fun JCardSheet(
             Spacer(Modifier.height(16.dp))
             // The buttons, like the controls printed on the back of the card.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CardButton("✎", "LABEL", Modifier.weight(1f)) { edit = JEdit.LABEL }
-                CardButton("▣", "PHOTO", Modifier.weight(1f)) { if (tape.photoPath == null) actions.pickPhoto(tape.id) else edit = JEdit.PHOTO_MENU }
-                CardButton("Aa", "FONT", Modifier.weight(1f)) { edit = JEdit.FONT }
+                CardButton("✎", "LABEL", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.LABEL }
+                CardButton("▣", "PHOTO", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { if (tape.photoPath == null) actions.pickPhoto(tape.id) else edit = JEdit.PHOTO_MENU }
+                CardButton("Aa", "FONT", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.FONT }
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CardButton("◐", "COLOURS", Modifier.weight(1f)) { edit = JEdit.COLOURS }
-                CardButton("♫", "PLAYLIST", Modifier.weight(1f)) { edit = JEdit.PLAYLIST }
-                CardButton("✕", "DELETE", Modifier.weight(1f)) { edit = JEdit.DELETE }
+                CardButton("◐", "COLOURS", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.COLOURS }
+                CardButton("♫", "PLAYLIST", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.PLAYLIST }
+                CardButton("✕", "DELETE", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.DELETE }
             }
         }
         Spacer(Modifier.height(10.dp))

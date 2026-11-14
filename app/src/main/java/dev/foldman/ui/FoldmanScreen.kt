@@ -93,6 +93,8 @@ fun FoldmanScreen(
     val view = LocalView.current
     val scope = rememberCoroutineScope()
     val feel by rememberUpdatedState(ui)
+    // Settings > Tape shelf on the front screen: the shelf that slides up from the TAPES button.
+    var shelfOpen by rememberSaveable { mutableStateOf(false) }
 
     // A new tape drops into the deck whenever the source changes (and when the app opens).
     // Foldy Streaman: the tape slides the last bit into the slot and clicks as it seats.
@@ -160,6 +162,7 @@ fun FoldmanScreen(
             appleSignIn = onAppleSignIn,
             appleSignOut = vm::signOutOfApple,
             setStopOnOpen = vm::setStopOnOpen,
+            setFrontShelf = vm::setFrontShelf,
         )
     }
     val fold = windowLayout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull()
@@ -196,8 +199,8 @@ fun FoldmanScreen(
             when (posture) {
                 // The cover screen is the player itself: edge to edge, system bars hidden.
                 Posture.Cover -> when (ui.theme) {
-                    DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize())
-                    DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize())
+                    DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                    DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                 }
                 // Foldy Streaman: open to pick a tape, close to play.
                 Posture.Unfolded -> RackDeckLayout(
@@ -231,7 +234,30 @@ fun FoldmanScreen(
                     }
                 }
             }
-            // Foldy Streaman: no tape shelf on the front screen. Tapes are changed with the phone open.
+            // Foldy Streaman: the front-screen tape shelf, only when it's switched on in Settings.
+            val sheetHeight = maxHeight * 0.8f
+            if (shelfOpen && ui.frontShelf && posture == Posture.Cover) {
+                ModalBottomSheet(
+                    onDismissRequest = { shelfOpen = false },
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                    containerColor = Color(0xFF1C1510),
+                ) {
+                    TapeShelf(
+                        ui,
+                        ShelfActions(
+                            selectSource = { vm.selectSource(it) },
+                            pickFolder = onPickFolder,
+                            playTrack = { vm.playTrack(it); shelfOpen = false },
+                            openAccess = vm::openAccessSettings,
+                            openApp = vm::openSourceApp,
+                            installApp = onInstallApp,
+                            apple = appleActions,
+                            tapes = tapeActions,
+                        ),
+                        Modifier.fillMaxWidth().height(sheetHeight),
+                    )
+                }
+            }
             // The inside screen darkens from the fold out as the phone closes (and clears as it opens).
             if (!ui.phoneMode && posture != Posture.Cover) {
                 HingeShade(verticalFold = fold?.orientation != FoldingFeature.Orientation.HORIZONTAL, modifier = Modifier.fillMaxSize())
@@ -276,7 +302,7 @@ private val OnEnamel = EngravedCaps.copy(color = Color(0xFFDCE6F2))
 
 /** The folded phone: an upright portable player. */
 @Composable
-internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onFixAccess: () -> Unit, modifier: Modifier) {
+internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onFixAccess: () -> Unit, modifier: Modifier, onTapes: () -> Unit = {}) {
     BoxWithConstraints(modifier) {
         val capH = maxHeight * 0.12f
         Row(Modifier.fillMaxSize().paintedBody(Enamel, capHeight = capH, corner = 0.dp, framed = false)) {
@@ -291,9 +317,14 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                 Box(Modifier.fillMaxWidth().height(capH)) {
                     // Inset from the corner so the display's rounded corner doesn't clip it.
                     // Foldy Streaman: tapes live in the rack, which opens with the phone.
-                    // The yellow hotline button, as on the original players: just for the look now.
-                    HotlineButton({}, Modifier.align(Alignment.TopStart).padding(top = 18.dp, start = 8.dp).size(60.dp, 30.dp))
-                    Text(changeTapesHint(ui), style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopEnd).padding(top = 30.dp, end = 4.dp))
+                    // The yellow hotline button, as on the original players. With the front tape shelf
+                    // switched on in Settings it opens the shelf (and says TAPES); otherwise it's just for the look.
+                    HotlineButton(if (ui.frontShelf) onTapes else ({}), Modifier.align(Alignment.TopStart).padding(top = 18.dp, start = 8.dp).size(60.dp, 30.dp))
+                    if (ui.frontShelf) {
+                        Text("TAPES", style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopStart).padding(top = 52.dp, start = 24.dp))
+                    } else {
+                        Text(changeTapesHint(ui), style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopEnd).padding(top = 30.dp, end = 4.dp))
+                    }
                 }
                 Spacer(Modifier.height(18.dp))
                 Text("STEREO", style = Serif.copy(fontSize = 30.sp))

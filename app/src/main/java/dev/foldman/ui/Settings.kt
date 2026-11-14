@@ -43,6 +43,7 @@ class SettingsActions(
     val appleSignIn: () -> Unit,
     val appleSignOut: () -> Unit,
     val setStopOnOpen: (Boolean) -> Unit = {},
+    val setFrontShelf: (Boolean) -> Unit = {},
 ) {
     companion object {
         val None = SettingsActions({}, {}, {}, {}, {}, {}, {})
@@ -90,6 +91,11 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
             Section("FEEL") {
                 ToggleRow("Click sounds", "Keys, tapes going in and out", ui.keySounds, accent) { actions.setKeySounds(!ui.keySounds) }
                 ToggleRow("Haptics", "A buzz with each click", ui.haptics, accent) { actions.setHaptics(!ui.haptics) }
+                ToggleRow(
+                    "Tape shelf on the front screen",
+                    "A TAPES button on the player, to change tapes without opening it",
+                    ui.frontShelf, accent,
+                ) { actions.setFrontShelf(!ui.frontShelf) }
                 if (!ui.phoneMode) {
                     ToggleRow("Stop the music when I open the phone", "Like opening the lid of a real player", ui.stopOnOpen, accent) { actions.setStopOnOpen(!ui.stopOnOpen) }
                 }

@@ -204,7 +204,7 @@ class PreviewShots {
     @Config(qualifiers = "w832dp-h628dp-xxhdpi")
     fun jcard() {
         rule.setContent {
-            RackDeckLayout(ui.copy(title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewCard = 3)
+            RackDeckLayout(ui.copy(title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewCard = 4)
         }
         // Give the picture a moment to load before taking the shot.
         repeat(5) { Thread.sleep(200); rule.mainClock.advanceTimeBy(200); rule.waitForIdle() }
@@ -281,5 +281,29 @@ class PreviewShots {
             }
         }
         rule.onRoot().captureRoboImage("build/shots/button-styles.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun frontShelfOn() {
+        rule.setContent { CoverWalkman(ui.copy(frontShelf = true, tapeCued = false), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/front-shelf-on.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun frontShelfOnGold() {
+        rule.setContent { CoverBlackGold(gold.copy(frontShelf = true), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/front-shelf-on-gold.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
+    fun jcardGold() {
+        rule.setContent {
+            RackDeckLayout(gold.copy(title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewCard = 5)
+        }
+        repeat(5) { Thread.sleep(200); rule.mainClock.advanceTimeBy(200); rule.waitForIdle() }
+        rule.onRoot().captureRoboImage("build/shots/jcard-gold.png")
     }
 }

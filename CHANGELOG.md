@@ -2,6 +2,14 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.12.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Settings > Tape shelf on the front screen** (off to start with). When on, the yellow button on the Original front (or a TAPES button on Black & Gold) opens the tape shelf there, so you can change tapes without opening the phone.
+
+### Changed
+- The J-card buttons are now **metal keys** like the player's: silver with an orange stripe (Original), black with a gold stripe (Black & Gold).
+
 ## [0.11.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
