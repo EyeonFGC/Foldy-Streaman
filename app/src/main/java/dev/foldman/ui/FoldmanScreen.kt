@@ -4,6 +4,7 @@ import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -89,7 +90,6 @@ fun FoldmanScreen(
     DisposableEffect(sounds) { onDispose { sounds.release() } }
     val view = LocalView.current
     val scope = rememberCoroutineScope()
-    var shelfOpen by rememberSaveable { mutableStateOf(false) }
     val feel by rememberUpdatedState(ui)
 
     // A new tape drops into the deck whenever the source changes (and when the app opens).
@@ -109,7 +109,6 @@ fun FoldmanScreen(
                         anim.pop.animateTo(1f, tween(90))
                         anim.pop.animateTo(0f, spring(dampingRatio = 0.4f, stiffness = 500f))
                     }
-                    shelfOpen = true
                 }
             }
         }
@@ -152,7 +151,6 @@ fun FoldmanScreen(
                 .background(Brush.radialGradient(listOf(Color(0xFF2A2420), DeckColors.Backdrop), radius = 1800f)),
         ) {
             val density = LocalDensity.current
-            val sheetHeight = maxHeight * 0.8f
             // Held sideways the inner screen is short, so the library gets a bigger share.
             val landscape = maxWidth > maxHeight
             val posture = when {
@@ -164,7 +162,7 @@ fun FoldmanScreen(
             LaunchedEffect(posture) { view.showSystemBars(posture != Posture.Cover) }
             when (posture) {
                 // The cover screen is the player itself: edge to edge, system bars hidden.
-                Posture.Cover -> CoverWalkman(ui, anim, deck, onTapes = { shelfOpen = true }, modifier = Modifier.fillMaxSize())
+                Posture.Cover -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize())
                 // Foldy Streaman: open to pick a tape, close to play.
                 Posture.Unfolded -> RackDeckLayout(
                     ui, anim, deck, shelfActions,
@@ -195,28 +193,7 @@ fun FoldmanScreen(
                     }
                 }
             }
-            if (shelfOpen && posture == Posture.Cover) {
-                ModalBottomSheet(
-                    onDismissRequest = { shelfOpen = false },
-                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = Color(0xFF1C1510),
-                ) {
-                    TapeShelf(
-                        ui,
-                        ShelfActions(
-                            selectSource = { vm.selectSource(it) },
-                            pickFolder = onPickFolder,
-                            playTrack = { vm.playTrack(it); shelfOpen = false },
-                            openAccess = vm::openAccessSettings,
-                            openApp = vm::openSourceApp,
-                            installApp = onInstallApp,
-                            apple = appleActions,
-                            tapes = tapeActions,
-                        ),
-                        Modifier.fillMaxWidth().height(sheetHeight),
-                    )
-                }
-            }
+            // Foldy Streaman: no tape shelf on the front screen. Tapes are changed with the phone open.
         }
     }
 }
@@ -255,7 +232,7 @@ private val OnEnamel = EngravedCaps.copy(color = Color(0xFFDCE6F2))
 
 /** The folded phone: an upright portable player. */
 @Composable
-internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onTapes: () -> Unit, modifier: Modifier) {
+internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, onFixAccess: () -> Unit, modifier: Modifier) {
     BoxWithConstraints(modifier) {
         val capH = maxHeight * 0.12f
         Row(Modifier.fillMaxSize().paintedBody(Enamel, capHeight = capH, corner = 0.dp, framed = false)) {
@@ -269,8 +246,8 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
             ) {
                 Box(Modifier.fillMaxWidth().height(capH)) {
                     // Inset from the corner so the display's rounded corner doesn't clip it.
-                    HotlineButton(onTapes, Modifier.align(Alignment.TopStart).padding(top = 22.dp, start = 8.dp).size(44.dp, 22.dp))
-                    Text("TAPES", style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopStart).padding(top = 48.dp, start = 14.dp))
+                    // Foldy Streaman: tapes live in the rack, which opens with the phone.
+                    Text("UNFOLD TO CHANGE TAPES", style = OnEnamel.copy(fontSize = 7.sp), modifier = Modifier.align(Alignment.TopStart).padding(top = 30.dp, start = 10.dp))
                 }
                 Spacer(Modifier.height(18.dp))
                 Text("STEREO", style = Serif.copy(fontSize = 30.sp))
@@ -279,8 +256,6 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                         TapeWindow(ui, anim, vertical = true)
                     }
-                    Spacer(Modifier.width(12.dp))
-                    EjectArrow(onTapes, Modifier.size(30.dp, 58.dp))
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
@@ -288,6 +263,18 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                     style = OnEnamel.copy(fontSize = 9.sp, letterSpacing = 1.5.sp),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
+                if (ui.status == dev.foldman.deck.SourceStatus.NeedsAccess) {
+                    // Without notification access Foldy can't see or control YT Music.
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "TAP: TURN ON NOTIFICATION ACCESS",
+                        style = OnEnamel.copy(fontSize = 9.sp, color = Color(0xFFFFE07A)),
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.35f), androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                            .clickable(onClick = onFixAccess)
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 Wordmark("STREAMAN", 40.sp)
                 Spacer(Modifier.height(20.dp))

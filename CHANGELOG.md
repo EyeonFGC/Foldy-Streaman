@@ -2,6 +2,14 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.5.0] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Tapes are only changed with the phone open.** The front screen no longer has the TAPES button or tape sheet; it says "Unfold to change tapes".
+- **Foldy comes back after starting a playlist even without notification access**: about 4½ seconds after YT Music opens.
+- PAUSE, and the skip buttons, now also reach YT Music when Foldy can't see its player.
+- The front screen shows "Tap: turn on notification access" when that's missing (Foldy needs it to see and control YT Music).
+
 ## [0.4.0] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

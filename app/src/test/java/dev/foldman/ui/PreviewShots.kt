@@ -80,4 +80,13 @@ class PreviewShots {
         }
         rule.onRoot().captureRoboImage("build/shots/folded.png")
     }
+
+    @Test
+    @Config(qualifiers = "w380dp-h860dp-xhdpi")
+    fun foldedNeedsAccess() {
+        rule.setContent {
+            CoverWalkman(ui.copy(status = SourceStatus.NeedsAccess), anim(), deck, {}, Modifier.fillMaxSize().background(Color.Black))
+        }
+        rule.onRoot().captureRoboImage("build/shots/folded-access.png")
+    }
 }

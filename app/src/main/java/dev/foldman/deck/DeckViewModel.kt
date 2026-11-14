@@ -378,8 +378,13 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
      * Foldy jumps back as soon as YT Music starts playing (or gives up after [COME_BACK_MS]).
      */
     private fun comeBackWhenPlaying() {
-        comeBackBy = SystemClock.elapsedRealtime() + COME_BACK_MS
+        val now = SystemClock.elapsedRealtime()
+        comeBackBy = now + COME_BACK_MS
+        comeBackAnywayAt = now + COME_BACK_BLIND_MS
     }
+
+    /** Without notification access we can't tell when YT Music starts, so come back after a pause. */
+    private var comeBackAnywayAt = 0L
 
     private fun maybeComeBack(state: BackendState, now: Long) {
         if (comeBackBy == 0L) return
@@ -387,7 +392,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             comeBackBy = 0L
             return
         }
-        if (!state.isPlaying) return
+        val canSee = remotes[Source.YT_MUSIC]?.hasSession == true
+        if (!state.isPlaying && (canSee || now < comeBackAnywayAt)) return
         comeBackBy = 0L
         val app = getApplication<Application>()
         val intent = Intent(app, dev.foldman.MainActivity::class.java)
@@ -727,6 +733,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         const val WIND_SPEED = 12L
         /** How long after opening YT Music Foldy may still jump back in front of it. */
         private const val COME_BACK_MS = 9_000L
+        /** When Foldy can't see YT Music's player: come back this long after opening it. */
+        private const val COME_BACK_BLIND_MS = 4_500L
 
         private fun blend(a: Color, b: Color, t: Float) = Color(
             red = a.red * (1 - t) + b.red * t,

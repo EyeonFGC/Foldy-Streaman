@@ -208,11 +208,13 @@ class RemoteBackend(private val context: Context, source: Source) : DeckBackend 
         return runCatching { c.transportControls.playFromUri(uri, null) }.isSuccess
     }
 
-    override fun pause() { controller?.transportControls?.pause() }
+    // Foldy Streaman: without a session (no notification access), fall back to media-button
+    // presses sent to the app, which work in the background too.
+    override fun pause() { controller?.transportControls?.pause() ?: sendMediaButton(KeyEvent.KEYCODE_MEDIA_PAUSE) }
     override fun seekTo(positionMs: Long) { controller?.transportControls?.seekTo(positionMs) }
     override fun playQueueItem(id: Long) { controller?.transportControls?.skipToQueueItem(id) }
-    override fun skipToNext() { controller?.transportControls?.skipToNext() }
-    override fun skipToPrevious() { controller?.transportControls?.skipToPrevious() }
+    override fun skipToNext() { controller?.transportControls?.skipToNext() ?: sendMediaButton(KeyEvent.KEYCODE_MEDIA_NEXT) }
+    override fun skipToPrevious() { controller?.transportControls?.skipToPrevious() ?: sendMediaButton(KeyEvent.KEYCODE_MEDIA_PREVIOUS) }
 
     /** Opens the streaming app, beside Foldman when the screen is unfolded. */
     fun openApp() {
