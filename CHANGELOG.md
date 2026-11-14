@@ -2,6 +2,15 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.22.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Search album covers from the J-card.** Tap PHOTO (or the picture area) > "Search album covers", type an album or artist, and tap a cover to put it on the tape. No need to leave the app. Covers come from MusicBrainz and the Cover Art Archive (free, open music databases); only the words you type are sent.
+
+### Changed
+- **J-card buttons glow the moment you touch them** (edges and centre), then fade after you let go, so a quick tap shows the glow too.
+- PHOTO now always opens a small menu: search covers, choose from the phone, and (when there is a picture) move & zoom or remove.
+
 ## [0.21.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

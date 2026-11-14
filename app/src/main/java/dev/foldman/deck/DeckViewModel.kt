@@ -656,6 +656,17 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Puts an album cover from the cover search on the tape's J-card (Foldy keeps its own copy). */
+    fun setTapeCover(tapeId: String, url: String) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val path = CoverSearch.download(app, tapeId, url) ?: return@launch
+            val tape = tapes.firstOrNull { it.id == tapeId } ?: return@launch
+            tape.photoPath?.let { old -> if (old != path) withContext(Dispatchers.IO) { java.io.File(old).delete() } }
+            saveTape(tape.copy(photoPath = path, photoX = 0f, photoY = 0f, photoZoom = 1f))
+        }
+    }
+
     fun removeTapePhoto(tapeId: String) {
         val tape = tapes.firstOrNull { it.id == tapeId } ?: return
         tape.photoPath?.let { java.io.File(it).delete() }

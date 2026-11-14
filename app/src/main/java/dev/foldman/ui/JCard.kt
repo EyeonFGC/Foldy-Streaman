@@ -8,6 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,6 +70,7 @@ import dev.foldman.deck.Transport
 import dev.foldman.deck.PlaylistRef
 import dev.foldman.deck.parsePlaylist
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
@@ -205,6 +209,7 @@ class JCardActions(
     val delete: (String) -> Unit,
     val pickPhoto: (String) -> Unit,
     val removePhoto: (String) -> Unit,
+    val pickCover: (tapeId: String, url: String) -> Unit = { _, _ -> },
 )
 
 private enum class JEdit { LABEL, PHOTO_MENU, FONT, COLOURS, PLAYLIST, DELETE }
@@ -232,6 +237,17 @@ fun JCardSheet(
     val font = tape.font
     if (jDark != ui.jcardDark) jDark = ui.jcardDark
     val card = tornCard()
+    // Searching for an album cover: the card turns over to a search page.
+    var searching by remember { mutableStateOf(false) }
+    if (searching) {
+        CoverSearchCard(
+            startWith = tape.title,
+            onPick = { hit -> actions.pickCover(tape.id, hit.fullUrl); searching = false },
+            onBack = { searching = false },
+            modifier = modifier.shadow(18.dp, card).clip(card).paper(ui.jcardDark).padding(horizontal = 20.dp, vertical = 16.dp),
+        )
+        return
+    }
 
     Column(
         modifier
@@ -258,7 +274,7 @@ fun JCardSheet(
                 .fillMaxWidth()
                 .aspectRatio(PHOTO_STRIP_ASPECT)
                 .then(if (moving) Modifier.border(2.dp, JRed, RoundedCornerShape(2.dp)) else Modifier)
-                .clickable(enabled = !moving) { if (tape.photoPath == null) actions.pickPhoto(tape.id) else edit = JEdit.PHOTO_MENU },
+                .clickable(enabled = !moving) { edit = JEdit.PHOTO_MENU },
             onMove = if (moving) { x, y, z -> mx = x; my = y; mz = z } else null,
             empty = { Text("TAP TO ADD A PICTURE", style = Typed.copy(color = JInk.copy(alpha = 0.55f), fontSize = 11.sp, letterSpacing = 2.sp)) },
         )
@@ -322,7 +338,7 @@ fun JCardSheet(
             // The buttons, like the controls printed on the back of the card.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CardButton("✎", "LABEL", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.LABEL }
-                CardButton("▣", "PHOTO", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { if (tape.photoPath == null) actions.pickPhoto(tape.id) else edit = JEdit.PHOTO_MENU }
+                CardButton("▣", "PHOTO", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.PHOTO_MENU }
                 CardButton("Aa", "FONT", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.FONT }
             }
             Spacer(Modifier.height(10.dp))
@@ -394,9 +410,12 @@ fun JCardSheet(
             title = { Text("Picture") },
             text = {
                 Column {
-                    MenuRow("Move & zoom it") { mx = tape.photoX; my = tape.photoY; mz = tape.photoZoom; moving = true; edit = null }
-                    MenuRow("Choose a different picture") { actions.pickPhoto(tape.id); edit = null }
-                    MenuRow("Remove the picture") { actions.removePhoto(tape.id); edit = null }
+                    MenuRow("Search album covers") { searching = true; edit = null }
+                    MenuRow("Choose one from my phone") { actions.pickPhoto(tape.id); edit = null }
+                    if (tape.photoPath != null) {
+                        MenuRow("Move & zoom it") { mx = tape.photoX; my = tape.photoY; mz = tape.photoZoom; moving = true; edit = null }
+                        MenuRow("Remove the picture") { actions.removePhoto(tape.id); edit = null }
+                    }
                 }
             },
             confirmButton = { TextButton(onClick = { edit = null }) { Text("Close") } },
@@ -433,8 +452,20 @@ internal fun CardButton(
     val gold = theme == dev.foldman.deck.DeckTheme.BLACK_GOLD
     val shape = RoundedCornerShape(if (style == JButtonStyle.ENAMEL) 25.dp else 6.dp)
     val press = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    val isPressed by press.collectIsPressedAsState()
-    val glow by androidx.compose.animation.core.animateFloatAsState(if (isPressed) 1f else 0f, androidx.compose.animation.core.tween(if (isPressed) 60 else 380), label = "glow")
+    // The glow lights fully the instant a finger lands (no waiting to see if it's a tap or a
+    // scroll), stays lit while held, then fades once the finger lifts, so a quick tap still shows.
+    val glowAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+    val glow = glowAnim.value
+    val touch = Modifier.pointerInput(Unit) {
+        kotlinx.coroutines.coroutineScope {
+            awaitEachGesture {
+                awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                launch { glowAnim.snapTo(1f) }
+                waitForUpOrCancellation(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                launch { glowAnim.animateTo(0f, androidx.compose.animation.core.tween(520, easing = androidx.compose.animation.core.LinearOutSlowInEasing)) }
+            }
+        }
+    }
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         val base = Modifier.fillMaxWidth().height(50.dp)
         val iconColor: Color
@@ -475,14 +506,37 @@ internal fun CardButton(
                 val lum = 0.2126f * ink.red + 0.7152f * ink.green + 0.0722f * ink.blue
                 val glowColor = if (lum < 0.25f) Color.White else ink
                 val stamp = RoundedCornerShape(4.dp)
+                val strong = if (lum < 0.25f) 0.9f else 0.55f
                 face = base
-                    .shadow((14 * glow).dp, stamp, ambientColor = glowColor, spotColor = glowColor)
-                    .background(glowColor.copy(alpha = (if (lum < 0.25f) 0.85f else 0.35f) * glow), stamp)
+                    .drawBehind {
+                        if (glow <= 0f) return@drawBehind
+                        val r = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())
+                        // A soft halo spreading out from the edges...
+                        for (i in 1..5) {
+                            val grow = i * 2.dp.toPx()
+                            drawRoundRect(
+                                glowColor.copy(alpha = strong * glow * 0.5f / i),
+                                topLeft = Offset(-grow, -grow),
+                                size = androidx.compose.ui.geometry.Size(size.width + grow * 2, size.height + grow * 2),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(r.x + grow),
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()),
+                            )
+                        }
+                        // ...a light wash over the whole button, and a brighter spot in the centre.
+                        drawRoundRect(glowColor.copy(alpha = strong * 0.45f * glow), cornerRadius = r)
+                        drawRoundRect(
+                            androidx.compose.ui.graphics.Brush.radialGradient(
+                                listOf(glowColor.copy(alpha = strong * glow), Color.Transparent),
+                                center = center, radius = size.width * 0.55f,
+                            ),
+                            cornerRadius = r,
+                        )
+                    }
                     .border(2.dp, ink, stamp).padding(3.dp).border(0.8.dp, ink.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
                 iconColor = ink
             }
         }
-        Box(face.clickable(interactionSource = press, indication = null, onClick = onClick), contentAlignment = Alignment.Center) {
+        Box(face.then(touch).clickable(interactionSource = press, indication = null, onClick = onClick), contentAlignment = Alignment.Center) {
             Text(icon, style = TextStyle(color = iconColor, fontSize = 20.sp, fontWeight = FontWeight.Bold))
         }
         Spacer(Modifier.height(4.dp))
@@ -656,5 +710,90 @@ fun MiniJCard(ui: DeckUi, title: String, modifier: Modifier = Modifier, compact:
                 Text("♪ $song", style = Typed.copy(fontSize = 11.sp), maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Start)
             }
         }
+    }
+}
+
+/**
+ * The cover search page, on the same paper as the J-card: type an album or artist, and tap a
+ * cover to put it on the tape.
+ */
+@Composable
+private fun CoverSearchCard(startWith: String, onPick: (dev.foldman.deck.CoverHit) -> Unit, onBack: () -> Unit, modifier: Modifier) {
+    var query by remember { mutableStateOf(startWith) }
+    var hits by remember { mutableStateOf<List<dev.foldman.deck.CoverHit>>(emptyList()) }
+    var note by remember { mutableStateOf("Type an album or artist, then tap SEARCH.") }
+    var busy by remember { mutableStateOf(false) }
+    val noCover = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    fun run() {
+        if (query.isBlank() || busy) return
+        busy = true
+        note = "Searching…"
+        scope.launch {
+            runCatching { dev.foldman.deck.CoverSearch.search(query) }
+                .onSuccess { hits = it; noCover.clear(); note = if (it.isEmpty()) "Nothing found. Try different words." else "Tap a cover to use it." }
+                .onFailure { hits = emptyList(); note = "Couldn't search just now. Check the internet connection and try again." }
+            busy = false
+        }
+    }
+    Column(modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("ALBUM COVERS", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 2.sp), modifier = Modifier.weight(1f))
+            Text("BACK", style = Typed.copy(fontWeight = FontWeight.Bold), modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onBack).padding(end = 22.dp).padding(6.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.text.BasicTextField(
+                value = query,
+                onValueChange = { query = it },
+                singleLine = true,
+                textStyle = Typed.copy(fontSize = 14.sp),
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(JRed),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { run() }),
+                modifier = Modifier.weight(1f).border(1.5.dp, JInk, RoundedCornerShape(3.dp)).padding(horizontal = 8.dp, vertical = 9.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "SEARCH",
+                style = Typed.copy(color = JPaper, fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                modifier = Modifier.clip(RoundedCornerShape(3.dp)).background(JInk).clickable { run() }.padding(horizontal = 12.dp, vertical = 10.dp),
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(note, style = Typed.copy(fontSize = 11.sp, color = JInk.copy(alpha = 0.7f)))
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            val shown = hits.filter { it.id !in noCover }
+            items(shown.size, key = { shown[it].id }) { i ->
+                val hit = shown[i]
+                // null = still loading; an album without a cover drops out of the grid.
+                val thumb by produceState<ImageBitmap?>(null, hit.id) {
+                    val bmp = dev.foldman.deck.CoverSearch.thumbnail(hit)
+                    if (bmp == null) noCover.add(hit.id) else value = bmp.asImageBitmap()
+                }
+                Column(Modifier.clickable(enabled = thumb != null) { onPick(hit) }) {
+                    Box(
+                        Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(2.dp)).background(JInk.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val t = thumb
+                        if (t != null) {
+                            androidx.compose.foundation.Image(t, contentDescription = hit.title, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        } else {
+                            Text("…", style = Typed)
+                        }
+                    }
+                    Text(hit.title, style = Typed.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(listOf(hit.artist, hit.year).filter { it.isNotBlank() }.joinToString(" · "), style = Typed.copy(fontSize = 9.sp, color = JInk.copy(alpha = 0.65f)), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Text("Covers from MusicBrainz and the Cover Art Archive.", style = Typed.copy(fontSize = 9.sp, color = JInk.copy(alpha = 0.5f)))
     }
 }
