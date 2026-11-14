@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.18.5] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Red Chrome:** AUTO REVERSE sits lower, clear of the tape window and centred in the black; STREAMAN and the song title start at the bottom, level with the black panel's lower corner.
+
 ## [0.18.4] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

@@ -135,7 +135,8 @@ internal fun CoverRedChrome(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth().weight(1f)) {
                 // The wordmark runs up the side, the song title beside it (under it, read sideways).
-                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                // They start at the bottom, level with where the black panel's corner begins to curve.
+                Box(Modifier.fillMaxHeight().padding(bottom = 8.dp), contentAlignment = Alignment.BottomCenter) {
                     Column(Modifier.quarterTurn()) {
                         Text(
                             "STREAMAN",
@@ -269,7 +270,7 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                         drawStyle = Stroke(width = 2.6f, join = androidx.compose.ui.graphics.StrokeJoin.Round),
                     ),
                     maxLines = 1, softWrap = false,
-                    modifier = Modifier.offset(x = (-8).dp, y = (-14).dp).rotate(-slope),
+                    modifier = Modifier.offset(x = (-24).dp, y = (-9).dp).rotate(-slope),
                 )
             }
         }
