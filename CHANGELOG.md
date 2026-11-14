@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.15.1] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **0.15.0 crashed on startup.** The new "Adapters on the rack" setting was read before it had been loaded. Settings now load before the app first draws.
+
 ## [0.15.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

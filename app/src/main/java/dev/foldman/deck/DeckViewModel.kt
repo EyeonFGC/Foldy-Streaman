@@ -194,6 +194,14 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var artBitmap: ImageBitmap? = null
     private var artSource: Any? = null
 
+    // Settings read on every refresh of the screen. They must be loaded before the init block
+    // below, which refreshes the screen straight away (an unloaded list here crashed the app).
+    private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
+    private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
+
+    private var hiddenSources: Set<Source> = prefs.getStringSet(KEY_HIDDEN_SOURCES, emptySet()).orEmpty()
+        .mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
+
     init {
         prefs.getString(KEY_FOLDER, null)?.let { loadFolder(Uri.parse(it), firstLoad = true) }
         syncAppleTokens()
@@ -449,11 +457,6 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     // region Opening the phone, audio output, J-card photos (Foldy Streaman)
 
-    private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
-    private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
-
-    private var hiddenSources: Set<Source> = prefs.getStringSet(KEY_HIDDEN_SOURCES, emptySet()).orEmpty()
-        .mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
 
     /** Settings > Adapters on the rack: show or hide one adapter (your own tapes aren't affected). */
     fun setSourceShown(s: Source, shown: Boolean) {
