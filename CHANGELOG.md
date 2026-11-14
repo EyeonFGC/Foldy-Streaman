@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.19.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Black & Gold:** the black knobs are a slightly lighter shade, so they stand out from the black ring round them.
+
 ## [0.19.0] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

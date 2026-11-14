@@ -315,12 +315,13 @@ private fun DrawScope.drawKnob(depth: Float, gold: Boolean) {
     // Shadow on the band, shorter as the knob goes in.
     drawCircle(Color.Black.copy(alpha = 0.35f), r * 1.02f, c + Offset(drop * 0.6f, drop * 1.4f))
     // The cylinder's side, then its top face.
-    val side = if (gold) listOf(Color(0xFF9C6E0C), Color(0xFF6E4C06)) else listOf(Color(0xFF2B2B2E), Color(0xFF070708))
+    val side = if (gold) listOf(Color(0xFF9C6E0C), Color(0xFF6E4C06)) else listOf(Color(0xFF3A3A3E), Color(0xFF18181A))
     drawCircle(Brush.verticalGradient(side, c.y - r, c.y + r + drop), r, c + Offset(0f, drop))
     val face = if (gold) {
         Brush.radialGradient(listOf(BlackGold.GoldHi, BlackGold.Gold, BlackGold.GoldLo), c - Offset(r * 0.35f, r * 0.4f), r * 1.5f)
     } else {
-        Brush.radialGradient(listOf(Color(0xFF4A4A4F), Color(0xFF1D1D20), Color(0xFF0C0C0D)), c - Offset(r * 0.35f, r * 0.4f), r * 1.5f)
+        // A slightly lighter black than the ring round it, so the knob stands out.
+        Brush.radialGradient(listOf(Color(0xFF606066), Color(0xFF36363A), Color(0xFF232326)), c - Offset(r * 0.35f, r * 0.4f), r * 1.5f)
     }
     drawCircle(face, r * 0.94f, c)
     drawCircle(Color.White.copy(alpha = if (gold) 0.35f else 0.12f), r * 0.94f, c, style = Stroke(1.2f))
