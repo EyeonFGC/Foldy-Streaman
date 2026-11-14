@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.30.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- The Spotify Client ID is now built in, so Settings > Spotify only needs a tap on LOG IN. (People logging in still have to be on the Spotify app's allowed list.)
+
 ## [0.30.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

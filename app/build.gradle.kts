@@ -11,7 +11,8 @@ val appleProps = Properties().apply {
     rootProject.file("apple-music.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
 val appleDeveloperToken: String = appleProps.getProperty("apple.developerToken", "").trim()
-val spotifyClientId = ""
+// Foldy Streaman: the Client ID of the owner's Spotify app. A public ID by design; the app has no secret.
+val spotifyClientId = "71ead01495b3418192d9a18c38d044ab"
 
 // Release signing, from the git-ignored signing.properties (storeFile, storePassword, keyAlias,
 // keyPassword). Without it, release builds fall back to the debug key.
@@ -20,8 +21,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "0.30.0"
-val appVersionCode = 51
+val appVersionName = "0.30.1"
+val appVersionCode = 52
 
 base {
     archivesName = "FoldyStreaman-$appVersionName"
