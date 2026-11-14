@@ -219,6 +219,7 @@ internal fun RackDeckLayout(
         val byKey = mineOnRack.associateBy { it.key }
         onRackBase.filterIsInstance<RackItem.Src>() + order.mapNotNull { byKey[it] } + mineOnRack.filter { it.key !in order }
     }
+    val hapticsOn = LocalHaptics.current
     fun updateOrder() {
         val d = dragging as? RackItem.Mine ?: return
         if (!rackBounds.contains(dragPos) || deckBounds.contains(dragPos)) return
@@ -227,7 +228,11 @@ internal fun RackDeckLayout(
         // Before the first tape whose middle is below the finger.
         val at = others.indexOfFirst { k -> spineBounds[k]?.let { dragPos.y < it.center.y } == true }.let { if (it < 0) others.size else it }
         val next = others.take(at) + d.key + others.drop(at)
-        if (next != current) liveOrder = next
+        if (next != current) {
+            liveOrder = next
+            // A small tick each time the tape passes another one.
+            if (hapticsOn) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+        }
     }
     LaunchedEffect(previewReorder, rackBounds) {
         val (i, y) = previewReorder ?: return@LaunchedEffect

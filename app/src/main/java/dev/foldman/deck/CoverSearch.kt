@@ -22,7 +22,8 @@ data class CoverHit(val id: String, val title: String, val artist: String, val y
 }
 
 object CoverSearch {
-    private const val AGENT = "FoldyStreaman/1.0 (Android cassette player app)"
+    // MusicBrainz turns away app names it finds too vague, so this carries the real version.
+    private val AGENT = "FoldyStreaman/${dev.foldman.BuildConfig.VERSION_NAME} (personal cassette player app; Android)"
     private val thumbs = android.util.LruCache<String, Bitmap>(80)
 
     /** Albums matching [query] (an album, an artist, or both), best matches first. */
@@ -59,8 +60,30 @@ object CoverSearch {
         }.getOrNull()
     }
 
-    /** GETs [url], following the archive's redirects itself (always over https). */
+    /**
+     * GETs [url]. The album database is often "busy" for a moment (or drops the line) and fine on
+     * the next ask, so a failed try is repeated a few times before giving up.
+     */
     private fun fetch(url: String): ByteArray {
+        var last: Exception? = null
+        repeat(4) { attempt ->
+            if (attempt > 0) Thread.sleep(700L * attempt)
+            try {
+                return fetchOnce(url)
+            } catch (e: NoCover) {
+                throw e
+            } catch (e: Exception) {
+                last = e
+            }
+        }
+        throw last ?: IllegalStateException("No answer")
+    }
+
+    /** That album simply has no picture: no point asking again. */
+    private class NoCover : Exception()
+
+    /** One try at [url], following the archive's redirects itself (always over https). */
+    private fun fetchOnce(url: String): ByteArray {
         var at = url
         repeat(6) {
             val c = URL(at.replaceFirst("http://", "https://")).openConnection() as HttpURLConnection
@@ -73,6 +96,7 @@ object CoverSearch {
                 when (val code = c.responseCode) {
                     in 300..399 -> at = URL(URL(at), c.getHeaderField("Location") ?: error("Redirect without a target")).toString()
                     200 -> return c.inputStream.use { it.readBytes() }
+                    400, 404 -> throw NoCover()
                     else -> error("The cover service answered $code")
                 }
             } finally {

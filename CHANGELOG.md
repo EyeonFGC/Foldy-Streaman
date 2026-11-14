@@ -2,6 +2,14 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.23.0] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **Album cover search said "Couldn't search just now".** The album database often answers "busy" on the first ask; the app now asks again by itself (up to four times) instead of giving up, and introduces itself in a way the database accepts.
+
+### Added
+- **A tick in your finger each time a tape you're dragging passes another tape** on the rack (when Haptics is on).
+
 ## [0.22.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
