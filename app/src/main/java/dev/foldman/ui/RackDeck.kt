@@ -354,11 +354,16 @@ internal fun RackDeckLayout(
                 // The J-card under the deck: title in the tape's writing, its picture, the song.
                 if (!ui.empty) {
                     Spacer(Modifier.height(8.dp))
-                    val deckTitle = ui.tape?.title?.ifBlank { "my tape" } ?: RackItem.Src(ui.source).title()
-                    MiniJCard(
-                        ui, deckTitle,
-                        Modifier.fillMaxWidth().then(if (onClose != null) Modifier.height(58.dp) else Modifier),
-                        compact = onClose != null,
+                    // The tape's spine, just as it looks on the rack: its picture with the title on top.
+                    val deckItem: RackItem = ui.tape?.let { RackItem.Mine(it) } ?: RackItem.Src(ui.source)
+                    TapeSpineView(
+                        title = deckItem.title(),
+                        shell = deckItem.shell(),
+                        label = deckItem.label(),
+                        trailing = null,
+                        font = deckItem.font(),
+                        photoOf = ui.tape,
+                        modifier = Modifier.then(if (spineWidth > 0) Modifier.width(with(density) { spineWidth.toDp() }) else Modifier.fillMaxWidth()).shadow(3.dp, RoundedCornerShape(4.dp)),
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -423,6 +428,7 @@ internal fun RackDeckLayout(
                     label = d.label(),
                     trailing = null,
                     font = d.font(),
+                    photoOf = (d as? RackItem.Mine)?.tape,
                     modifier = Modifier
                         .width(with(density) { spineWidth.toDp() })
                         .offset { IntOffset((local.x - spineWidth / 2f).roundToInt(), (local.y - spineH / 2f).roundToInt()) }
@@ -484,7 +490,8 @@ internal fun RackDeckLayout(
 
 private fun deckStatus(ui: DeckUi): String {
     if (ui.empty) return "NO TAPE"
-    // The J-card above shows the tape and the song, so this is just the state and the time.
+    // The spine above shows the tape, so this is the song, the time and the state.
+    val song = listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString(" — ").takeIf { ui.tape == null || !ui.tapeCued }?.ifBlank { null }
     val time = if (ui.durationMs > 0) "${formatTime(ui.positionMs)} / ${formatTime(ui.durationMs)}" else null
     val state = when {
         ui.status == SourceStatus.NeedsAccess -> "NEEDS NOTIFICATION ACCESS (SEE SETTINGS)"
@@ -493,7 +500,7 @@ private fun deckStatus(ui: DeckUi): String {
         ui.transport == Transport.PAUSED -> "PAUSED"
         else -> "STOPPED"
     }
-    return listOfNotNull(state, time).joinToString("  ·  ").uppercase()
+    return listOfNotNull(song, time, state).joinToString("  ·  ").uppercase()
 }
 
 @Composable
@@ -538,6 +545,7 @@ private fun RackSpine(
             shell = item.shell(),
             label = item.label(),
             font = item.font(),
+            photoOf = (item as? RackItem.Mine)?.tape,
             trailing = if (item is RackItem.Src && item.source != Source.LOCAL) "AUX" else null,
             modifier = gestures.alpha(if (beingDragged) 0.25f else 1f).shadow(3.dp, RoundedCornerShape(4.dp)),
         )

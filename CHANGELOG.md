@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.10.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Tapes show their picture on the rack**, with the title written across the middle of it.
+- **Under the deck is now the tape's spine**, the same thin strip as on the rack (picture and title), so the cassette above it is bigger. The song playing is in the line underneath.
+
 ## [0.10.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

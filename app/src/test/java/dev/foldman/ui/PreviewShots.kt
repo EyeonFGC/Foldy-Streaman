@@ -49,7 +49,7 @@ class PreviewShots {
     private val tapes by lazy {
         listOf(
             CustomTape(title = "Road trip 2026", playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER, photoPath = photo, photoY = 0.3f, photoZoom = 1.2f),
-            CustomTape(title = "Stream hype", playlistId = "PLdef1234567", shell = 0xFF1F5FA8, label = 0xFFFFE58A, font = TapeFont.TYPE_WORN),
+            CustomTape(title = "Stream hype", playlistId = "PLdef1234567", shell = 0xFF1F5FA8, label = 0xFFFFE58A, font = TapeFont.TYPE_WORN, photoPath = photo, photoY = -0.4f),
             CustomTape(title = "Chill beats", playlistId = "PLghi1234567", shell = 0xFF2E8B57, label = 0xFFC9F2C7, font = TapeFont.PEN),
         )
     }
