@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -68,10 +70,64 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
-private val JPaper = Color(0xFFF1E9D8)
-private val JInk = Color(0xFF26211D)
-private val JRed = Color(0xFFB0372B)
-private val Typed = TextStyle(fontFamily = FontFamily.Monospace, color = JInk, fontSize = 12.sp)
+/** Settings > Dark J-cards: every colour on the card follows this. */
+private var jDark by mutableStateOf(false)
+private val JPaper get() = if (jDark) Color(0xFF2A2622) else Color(0xFFF1E9D8)
+private val JInk get() = if (jDark) Color(0xFFECE4D4) else Color(0xFF26211D)
+private val JRed get() = if (jDark) Color(0xFFFF8E7E) else Color(0xFFB0372B)
+private val Typed get() = TextStyle(fontFamily = FontFamily.Monospace, color = JInk, fontSize = 12.sp)
+
+/** The ink the card's buttons are drawn in: the theme's colour, lighter on dark paper. */
+private fun stampInk(theme: dev.foldman.deck.DeckTheme, dark: Boolean): Color = when (theme) {
+    dev.foldman.deck.DeckTheme.ORIGINAL -> if (dark) Color(0xFF8CC4FF) else Color(0xFF1F5FA8)
+    dev.foldman.deck.DeckTheme.BLACK_GOLD -> if (dark) Color(0xFFDAD5C9) else Color(0xFF3A3A3E)
+    dev.foldman.deck.DeckTheme.CHERRY_RED -> if (dark) Color(0xFFFF8597) else Color(0xFFC22A44)
+    dev.foldman.deck.DeckTheme.RED_CHROME -> if (dark) Color(0xFFFF7A82) else Color(0xFFB3202B)
+    dev.foldman.deck.DeckTheme.SILVER_BLUE -> if (dark) Color(0xFF9DB4FF) else Color(0xFF2347C6)
+}
+
+/** Paper: a flat colour with speckles and fibres drawn over it, so it reads as a real card. */
+private fun Modifier.paper(dark: Boolean): Modifier = drawWithCache {
+    val rnd = kotlin.random.Random(21)
+    val base = if (dark) Color(0xFF2A2622) else Color(0xFFF1E9D8)
+    val speck = if (dark) Color.White else Color(0xFF5A4630)
+    val dots = List(2600) { Offset(rnd.nextFloat() * size.width, rnd.nextFloat() * size.height) to rnd.nextFloat() }
+    val fibres = List(170) {
+        val a = Offset(rnd.nextFloat() * size.width, rnd.nextFloat() * size.height)
+        val ang = rnd.nextFloat() * 6.283f
+        val len = 8f + rnd.nextFloat() * 26f
+        Triple(a, a + Offset(kotlin.math.cos(ang) * len, kotlin.math.sin(ang) * len), rnd.nextFloat())
+    }
+    val wash = androidx.compose.ui.graphics.Brush.linearGradient(
+        listOf(Color.White.copy(alpha = if (dark) 0.04f else 0.25f), Color.Transparent, Color.Black.copy(alpha = if (dark) 0.25f else 0.07f)),
+        Offset.Zero, Offset(size.width, size.height),
+    )
+    onDrawBehind {
+        drawRect(base)
+        dots.forEach { (o, a) -> drawCircle(speck.copy(alpha = (if (dark) 0.05f else 0.09f) * a), 0.9f + a, o) }
+        fibres.forEach { (a, b, t) -> drawLine((if (t > 0.5f) speck else Color.White).copy(alpha = (if (dark) 0.06f else 0.12f) * t), a, b, 0.9f) }
+        drawRect(wash)
+    }
+}
+
+/** The card's outline: square-cornered, with a small ragged tear across the top-right corner. */
+@Composable
+private fun tornCard(): androidx.compose.ui.graphics.Shape {
+    val t = with(androidx.compose.ui.platform.LocalDensity.current) { 15.dp.toPx() }
+    return remember(t) {
+        androidx.compose.foundation.shape.GenericShape { size, _ ->
+            moveTo(0f, 0f)
+            lineTo(size.width - t, 0f)
+            // The tear: a jagged diagonal from the top edge down to the right edge.
+            val jag = floatArrayOf(0.10f, 0.06f, 0.30f, 0.16f, 0.36f, 0.40f, 0.60f, 0.46f, 0.66f, 0.72f, 0.90f, 0.80f)
+            for (i in jag.indices step 2) lineTo(size.width - t + t * jag[i], t * jag[i + 1])
+            lineTo(size.width, t)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+    }
+}
 
 /** How wide the picture strip is for its height. */
 const val PHOTO_STRIP_ASPECT = 2.4f
@@ -116,7 +172,7 @@ fun TapePhoto(
             move?.invoke(px, py, pz)
         }
     }
-    Box(modifier.clip(RoundedCornerShape(2.dp)).background(Color(0xFFD9CFBC)).then(gestures), contentAlignment = Alignment.Center) {
+    Box(modifier.clip(RoundedCornerShape(2.dp)).background(if (jDark) Color(0xFF3B3630) else Color(0xFFD9CFBC)).then(gestures), contentAlignment = Alignment.Center) {
         if (photo == null) {
             empty()
         } else {
@@ -174,18 +230,20 @@ fun JCardSheet(
     var mz by remember { mutableFloatStateOf(tape.photoZoom) }
     val inDeck = ui.tape?.id == tape.id
     val font = tape.font
+    if (jDark != ui.jcardDark) jDark = ui.jcardDark
+    val card = tornCard()
 
     Column(
         modifier
-            .shadow(18.dp, RoundedCornerShape(3.dp))
-            .clip(RoundedCornerShape(3.dp))
-            .background(JPaper)
+            .shadow(18.dp, card)
+            .clip(card)
+            .paper(ui.jcardDark)
             .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
             Text(
-                tape.title.ifBlank { "my tape" },
-                style = TextStyle(fontFamily = font.family(), fontWeight = font.weight(), fontSize = (30 * font.sizeScale()).sp, color = JInk, lineHeight = (34 * font.sizeScale()).sp),
+                tape.title.ifBlank { "Tap to name this tape" },
+                style = TextStyle(fontFamily = font.family(), fontWeight = font.weight(), fontSize = (30 * font.sizeScale()).sp, color = if (tape.title.isBlank()) JInk.copy(alpha = 0.45f) else JInk, lineHeight = (34 * font.sizeScale()).sp),
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).clickable { edit = JEdit.LABEL },
             )
@@ -222,7 +280,32 @@ fun JCardSheet(
         Spacer(Modifier.height(12.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text("SIDE A", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp))
-            Text("${tape.service.label} playlist", style = Typed.copy(fontSize = 13.sp))
+            if (tape.playlistId.isBlank()) {
+                // A blank tape: paste its playlist link right here on the card.
+                var link by remember { mutableStateOf("") }
+                Text("Paste a YouTube Music or Spotify playlist link:", style = Typed.copy(fontSize = 12.sp))
+                Spacer(Modifier.height(4.dp))
+                androidx.compose.foundation.text.BasicTextField(
+                    value = link,
+                    onValueChange = { v ->
+                        link = v
+                        parsePlaylist(v)?.let { ref -> actions.save(tape.copy(playlistId = ref.id, service = ref.service)) }
+                    },
+                    singleLine = true,
+                    textStyle = Typed.copy(fontSize = 13.sp),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(JRed),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.5.dp, JRed, RoundedCornerShape(3.dp))
+                        .padding(horizontal = 8.dp, vertical = 9.dp),
+                )
+                Text(
+                    if (link.isNotBlank()) "That doesn't look like a playlist link yet." else "In the music app: open the playlist → Share → Copy link.",
+                    style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)),
+                )
+            } else {
+                Text("${tape.service.label} playlist", style = Typed.copy(fontSize = 13.sp))
+            }
             Text(
                 when {
                     inDeck && ui.transport == Transport.PLAYING -> "In the deck · playing"
@@ -238,15 +321,15 @@ fun JCardSheet(
             Spacer(Modifier.height(16.dp))
             // The buttons, like the controls printed on the back of the card.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CardButton("✎", "LABEL", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.LABEL }
-                CardButton("▣", "PHOTO", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { if (tape.photoPath == null) actions.pickPhoto(tape.id) else edit = JEdit.PHOTO_MENU }
-                CardButton("Aa", "FONT", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.FONT }
+                CardButton("✎", "LABEL", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.LABEL }
+                CardButton("▣", "PHOTO", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { if (tape.photoPath == null) actions.pickPhoto(tape.id) else edit = JEdit.PHOTO_MENU }
+                CardButton("Aa", "FONT", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.FONT }
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CardButton("◐", "COLOURS", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.COLOURS }
-                CardButton("♫", "PLAYLIST", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.PLAYLIST }
-                CardButton("✕", "DELETE", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.DELETE }
+                CardButton("◐", "COLOURS", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.COLOURS }
+                CardButton("♫", "PLAYLIST", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.PLAYLIST }
+                CardButton("✕", "DELETE", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.DELETE }
             }
             // Show the picture on the cassette itself, where the label colour normally goes.
             Spacer(Modifier.height(14.dp))
@@ -279,7 +362,7 @@ fun JCardSheet(
             }
         }
         Spacer(Modifier.height(10.dp))
-        val canLoad = !inDeck && ui.empty
+        val canLoad = !inDeck && ui.empty && tape.playlistId.isNotBlank()
         Box(
             Modifier
                 .fillMaxWidth()
@@ -292,6 +375,7 @@ fun JCardSheet(
             Text(
                 when {
                     inDeck -> "IN THE DECK"
+                    tape.playlistId.isBlank() -> "ADD A PLAYLIST LINK FIRST"
                     !ui.empty -> "EJECT THE TAPE IN THE DECK FIRST"
                     else -> "PUT IN DECK"
                 },
@@ -348,6 +432,9 @@ internal fun CardButton(
 ) {
     val gold = theme == dev.foldman.deck.DeckTheme.BLACK_GOLD
     val shape = RoundedCornerShape(if (style == JButtonStyle.ENAMEL) 25.dp else 6.dp)
+    val press = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by press.collectIsPressedAsState()
+    val glow by androidx.compose.animation.core.animateFloatAsState(if (isPressed) 1f else 0f, androidx.compose.animation.core.tween(if (isPressed) 60 else 380), label = "glow")
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         val base = Modifier.fillMaxWidth().height(50.dp)
         val iconColor: Color
@@ -382,16 +469,24 @@ internal fun CardButton(
             }
             // Printed onto the card like a rubber stamp: an inked outline and icon, no button body.
             JButtonStyle.STAMP -> {
-                val ink = if (gold) Color(0xFF8A6408) else JRed
-                face = base.border(2.dp, ink, RoundedCornerShape(4.dp)).padding(3.dp).border(0.8.dp, ink.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
+                // Drawn straight onto the card in the theme's ink. Pressed, it glows in that colour
+                // (a dark ink glows white instead, so the glow always shows).
+                val ink = stampInk(theme, jDark)
+                val lum = 0.2126f * ink.red + 0.7152f * ink.green + 0.0722f * ink.blue
+                val glowColor = if (lum < 0.25f) Color.White else ink
+                val stamp = RoundedCornerShape(4.dp)
+                face = base
+                    .shadow((14 * glow).dp, stamp, ambientColor = glowColor, spotColor = glowColor)
+                    .background(glowColor.copy(alpha = (if (lum < 0.25f) 0.85f else 0.35f) * glow), stamp)
+                    .border(2.dp, ink, stamp).padding(3.dp).border(0.8.dp, ink.copy(alpha = 0.6f), RoundedCornerShape(2.dp))
                 iconColor = ink
             }
         }
-        Box(face.clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        Box(face.clickable(interactionSource = press, indication = null, onClick = onClick), contentAlignment = Alignment.Center) {
             Text(icon, style = TextStyle(color = iconColor, fontSize = 20.sp, fontWeight = FontWeight.Bold))
         }
         Spacer(Modifier.height(4.dp))
-        Text(label, style = Typed.copy(fontSize = 10.sp, letterSpacing = 1.sp, color = if (style == JButtonStyle.STAMP) (if (gold) Color(0xFF8A6408) else JRed) else JInk))
+        Text(label, style = Typed.copy(fontSize = 10.sp, letterSpacing = 1.sp, color = if (style == JButtonStyle.STAMP) stampInk(theme, jDark) else JInk))
     }
 }
 

@@ -165,6 +165,7 @@ fun FoldmanScreen(
             appleSignOut = vm::signOutOfApple,
             setStopOnOpen = vm::setStopOnOpen,
             setFrontShelf = vm::setFrontShelf,
+            setJcardDark = vm::setJcardDark,
             setSourceShown = vm::setSourceShown,
             setHingeStyle = vm::setHingeStyle,
             backup = onBackup,

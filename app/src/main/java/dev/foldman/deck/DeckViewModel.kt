@@ -100,6 +100,8 @@ data class DeckUi(
     val audioElsewhere: Boolean = false,
     /** Settings: a TAPES button on the front screen opens a tape shelf there. */
     val frontShelf: Boolean = false,
+    /** Settings: J-cards on dark paper. */
+    val jcardDark: Boolean = false,
     /** Settings: adapters switched off, left off the rack. */
     val hiddenSources: Set<Source> = emptySet(),
     val hingeStyle: HingeStyle = HingeStyle.PIANO,
@@ -211,6 +213,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     // below, which refreshes the screen straight away (an unloaded list here crashed the app).
     private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
     private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
+    private var jcardDark = prefs.getBoolean(KEY_JCARD_DARK, false)
 
     private var hiddenSources: Set<Source> = prefs.getStringSet(KEY_HIDDEN_SOURCES, emptySet()).orEmpty()
         .mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
@@ -326,15 +329,36 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     fun previous() {
         if (deckEmpty) return
         if (winding != 0) finishWinding()
+        val wasPlaying = _ui.value.transport == Transport.PLAYING
         if (backend.positionMs() > 3000 || !_ui.value.hasPrevious) backend.seekTo(0) else backend.skipToPrevious()
+        if (!wasPlaying) stayStoppedAfterSkip()
         tick()
     }
 
     fun next() {
         if (deckEmpty) return
         if (winding != 0) finishWinding()
+        val wasPlaying = _ui.value.transport == Transport.PLAYING
         backend.skipToNext()
+        if (!wasPlaying) stayStoppedAfterSkip()
         tick()
+    }
+
+    /**
+     * Skipping while stopped or paused only moves to the song: every key pops up (a pause becomes
+     * a stop) and nothing plays until PLAY. Music apps often start playing on a skip, so that is
+     * paused again straight away.
+     */
+    private fun stayStoppedAfterSkip() {
+        stopped = true
+        playRequestedAt = 0
+        stopRequestedAt = SystemClock.elapsedRealtime()
+        viewModelScope.launch {
+            repeat(8) {
+                delay(250)
+                if (stopped && backend.state.value.isPlaying) backend.pause()
+            }
+        }
     }
 
     private fun startWinding(direction: Int) {
@@ -546,6 +570,12 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         tick()
     }
 
+    fun setJcardDark(on: Boolean) {
+        jcardDark = on
+        prefs.edit { putBoolean(KEY_JCARD_DARK, on) }
+        tick()
+    }
+
     fun setFrontShelf(on: Boolean) {
         frontShelf = on
         prefs.edit { putBoolean(KEY_FRONT_SHELF, on) }
@@ -650,6 +680,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Puts one of your tapes in the deck. PLAY then starts its playlist in YT Music. */
     fun loadTape(tape: CustomTape) {
+        // A blank tape (no playlist on it yet) has nothing to play.
+        if (tape.playlistId.isBlank()) return
         if (loadedTape?.id == tape.id) return
         if (winding != 0) finishWinding()
         if (backend.state.value.isPlaying) backend.pause()
@@ -1041,6 +1073,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             stopOnOpen = stopOnOpen,
             audioElsewhere = audioElsewhere,
             frontShelf = frontShelf,
+            jcardDark = jcardDark,
             hiddenSources = hiddenSources,
             hingeStyle = hingeStyle,
             backupMessage = backupMessage,
@@ -1093,6 +1126,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
         private const val KEY_FRONT_SHELF = "front_shelf"
+        private const val KEY_JCARD_DARK = "jcard_dark"
         private const val KEY_HIDDEN_SOURCES = "hidden_sources"
         private const val KEY_HINGES = "hinges"
         /** How long to wait for another volume-button tap before acting. */

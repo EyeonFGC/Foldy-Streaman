@@ -199,6 +199,8 @@ internal fun RackDeckLayout(
     }
 
     var rackBounds by remember { mutableStateOf(Rect.Zero) }
+    /** A blank tape just made, until it shows up in the list. */
+    var newTapeId by remember { mutableStateOf<String?>(null) }
     val spineBounds = remember { mutableMapOf<String, Rect>() }
     val items = remember(ui.tapes, ui.hiddenSources) {
         Source.entries.filter { it !in ui.hiddenSources }.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) }
@@ -326,7 +328,13 @@ internal fun RackDeckLayout(
                                 .height(46.dp)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(Brush.verticalGradient(listOf(Color(0xFF34322F), Color(0xFF22201E))))
-                                .clickable { creating = true },
+                                .clickable {
+                                    // A new blank tape goes on the rack and its J-card opens to fill in.
+                                    val blank = CustomTape(title = "", playlistId = "", shell = dev.foldman.deck.TapeColors.shells[1], label = dev.foldman.deck.TapeColors.labels[0])
+                                    actions.tapes.save(blank)
+                                    newTapeId = blank.id
+                                    card = RackItem.Mine(blank)
+                                },
                             contentAlignment = Alignment.Center,
                         ) {
                             Text("BLANK TAPE  ·  MAKE ONE FROM A PLAYLIST", style = EngravedCaps.copy(color = Color(0xFF9C958B), fontSize = 9.sp))
@@ -466,7 +474,8 @@ internal fun RackDeckLayout(
 
         // Tapping one of your tapes slides its J-card out over the rack.
         val cardTape = (card as? RackItem.Mine)?.let { m -> ui.tapes.firstOrNull { it.id == m.tape.id } }
-        if (card is RackItem.Mine && cardTape == null) card = null
+        if (cardTape != null && cardTape.id == newTapeId) newTapeId = null
+        if (card is RackItem.Mine && cardTape == null && (card as RackItem.Mine).tape.id != newTapeId) card = null
         // The J-card slides in from the left: quick at first, then easing gently to a stop. It slides
         // back out (a little quicker) when closed. The last tape shown stays drawn while it leaves.
         val shownTape = remember { arrayOfNulls<CustomTape>(1) }
@@ -489,7 +498,11 @@ internal fun RackDeckLayout(
                         removePhoto = actions.tapes.removePhoto,
                     ),
                     onLoad = { if (ui.empty) load(RackItem.Mine(t)); card = null },
-                    onClose = { card = null },
+                    onClose = {
+                        // A blank tape closed without a playlist link is thrown away.
+                        if (t.playlistId.isBlank()) actions.tapes.delete(t.id)
+                        card = null
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }

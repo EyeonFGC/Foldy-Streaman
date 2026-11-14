@@ -2,6 +2,17 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.21.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Blank tape opens a blank J-card.** Tapping "Blank tape" puts a new tape on the rack and slides its J-card in, with a box on the card to paste the playlist link, and everything else (name, picture, font, colours) right there. Close it without a link and the blank is thrown away.
+- **Settings > Dark J-cards:** dark textured paper, with the buttons in lighter versions of their colours.
+
+### Changed
+- **J-cards look like paper:** a speckled, fibrous texture and a small tear across the top-right corner.
+- **J-card buttons are drawn onto the card** in the theme's colour (blue for Original and Silver & Blue, dark grey for Black & Gold, red for the red themes) and **glow** when pressed.
+- **Skip buttons while not playing:** with the tape stopped, next/previous moves to that song but stays stopped until PLAY. With it paused, they act like STOP first (every key pops up), then move to the song.
+
 ## [0.20.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

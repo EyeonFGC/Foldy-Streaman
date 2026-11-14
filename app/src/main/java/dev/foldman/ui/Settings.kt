@@ -44,6 +44,7 @@ class SettingsActions(
     val appleSignOut: () -> Unit,
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setFrontShelf: (Boolean) -> Unit = {},
+    val setJcardDark: (Boolean) -> Unit = {},
     val setSourceShown: (dev.foldman.deck.Source, Boolean) -> Unit = { _, _ -> },
     val setHingeStyle: (dev.foldman.deck.HingeStyle) -> Unit = {},
     val backup: () -> Unit = {},
@@ -123,6 +124,7 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
             Section("FEEL") {
                 ToggleRow("Click sounds", "Keys, tapes going in and out", ui.keySounds, accent) { actions.setKeySounds(!ui.keySounds) }
                 ToggleRow("Haptics", "A buzz with each click", ui.haptics, accent) { actions.setHaptics(!ui.haptics) }
+                ToggleRow("Dark J-cards", "Tape cards on dark paper, with lighter buttons", ui.jcardDark, accent) { actions.setJcardDark(!ui.jcardDark) }
                 ToggleRow(
                     "Tape shelf on the front screen",
                     "A TAPES button on the player, to change tapes without opening it",
