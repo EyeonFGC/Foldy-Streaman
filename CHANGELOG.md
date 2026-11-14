@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.18.2] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Red Chrome has a round volume dial**: a black knurled dial lying flat, with white numbers 1 to 10 printed on its face. Turn it with a finger (clockwise is louder); the number at the marker gets bigger and glows.
+
 ## [0.18.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

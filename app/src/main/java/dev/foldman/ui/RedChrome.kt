@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -310,7 +311,11 @@ private fun RedKeyStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
                 SilverKey(KeySymbol.STOP, "STOP·EJECT", false, deck.stop, keyH, Modifier.fillMaxWidth())
             }
             Spacer(Modifier.height(12.dp))
-            VolumeWheelSlot(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f), ink = Color.White, marker = RedChrome.Green)
+            Text("VOLUME", style = caption)
+            // A round dial lying flat: turn it with a finger.
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                VolumeDial(ui.volume, deck.volume, Modifier.fillMaxWidth().aspectRatio(1f), marker = Color.White)
+            }
             Spacer(Modifier.height(6.dp))
             Text("PHONES", style = caption.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))
