@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.17.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Drag to reorder your tapes.** Hold a tape and drag it up or down the rack: the other tapes slide out of the way to open a gap where it will land, and you drop it in. (Dragging it onto the deck still loads it.) Adapters stay at the top.
+- **Tap the tape under the deck** to open its J-card.
+- **The app never rotates on the Fold**, folded or open, even with auto-rotate on.
+
+### Changed
+- **The rack closes up.** The tape in the deck leaves the rack and the others slide up to fill the gap; ejecting it slides it back into its place. Deleted tapes close up the same way.
+
 ## [0.16.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

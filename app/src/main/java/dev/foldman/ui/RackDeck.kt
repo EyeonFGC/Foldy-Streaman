@@ -11,6 +11,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
 import dev.foldman.deck.DeckTheme
 import androidx.compose.foundation.background
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
@@ -149,6 +150,8 @@ internal fun RackDeckLayout(
     onClose: (() -> Unit)? = null,
     /** Screen previews only: open with rack item N's card showing. */
     previewCard: Int? = null,
+    /** Screen previews only: drag rack item N to this spot over the rack (to show the marker line). */
+    previewReorder: Pair<Int, Float>? = null,
 ) {
     var showSettings by remember { mutableStateOf(previewSettings) }
     // Lettering on the body follows the theme (light on blue, black or red; dark blue on silver).
@@ -195,10 +198,43 @@ internal fun RackDeckLayout(
         }
     }
 
+    var rackBounds by remember { mutableStateOf(Rect.Zero) }
+    val spineBounds = remember { mutableMapOf<String, Rect>() }
     val items = remember(ui.tapes, ui.hiddenSources) {
         Source.entries.filter { it !in ui.hiddenSources }.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) }
     }
     LaunchedEffect(previewCard) { previewCard?.let { card = items[it] } }
+    // What's on the rack: everything except the tape that's in the deck.
+    val onRackBase = items.filterNot { it.inDeck(ui) }
+    // Dragging one of your tapes up or down the rack: the rack shows it in its new place straight
+    // away and the others slide out of the way (an empty slot marks where it will land). The order
+    // here is just for show until it's dropped. Adapters stay at the top.
+    var liveOrder by remember { mutableStateOf<List<String>?>(null) }
+    LaunchedEffect(ui.tapes) { liveOrder = null }
+    val mineOnRack = onRackBase.filterIsInstance<RackItem.Mine>()
+    val onRack = run {
+        val order = liveOrder ?: return@run onRackBase
+        val byKey = mineOnRack.associateBy { it.key }
+        onRackBase.filterIsInstance<RackItem.Src>() + order.mapNotNull { byKey[it] } + mineOnRack.filter { it.key !in order }
+    }
+    fun updateOrder() {
+        val d = dragging as? RackItem.Mine ?: return
+        if (!rackBounds.contains(dragPos) || deckBounds.contains(dragPos)) return
+        val current = onRack.filterIsInstance<RackItem.Mine>().map { it.key }
+        val others = current.filter { it != d.key }
+        // Before the first tape whose middle is below the finger.
+        val at = others.indexOfFirst { k -> spineBounds[k]?.let { dragPos.y < it.center.y } == true }.let { if (it < 0) others.size else it }
+        val next = others.take(at) + d.key + others.drop(at)
+        if (next != current) liveOrder = next
+    }
+    LaunchedEffect(previewReorder, rackBounds) {
+        val (i, y) = previewReorder ?: return@LaunchedEffect
+        if (rackBounds == Rect.Zero) return@LaunchedEffect
+        dragging = items[i]
+        dragPos = Offset(rackBounds.center.x, rackBounds.top + rackBounds.height * y)
+        kotlinx.coroutines.delay(50)
+        updateOrder()
+    }
     LaunchedEffect(previewDrag, deckBounds) {
         val (i, over) = previewDrag ?: return@LaunchedEffect
         if (deckBounds == Rect.Zero) return@LaunchedEffect
@@ -229,31 +265,36 @@ internal fun RackDeckLayout(
                     Text("${items.size} TAPES", style = EngravedCaps.copy(color = look.muted, fontSize = 9.sp))
                 }
                 Spacer(Modifier.height(10.dp))
-                Column(
+                // The tapes on the rack. The one in the deck isn't here (the others slide up to close
+                // the gap, and it slides back in when ejected). Hold a tape to drag it: into the deck to
+                // load it, or up and down the rack to move it.
+                androidx.compose.foundation.lazy.LazyColumn(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
                         .background(Color(0xFF0E0D0C))
-                        .verticalScroll(rememberScrollState())
-                        .padding(12.dp),
+                        .onGloballyPositioned { rackBounds = it.boundsInRoot() },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
                     verticalArrangement = Arrangement.spacedBy(9.dp),
                 ) {
-                    items.forEach { item ->
+                    items(onRack, key = { it.key }) { item ->
                         RackSpine(
                             item = item,
-                            inDeck = item.inDeck(ui),
+                            inDeck = false,
                             beingDragged = dragging?.key == item.key,
                             onWidth = { spineWidth = it },
+                            onBounds = { spineBounds[item.key] = it },
                             onTap = { card = item },
                             onDragStart = { pos ->
                                 view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                                 dragging = item
                                 dragPos = pos
                             },
-                            onDrag = { delta -> dragPos += delta },
+                            onDrag = { delta -> dragPos += delta; updateOrder() },
                             onDragEnd = {
                                 val item2 = dragging
+                                val order = liveOrder
                                 if (item2 != null && deckBounds.contains(dragPos)) {
                                     if (ui.empty) {
                                         view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
@@ -262,27 +303,39 @@ internal fun RackDeckLayout(
                                         // Deck's full: the tape just goes back on the rack.
                                         view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                                     }
+                                } else if (item2 is RackItem.Mine && order != null) {
+                                    // Dropped into its new place: save the new order.
+                                    val i = order.indexOf(item2.key)
+                                    val beforeKey = order.getOrNull(i + 1)
+                                    val beforeId = (onRackBase.firstOrNull { it.key == beforeKey } as? RackItem.Mine)?.tape?.id
+                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                    actions.tapes.move(item2.tape.id, beforeId)
                                 }
+                                if (order == null || order == onRackBase.filterIsInstance<RackItem.Mine>().map { it.key }) liveOrder = null
                                 dragging = null
                             },
+                            modifier = Modifier.animateItem(),
                         )
                     }
-                    // A blank tape: make a new one from a YouTube Music playlist.
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(46.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(Brush.verticalGradient(listOf(Color(0xFF34322F), Color(0xFF22201E))))
-                            .clickable { creating = true },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("BLANK TAPE  ·  MAKE ONE FROM A PLAYLIST", style = EngravedCaps.copy(color = Color(0xFF9C958B), fontSize = 9.sp))
+                    item(key = "blank") {
+                        // A blank tape: make a new one from a playlist.
+                        Box(
+                            Modifier
+                                .animateItem()
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Brush.verticalGradient(listOf(Color(0xFF34322F), Color(0xFF22201E))))
+                                .clickable { creating = true },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("BLANK TAPE  ·  MAKE ONE FROM A PLAYLIST", style = EngravedCaps.copy(color = Color(0xFF9C958B), fontSize = 9.sp))
+                        }
                     }
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "TAP A TAPE TO READ IT  ·  HOLD TO DRAG IT IN",
+                    "TAP A TAPE TO READ IT  ·  HOLD TO DRAG IT IN OR MOVE IT",
                     style = EngravedCaps.copy(color = look.muted, fontSize = 8.sp),
                     maxLines = 2,
                 )
@@ -375,7 +428,11 @@ internal fun RackDeckLayout(
                         trailing = null,
                         font = deckItem.font(),
                         photoOf = ui.tape,
-                        modifier = Modifier.then(if (spineWidth > 0) Modifier.width(with(density) { spineWidth.toDp() }) else Modifier.fillMaxWidth()).shadow(3.dp, RoundedCornerShape(4.dp)),
+                        modifier = Modifier
+                            .then(if (spineWidth > 0) Modifier.width(with(density) { spineWidth.toDp() }) else Modifier.fillMaxWidth())
+                            .shadow(3.dp, RoundedCornerShape(4.dp))
+                            // Tap the tape under the deck to open its J-card.
+                            .clickable { card = deckItem },
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -536,6 +593,8 @@ private fun RackSpine(
     onDragStart: (Offset) -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
+    onBounds: (Rect) -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
     // The gesture loops below keep running while the tape sits on the rack, so they call the
@@ -545,8 +604,8 @@ private fun RackSpine(
     val drag by rememberUpdatedState(onDrag)
     val end by rememberUpdatedState(onDragEnd)
     val tap by rememberUpdatedState(onTap)
-    val gestures = Modifier
-        .onGloballyPositioned { coords = it; onWidth(it.size.width) }
+    val gestures = modifier
+        .onGloballyPositioned { coords = it; onWidth(it.size.width); onBounds(it.boundsInRoot()) }
         .pointerInput(item.key) {
             detectDragGesturesAfterLongPress(
                 onDragStart = { off -> start(coords?.localToRoot(off) ?: off) },
@@ -582,7 +641,7 @@ private fun RackSpine(
                 item is RackItem.Src && item.source != Source.LOCAL -> "AUX"
                 else -> null
             },
-            modifier = gestures.alpha(if (beingDragged) 0.25f else 1f).shadow(3.dp, RoundedCornerShape(4.dp)),
+            modifier = gestures.alpha(if (beingDragged) 0.12f else 1f).shadow(3.dp, RoundedCornerShape(4.dp)),
         )
     }
 }

@@ -366,4 +366,19 @@ class PreviewShots {
             rule.onRoot().captureRoboImage("build/shots/slide-$ms.png")
         }
     }
+
+    /** Dragging "Chill beats" up the rack: the marker line shows where it will land. */
+    @Test
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
+    fun reorder() {
+        val plain = tapes.map { it.copy(photoPath = null) }
+        val u = ui.copy(tapes = plain, tape = plain[0], tapeCued = false)
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(DeckTheme.ORIGINAL)) {
+                RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp), previewReorder = 6 to 0.5f)
+            }
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/reorder.png")
+    }
 }

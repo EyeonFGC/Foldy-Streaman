@@ -42,6 +42,8 @@ class MainActivity : ComponentActivity() {
         val foldable = isFoldable()
         vm.setPhoneMode(!foldable)
         if (!foldable) applyPhoneOrientation(getSharedPreferences("foldman", MODE_PRIVATE).getBoolean("phone_deck_open", false))
+        // On a Fold the app never rotates: each screen (front and inside) stays upright, auto-rotate or not.
+        else requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
         setContent {
             val windowLayout by remember { WindowInfoTracker.getOrCreate(this).windowLayoutInfo(this) }
                 .collectAsStateWithLifecycle<WindowLayoutInfo?>(initialValue = null)
@@ -50,7 +52,7 @@ class MainActivity : ComponentActivity() {
                 if (windowLayout?.displayFeatures?.any { it is FoldingFeature } == true) {
                     getSharedPreferences("foldman", MODE_PRIVATE).edit().putBoolean(KEY_SEEN_HINGE, true).apply()
                     vm.setPhoneMode(false)
-                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
                 }
             }
             val deckUi by vm.ui.collectAsStateWithLifecycle()

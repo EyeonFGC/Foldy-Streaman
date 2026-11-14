@@ -140,7 +140,7 @@ fun FoldmanScreen(
             play = vm::playApplePlaylist,
         )
     }
-    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape, eject = vm::ejectTape, pickPhoto = onPickPhoto, removePhoto = vm::removeTapePhoto) }
+    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape, eject = vm::ejectTape, pickPhoto = onPickPhoto, removePhoto = vm::removeTapePhoto, move = vm::moveTape) }
     val shelfActions = remember(vm) {
         ShelfActions(
             selectSource = vm::selectSource,

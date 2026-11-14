@@ -668,6 +668,16 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         tick()
     }
 
+    /** Drag to reorder: puts tape [id] just before tape [beforeId] on the rack (null = at the end). */
+    fun moveTape(id: String, beforeId: String?) {
+        val moving = tapes.firstOrNull { it.id == id } ?: return
+        val rest = tapes.filterNot { it.id == id }
+        val at = beforeId?.let { b -> rest.indexOfFirst { it.id == b } }?.takeIf { it >= 0 } ?: rest.size
+        tapes = rest.take(at) + moving + rest.drop(at)
+        tapeStore.save(tapes)
+        tick()
+    }
+
     fun deleteTape(id: String) {
         tapes.firstOrNull { it.id == id }?.photoPath?.let { java.io.File(it).delete() }
         tapes = tapes.filterNot { it.id == id }

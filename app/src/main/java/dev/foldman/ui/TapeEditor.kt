@@ -53,6 +53,7 @@ class TapeActions(
     val eject: () -> Unit = {},
     val pickPhoto: (String) -> Unit = {},
     val removePhoto: (String) -> Unit = {},
+    val move: (id: String, beforeId: String?) -> Unit = { _, _ -> },
 )
 
 private val HandFont = TextStyle(fontFamily = FontFamily.Cursive, fontWeight = FontWeight.Bold)
