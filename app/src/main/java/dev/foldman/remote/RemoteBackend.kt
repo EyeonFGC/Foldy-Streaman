@@ -189,9 +189,23 @@ class RemoteBackend(private val context: Context, source: Source) : DeckBackend 
             c.transportControls.play()
             return
         }
-        // No session yet: ask the app to resume its last queue, then open it next to us if it doesn't.
+        // No session yet: ask the app to resume its last queue in the background. (Foldy Streaman:
+        // no longer opens the app on top; the deck offers that itself if nothing starts.)
         sendMediaButton(KeyEvent.KEYCODE_MEDIA_PLAY)
-        handler.postDelayed({ if (controller == null) openApp() }, 2500)
+    }
+
+    /** Foldy Streaman: whether the app's player is visible to us (needs notification access). */
+    val hasSession: Boolean get() = controller != null
+
+    /**
+     * Foldy Streaman: starts [uri] inside the streaming app's own player, without opening its
+     * screen. Only works when the app's player says it accepts links; returns false otherwise.
+     */
+    fun playFromUri(uri: Uri): Boolean {
+        val c = controller ?: return false
+        val actions = c.playbackState?.actions ?: 0L
+        if (actions and PlaybackState.ACTION_PLAY_FROM_URI == 0L) return false
+        return runCatching { c.transportControls.playFromUri(uri, null) }.isSuccess
     }
 
     override fun pause() { controller?.transportControls?.pause() }

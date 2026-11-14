@@ -63,8 +63,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        vm.onScreenShown(true)
         // Notification access may have just been granted in Settings, or the streaming app started.
         vm.refresh()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        vm.onScreenShown(false)
     }
 
     private fun openStoreListing(source: Source) {

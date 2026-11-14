@@ -2,6 +2,13 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.4.0] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **PLAY and PAUSE no longer switch you over to YT Music.** The keys control YT Music in the background. (Before, PLAY opened YT Music whenever Foldy couldn't see its player.)
+- **Starting a tape's playlist stays in Foldy where possible**: if YT Music accepts the playlist directly, its screen never opens. Otherwise YT Music opens just long enough to start the playlist, and Foldy jumps back in front as soon as the music starts.
+- If YT Music isn't running at all, PLAY opens it once and Foldy comes straight back when it plays.
+
 ## [0.3.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

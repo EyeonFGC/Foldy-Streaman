@@ -173,6 +173,17 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         stopped = false
         playRequestedAt = SystemClock.elapsedRealtime()
         backend.play()
+        // Foldy Streaman: if YT Music isn't running, it can't hear the key; open it and come back.
+        val remote = remotes[source]
+        if (remote != null && backend === remote && !remote.hasSession && remote.hasAccess && remote.isInstalled) {
+            viewModelScope.launch {
+                delay(2500)
+                if (!remote.hasSession) {
+                    remote.openApp()
+                    comeBackWhenPlaying()
+                }
+            }
+        }
         tick()
     }
 
@@ -337,13 +348,51 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         tick()
     }
 
-    /** Asks YT Music to play the tape's playlist (beside this app when the phone is unfolded). */
+    /**
+     * Asks YT Music to play the tape's playlist. Inside its player when it allows that (no screen
+     * switch); otherwise by opening the playlist in YT Music, then coming straight back here as
+     * soon as it starts playing.
+     */
     private fun startPlaylist(tape: CustomTape) {
+        if (remotes[Source.YT_MUSIC]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
         val app = getApplication<Application>()
         val base = Intent(Intent.ACTION_VIEW, Uri.parse(tape.playUrl))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
         runCatching { app.startActivity(Intent(base).setPackage(Source.YT_MUSIC.packageName)) }
             .recoverCatching { app.startActivity(base) }
+        comeBackWhenPlaying()
+    }
+
+    /** Whether our screen is the one showing (set by MainActivity). */
+    private var screenShown = false
+    /** Until when to jump back to Foldy once the other app starts playing. */
+    private var comeBackBy = 0L
+
+    fun onScreenShown(shown: Boolean) {
+        screenShown = shown
+        if (shown) comeBackBy = 0L
+    }
+
+    /**
+     * Android lets an app reopen its own screen for a few seconds after it opened another app, so
+     * Foldy jumps back as soon as YT Music starts playing (or gives up after [COME_BACK_MS]).
+     */
+    private fun comeBackWhenPlaying() {
+        comeBackBy = SystemClock.elapsedRealtime() + COME_BACK_MS
+    }
+
+    private fun maybeComeBack(state: BackendState, now: Long) {
+        if (comeBackBy == 0L) return
+        if (now > comeBackBy || screenShown) {
+            comeBackBy = 0L
+            return
+        }
+        if (!state.isPlaying) return
+        comeBackBy = 0L
+        val app = getApplication<Application>()
+        val intent = Intent(app, dev.foldman.MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        runCatching { app.startActivity(intent) }
     }
 
     // endregion
@@ -580,6 +629,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         val state = backend.state.value
         val now = SystemClock.elapsedRealtime()
         if (winding != 0) windStep(state)
+        maybeComeBack(state, now)
         if (state.ended) stopped = true
         if (state.isPlaying && winding == 0) {
             stopped = false
@@ -675,6 +725,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_APPLE_USER = "apple_music_user_token"
         /** Winding speed relative to play: a four-minute song winds through in about 20 s. */
         const val WIND_SPEED = 12L
+        /** How long after opening YT Music Foldy may still jump back in front of it. */
+        private const val COME_BACK_MS = 9_000L
 
         private fun blend(a: Color, b: Color, t: Float) = Color(
             red = a.red * (1 - t) + b.red * t,
