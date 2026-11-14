@@ -40,14 +40,17 @@ object AudioOutput {
 
     /** True when music would play somewhere other than the phone's own speaker. */
     fun isElsewhere(audio: AudioManager): Boolean {
-        // Android 13+: ask where media actually goes right now.
+        // Headphones, a speaker or the car connected (Bluetooth, USB-C, wired): music goes there.
+        // This is checked first because "where would media go?" below is answered for Foldy's
+        // own sound, which some phones report as the speaker while YT Music plays to headphones.
+        if (audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type in external }) return true
+        // Android 13+: also trust it when it does say media is going somewhere else.
         if (Build.VERSION.SDK_INT >= 33) {
             val media = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build()
             val routed = runCatching { audio.getAudioDevicesForAttributes(media) }.getOrNull()
-            if (!routed.isNullOrEmpty()) return routed.none { it.type in builtIn }
+            if (!routed.isNullOrEmpty() && routed.none { it.type in builtIn }) return true
         }
-        // Older phones: something external is plugged in or connected.
-        return audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any { it.type in external }
+        return false
     }
 
     /**

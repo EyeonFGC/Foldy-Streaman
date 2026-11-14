@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.14.2] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **No plug in the headphone jack while playing through headphones.** Foldy asked Android where *its own* sound would go (the speaker, since Foldy itself isn't playing) instead of checking what's connected. It now shows the plug whenever Bluetooth, USB-C or wired headphones, a speaker or a car are connected, and re-checks every couple of seconds.
+
 ## [0.14.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

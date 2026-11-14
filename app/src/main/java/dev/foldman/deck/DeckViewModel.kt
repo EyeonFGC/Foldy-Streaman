@@ -204,6 +204,13 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         backend.refresh()
         runCatching { audio.registerAudioDeviceCallback(audioDevices, android.os.Handler(android.os.Looper.getMainLooper())) }
         checkAudioOutput()
+        // Re-check where the sound goes every couple of seconds, for changes Android doesn't announce.
+        viewModelScope.launch {
+            while (true) {
+                delay(2000)
+                checkAudioOutput()
+            }
+        }
         viewModelScope.launch {
             while (true) {
                 tick()
