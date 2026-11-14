@@ -43,6 +43,7 @@ class SettingsActions(
     val appleSignIn: () -> Unit,
     val appleSignOut: () -> Unit,
     val setStopOnOpen: (Boolean) -> Unit = {},
+    val setVolumeKeys: (Boolean) -> Unit = {},
     val setFrontShelf: (Boolean) -> Unit = {},
     val setJcardDark: (Boolean) -> Unit = {},
     val setSourceShown: (dev.foldman.deck.Source, Boolean) -> Unit = { _, _ -> },
@@ -131,6 +132,7 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     "A TAPES button on the player, to change tapes without opening it",
                     ui.frontShelf, accent,
                 ) { actions.setFrontShelf(!ui.frontShelf) }
+                ToggleRow("Volume buttons work the player", "On the front screen: up = play, down = pause, double-tap to skip or stop. Off = normal volume", ui.volumeKeys, accent) { actions.setVolumeKeys(!ui.volumeKeys) }
                 if (!ui.phoneMode) {
                     ToggleRow("Stop the music when I open the phone", "Like opening the lid of a real player", ui.stopOnOpen, accent) { actions.setStopOnOpen(!ui.stopOnOpen) }
                 }

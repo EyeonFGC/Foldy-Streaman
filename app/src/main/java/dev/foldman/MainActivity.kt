@@ -129,9 +129,10 @@ class MainActivity : ComponentActivity() {
         requestedOrientation = if (open) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
-    // Foldy Streaman: on the front screen, volume up = PLAY and volume down = PAUSE.
+    // Foldy Streaman: on the front screen, volume up = PLAY and volume down = PAUSE (unless that
+    // is switched off in Settings, when they are plain volume buttons).
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (vm.coverShown && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+        if (vm.coverShown && vm.volumeKeysOn && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             // Holding the button counts as one press.
             if (event.repeatCount == 0) {
                 vm.volumeButton(up = keyCode == KeyEvent.KEYCODE_VOLUME_UP)
@@ -142,7 +143,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        if (vm.coverShown && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) return true
+        if (vm.coverShown && vm.volumeKeysOn && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) return true
         return super.onKeyUp(keyCode, event)
     }
 

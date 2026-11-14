@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.27.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Settings > Volume buttons work the player.** On (as before): on the front screen, volume up = play, volume down = pause, double-tap to skip or stop. Off: they are normal volume buttons again.
+
 ## [0.26.0] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed

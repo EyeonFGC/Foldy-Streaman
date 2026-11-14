@@ -97,6 +97,8 @@ data class DeckUi(
     val deckOpen: Boolean = false,
     /** Settings: opening the Fold stops the music. */
     val stopOnOpen: Boolean = false,
+    /** Front screen: the volume buttons work the player (play, pause, skip) instead of the volume. */
+    val volumeKeys: Boolean = true,
     /** Sound is going to headphones, a speaker or the car rather than this phone: a plug sits in the jack. */
     val audioElsewhere: Boolean = false,
     /** Settings: a TAPES button on the front screen opens a tape shelf there. */
@@ -213,6 +215,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     // Settings read on every refresh of the screen. They must be loaded before the init block
     // below, which refreshes the screen straight away (an unloaded list here crashed the app).
     private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
+    var volumeKeysOn = prefs.getBoolean(KEY_VOLUME_KEYS, true)
+        private set
     private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
     private var jcardDark = prefs.getBoolean(KEY_JCARD_DARK, false)
 
@@ -515,6 +519,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         .put("keySounds", prefs.getBoolean(KEY_SOUNDS, true))
         .put("haptics", prefs.getBoolean(KEY_HAPTICS, true))
         .put("stopOnOpen", stopOnOpen)
+        .put("volumeKeys", volumeKeysOn)
         .put("frontShelf", frontShelf)
         .put("hiddenSources", org.json.JSONArray(hiddenSources.map { it.name }))
         .put("hinges", hingeStyle.name)
@@ -554,6 +559,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (o.has("keySounds")) prefs.edit { putBoolean(KEY_SOUNDS, o.optBoolean("keySounds", true)) }
         if (o.has("haptics")) prefs.edit { putBoolean(KEY_HAPTICS, o.optBoolean("haptics", true)) }
         if (o.has("stopOnOpen")) setStopOnOpen(o.optBoolean("stopOnOpen"))
+        if (o.has("volumeKeys")) setVolumeKeys(o.optBoolean("volumeKeys"))
         if (o.has("frontShelf")) setFrontShelf(o.optBoolean("frontShelf"))
         o.optJSONArray("hiddenSources")?.let { arr ->
             hiddenSources = List(arr.length()) { arr.optString(it) }.mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
@@ -580,6 +586,12 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     fun setFrontShelf(on: Boolean) {
         frontShelf = on
         prefs.edit { putBoolean(KEY_FRONT_SHELF, on) }
+        tick()
+    }
+
+    fun setVolumeKeys(on: Boolean) {
+        volumeKeysOn = on
+        prefs.edit { putBoolean(KEY_VOLUME_KEYS, on) }
         tick()
     }
 
@@ -1110,6 +1122,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             phoneMode = phoneMode,
             deckOpen = phoneMode && deckOpen,
             stopOnOpen = stopOnOpen,
+            volumeKeys = volumeKeysOn,
             audioElsewhere = audioElsewhere,
             frontShelf = frontShelf,
             jcardDark = jcardDark,
@@ -1164,6 +1177,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_THEME = "theme"
         private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
+        private const val KEY_VOLUME_KEYS = "volume_keys"
         private const val KEY_FRONT_SHELF = "front_shelf"
         private const val KEY_JCARD_DARK = "jcard_dark"
         private const val KEY_HIDDEN_SOURCES = "hidden_sources"
