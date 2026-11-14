@@ -202,8 +202,6 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         backend.refresh()
-        runCatching { audio.registerAudioDeviceCallback(audioDevices, android.os.Handler(android.os.Looper.getMainLooper())) }
-        checkAudioOutput()
         // Re-check where the sound goes every couple of seconds, for changes Android doesn't announce.
         viewModelScope.launch {
             while (true) {
@@ -472,18 +470,48 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Sound is going somewhere other than this phone's own speaker (Bluetooth, wired, USB...). */
     private var audioElsewhere = false
+    /** Where the music last went while something was playing (kept while it's paused). */
+    private var lastRouted: Boolean? = null
     private val audioDevices = object : android.media.AudioDeviceCallback() {
         override fun onAudioDevicesAdded(added: Array<out android.media.AudioDeviceInfo>?) = checkAudioOutput()
         override fun onAudioDevicesRemoved(removed: Array<out android.media.AudioDeviceInfo>?) = checkAudioOutput()
     }
+    /** Players starting, stopping or moving to another output. */
+    private val audioPlayers = object : AudioManager.AudioPlaybackCallback() {
+        override fun onPlaybackConfigChanged(configs: MutableList<android.media.AudioPlaybackConfiguration>?) = checkAudioOutput()
+    }
 
+    // Start listening only now that both listeners above exist (an earlier init block runs before they do).
+    init {
+        val main = android.os.Handler(android.os.Looper.getMainLooper())
+        runCatching { audio.registerAudioDeviceCallback(audioDevices, main) }
+        runCatching { audio.registerAudioPlaybackCallback(audioPlayers, main) }
+        checkAudioOutput()
+    }
+
+    /**
+     * The plug sits in the jack when the music comes out of anything but this phone. Nothing
+     * connected: no plug. Something connected: follow where the playing music actually goes, so
+     * switching to "This phone" with headphones still connected pulls the plug out. While paused,
+     * keep the last answer.
+     */
     private fun checkAudioOutput() {
-        val now = AudioOutput.isElsewhere(audio)
+        val now = when {
+            !AudioOutput.anyConnected(audio) -> {
+                lastRouted = null
+                false
+            }
+            else -> {
+                AudioOutput.playingElsewhere(audio)?.let { lastRouted = it }
+                lastRouted ?: true
+            }
+        }
         if (now != audioElsewhere) {
             audioElsewhere = now
             tick()
         }
     }
+
 
     /** Opens the system's "where does the sound go" menu (falls back to Bluetooth settings). */
     fun openOutputSwitcher() {
@@ -939,6 +967,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         runCatching { audio.unregisterAudioDeviceCallback(audioDevices) }
+        runCatching { audio.unregisterAudioPlaybackCallback(audioPlayers) }
         local.release()
         remotes.values.forEach { it.release() }
         appleKit?.release()

@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.14.3] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **The plug follows where the music actually plays.** Switch the sound to "This phone" while headphones are still connected and the plug comes out; switch back and it goes in. While paused it keeps the last state; with nothing connected there's never a plug.
+- Foldy now really hears about headphones connecting and disconnecting (the listener was being set up too early and never ran).
+
 ## [0.14.2] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed
