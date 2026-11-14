@@ -2,6 +2,21 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.10.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **J-cards.** Tap one of your tapes in the rack: its card slides out with the title, a picture under it and what's on the tape. LABEL, PHOTO, FONT, COLOURS, PLAYLIST and DELETE buttons change it.
+- **Pictures:** pick one from your phone, then drag to move it and pinch to zoom inside the frame. Foldy keeps its own copy.
+- **Fonts:** classic pen, old typewriter, typewriter, neat handwriting, scribble and marker. The font goes on the J-card, the cassette label and the spine in the rack.
+- **A small J-card under the deck:** the tape's title, its picture strip and the song playing.
+- **Headphone jack:** bigger and more real. When the sound goes anywhere but the phone (Bluetooth, wired, USB, car) a plug sits in it with its cable hanging off the screen. Tap it to choose where the sound goes.
+- **Opening and closing the Fold:** the inside screen darkens from the fold outwards as you close it, and clears again as you open it.
+- **Settings > Stop the music when I open the phone** (Fold only, off to start with).
+- **Volume buttons like headphones:** up = PLAY, up twice = next song, up three times = previous; down = PAUSE (again to carry on), down twice = STOP.
+
+### Changed
+- **Keys work like a Walkman:** PLAY does nothing while it's already down (playing, or paused). PAUSE pauses and un-pauses. STOP pops every key back up.
+
 ## [0.9.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

@@ -139,6 +139,7 @@ private fun CustomTapeSpine(tape: CustomTape, inDeck: Boolean, onLoad: () -> Uni
     Row(verticalAlignment = Alignment.CenterVertically) {
         TapeSpineView(
             title = tape.title.ifBlank { "my tape" },
+            font = tape.font,
             shell = Color(tape.shell),
             label = Color(tape.label),
             trailing = if (inDeck) "IN DECK" else "LOAD",

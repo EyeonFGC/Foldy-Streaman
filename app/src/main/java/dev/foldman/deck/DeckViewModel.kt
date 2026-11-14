@@ -84,6 +84,10 @@ data class DeckUi(
     val phoneMode: Boolean = false,
     /** Phone mode only: the deck is open (rack and deck showing). */
     val deckOpen: Boolean = false,
+    /** Settings: opening the Fold stops the music. */
+    val stopOnOpen: Boolean = false,
+    /** Sound is going to headphones, a speaker or the car rather than this phone: a plug sits in the jack. */
+    val audioElsewhere: Boolean = false,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -193,6 +197,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
         backend.refresh()
+        runCatching { audio.registerAudioDeviceCallback(audioDevices, android.os.Handler(android.os.Looper.getMainLooper())) }
+        checkAudioOutput()
         viewModelScope.launch {
             while (true) {
                 tick()
@@ -203,7 +209,17 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     // region Keys
 
+    /**
+     * The PLAY key. Like a Walkman: when PLAY is already down (playing, or paused with PAUSE also
+     * down) pressing it does nothing; PAUSE brings it back, STOP pops everything up.
+     */
     fun play() {
+        val t = _ui.value.transport
+        if (t == Transport.PLAYING || t == Transport.PAUSED) return
+        startPlaying()
+    }
+
+    private fun startPlaying() {
         if (deckEmpty) return
         if (winding != 0) finishWinding()
         val tape = loadedTape
@@ -240,7 +256,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
                 playRequestedAt = 0
                 backend.pause()
             }
-            Transport.PAUSED -> play()
+            Transport.PAUSED -> startPlaying()
             else -> return
         }
         tick()
@@ -383,17 +399,97 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         coverShown = shown
     }
 
-    /** Volume up on the front screen. */
-    fun volumeKeyPlay() {
+    private var volumeUpTaps = 0
+    private var volumeDownTaps = 0
+    private var volumeJob: Job? = null
+
+    /**
+     * The phone's volume buttons on the front screen, like Bluetooth headphones:
+     * up = PLAY, up twice = next song, up three times = previous song;
+     * down = PAUSE (again to un-pause), down twice = STOP.
+     * Each press clicks straight away; the action waits a moment to count the taps.
+     */
+    fun volumeButton(up: Boolean) {
         _events.tryEmit(DeckEvent.KeyClick)
-        play()
+        if (up) {
+            volumeDownTaps = 0
+            volumeUpTaps++
+        } else {
+            volumeUpTaps = 0
+            volumeDownTaps++
+        }
+        volumeJob?.cancel()
+        volumeJob = viewModelScope.launch {
+            delay(MULTI_TAP_MS)
+            val ups = volumeUpTaps
+            val downs = volumeDownTaps
+            volumeUpTaps = 0
+            volumeDownTaps = 0
+            when {
+                ups == 1 -> play()
+                ups == 2 -> next()
+                ups >= 3 -> previous()
+                downs == 1 -> pauseKey()
+                downs >= 2 -> if (_ui.value.transport != Transport.STOPPED) stop()
+            }
+        }
     }
 
-    /** Volume down on the front screen: pause only (never un-pauses). */
-    fun volumeKeyPause() {
-        _events.tryEmit(DeckEvent.KeyClick)
-        if (_ui.value.transport == Transport.PLAYING) pauseKey()
+    // region Opening the phone, audio output, J-card photos (Foldy Streaman)
+
+    private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
+
+    fun setStopOnOpen(on: Boolean) {
+        stopOnOpen = on
+        prefs.edit { putBoolean(KEY_STOP_ON_OPEN, on) }
+        tick()
     }
+
+    /** The Fold was just opened: stop the music if Settings says so. */
+    fun onPhoneOpened() {
+        if (!stopOnOpen) return
+        if (_ui.value.transport != Transport.STOPPED) stop()
+    }
+
+    /** Sound is going somewhere other than this phone's own speaker (Bluetooth, wired, USB...). */
+    private var audioElsewhere = false
+    private val audioDevices = object : android.media.AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(added: Array<out android.media.AudioDeviceInfo>?) = checkAudioOutput()
+        override fun onAudioDevicesRemoved(removed: Array<out android.media.AudioDeviceInfo>?) = checkAudioOutput()
+    }
+
+    private fun checkAudioOutput() {
+        val now = AudioOutput.isElsewhere(audio)
+        if (now != audioElsewhere) {
+            audioElsewhere = now
+            tick()
+        }
+    }
+
+    /** Opens the system's "where does the sound go" menu (falls back to Bluetooth settings). */
+    fun openOutputSwitcher() {
+        _events.tryEmit(DeckEvent.KeyClick)
+        AudioOutput.openSwitcher(getApplication(), remotes[source]?.let { source.packageName })
+    }
+
+    /** Copies a picked picture into the app (scaled down) and puts it on the tape's J-card. */
+    fun setTapePhoto(tapeId: String, uri: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val path = withContext(Dispatchers.IO) { TapePhotos.copyIn(app, tapeId, uri) } ?: return@launch
+            val tape = tapes.firstOrNull { it.id == tapeId } ?: return@launch
+            tape.photoPath?.let { old -> if (old != path) withContext(Dispatchers.IO) { java.io.File(old).delete() } }
+            saveTape(tape.copy(photoPath = path, photoX = 0f, photoY = 0f, photoZoom = 1f))
+        }
+    }
+
+    fun removeTapePhoto(tapeId: String) {
+        val tape = tapes.firstOrNull { it.id == tapeId } ?: return
+        tape.photoPath?.let { java.io.File(it).delete() }
+        saveTape(tape.copy(photoPath = null, photoX = 0f, photoY = 0f, photoZoom = 1f))
+    }
+
+    // endregion
 
     fun ejectTape() {
         if (winding != 0) finishWinding()
@@ -437,6 +533,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteTape(id: String) {
+        tapes.firstOrNull { it.id == id }?.photoPath?.let { java.io.File(it).delete() }
         tapes = tapes.filterNot { it.id == id }
         tapeStore.save(tapes)
         if (loadedTape?.id == id) {
@@ -785,6 +882,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             theme = theme,
             phoneMode = phoneMode,
             deckOpen = phoneMode && deckOpen,
+            stopOnOpen = stopOnOpen,
+            audioElsewhere = audioElsewhere,
         )
     }
 
@@ -819,6 +918,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        runCatching { audio.unregisterAudioDeviceCallback(audioDevices) }
         local.release()
         remotes.values.forEach { it.release() }
         appleKit?.release()
@@ -830,6 +930,9 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_EMPTY = "deck_empty"
         private const val KEY_THEME = "theme"
         private const val KEY_DECK_OPEN = "phone_deck_open"
+        private const val KEY_STOP_ON_OPEN = "stop_on_open"
+        /** How long to wait for another volume-button tap before acting. */
+        private const val MULTI_TAP_MS = 380L
         private const val KEY_FOLDER = "folder"
         private const val KEY_SOUNDS = "key_sounds"
         private const val KEY_HAPTICS = "haptics"

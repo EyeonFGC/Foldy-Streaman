@@ -109,6 +109,11 @@ private fun RackItem.shell(): Color = when (this) {
     is RackItem.Mine -> Color(tape.shell)
 }
 
+private fun RackItem.font(): dev.foldman.deck.TapeFont = when (this) {
+    is RackItem.Src -> dev.foldman.deck.TapeFont.CLASSIC
+    is RackItem.Mine -> tape.font
+}
+
 private fun RackItem.label(): Color = when (this) {
     is RackItem.Src -> DeckColors.Paper
     is RackItem.Mine -> Color(tape.label)
@@ -140,6 +145,8 @@ internal fun RackDeckLayout(
     previewSettings: Boolean = false,
     /** Phones that don't fold: shuts the lid and goes back to the player. Null on a foldable. */
     onClose: (() -> Unit)? = null,
+    /** Screen previews only: open with rack item N's card showing. */
+    previewCard: Int? = null,
 ) {
     var showSettings by remember { mutableStateOf(previewSettings) }
     val view = LocalView.current
@@ -185,6 +192,7 @@ internal fun RackDeckLayout(
     }
 
     val items = remember(ui.tapes) { Source.entries.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) } }
+    LaunchedEffect(previewCard) { previewCard?.let { card = items[it] } }
     LaunchedEffect(previewDrag, deckBounds) {
         val (i, over) = previewDrag ?: return@LaunchedEffect
         if (deckBounds == Rect.Zero) return@LaunchedEffect
@@ -343,7 +351,17 @@ internal fun RackDeckLayout(
                         )
                     }
                 }
-                Spacer(Modifier.height(10.dp))
+                // The J-card under the deck: title in the tape's writing, its picture, the song.
+                if (!ui.empty) {
+                    Spacer(Modifier.height(8.dp))
+                    val deckTitle = ui.tape?.title?.ifBlank { "my tape" } ?: RackItem.Src(ui.source).title()
+                    MiniJCard(
+                        ui, deckTitle,
+                        Modifier.fillMaxWidth().then(if (onClose != null) Modifier.height(58.dp) else Modifier),
+                        compact = onClose != null,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -372,6 +390,26 @@ internal fun RackDeckLayout(
             }
         }
 
+        // Tapping one of your tapes slides its J-card out over the rack.
+        val cardTape = (card as? RackItem.Mine)?.let { m -> ui.tapes.firstOrNull { it.id == m.tape.id } }
+        if (card is RackItem.Mine && cardTape == null) card = null
+        if (cardTape != null) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth(0.46f)) {
+                JCardSheet(
+                    cardTape, ui,
+                    JCardActions(
+                        save = actions.tapes.save,
+                        delete = actions.tapes.delete,
+                        pickPhoto = actions.tapes.pickPhoto,
+                        removePhoto = actions.tapes.removePhoto,
+                    ),
+                    onLoad = { if (ui.empty) load(RackItem.Mine(cardTape)); card = null },
+                    onClose = { card = null },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
         // The tape following your finger: it flips over from a spine into a whole cassette.
         val d = dragging
         if (d != null && spineWidth > 0) {
@@ -384,6 +422,7 @@ internal fun RackDeckLayout(
                     shell = d.shell(),
                     label = d.label(),
                     trailing = null,
+                    font = d.font(),
                     modifier = Modifier
                         .width(with(density) { spineWidth.toDp() })
                         .offset { IntOffset((local.x - spineWidth / 2f).roundToInt(), (local.y - spineH / 2f).roundToInt()) }
@@ -429,13 +468,13 @@ internal fun RackDeckLayout(
         }
     }
 
-    card?.let { item ->
+    (card as? RackItem.Src)?.let { item ->
         TapeCardDialog(
             item = item,
             ui = ui,
             actions = actions,
             onLoad = { if (ui.empty) load(item); card = null },
-            onEdit = { if (item is RackItem.Mine) editing = item.tape; card = null },
+            onEdit = { card = null },
             onDismiss = { card = null },
         )
     }
@@ -445,17 +484,16 @@ internal fun RackDeckLayout(
 
 private fun deckStatus(ui: DeckUi): String {
     if (ui.empty) return "NO TAPE"
-    val name = ui.tape?.title?.ifBlank { "my tape" }
+    // The J-card above shows the tape and the song, so this is just the state and the time.
     val time = if (ui.durationMs > 0) "${formatTime(ui.positionMs)} / ${formatTime(ui.durationMs)}" else null
     val state = when {
-        ui.status == SourceStatus.NeedsAccess -> "NEEDS NOTIFICATION ACCESS (TAP THE TAPE IN THE RACK)"
+        ui.status == SourceStatus.NeedsAccess -> "NEEDS NOTIFICATION ACCESS (SEE SETTINGS)"
         ui.tape != null && ui.tapeCued -> "PRESS PLAY TO START"
         ui.transport == Transport.PLAYING -> "PLAYING"
         ui.transport == Transport.PAUSED -> "PAUSED"
         else -> "STOPPED"
     }
-    val song = listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString(" — ").takeIf { ui.tape == null || !ui.tapeCued }
-    return listOfNotNull(name, song?.ifBlank { null }, time, state).joinToString("  ·  ").uppercase()
+    return listOfNotNull(state, time).joinToString("  ·  ").uppercase()
 }
 
 @Composable
@@ -499,6 +537,7 @@ private fun RackSpine(
             title = item.title(),
             shell = item.shell(),
             label = item.label(),
+            font = item.font(),
             trailing = if (item is RackItem.Src && item.source != Source.LOCAL) "AUX" else null,
             modifier = gestures.alpha(if (beingDragged) 0.25f else 1f).shadow(3.dp, RoundedCornerShape(4.dp)),
         )

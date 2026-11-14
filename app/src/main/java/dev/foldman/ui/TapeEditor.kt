@@ -50,6 +50,8 @@ class TapeActions(
     val save: (CustomTape) -> Unit,
     val delete: (String) -> Unit,
     val eject: () -> Unit = {},
+    val pickPhoto: (String) -> Unit = {},
+    val removePhoto: (String) -> Unit = {},
 )
 
 private val HandFont = TextStyle(fontFamily = FontFamily.Cursive, fontWeight = FontWeight.Bold)
@@ -171,6 +173,7 @@ fun TapeSpineView(
     trailing: String?,
     modifier: Modifier = Modifier,
     trailingColor: Color = Color.White.copy(alpha = 0.7f),
+    font: dev.foldman.deck.TapeFont = dev.foldman.deck.TapeFont.CLASSIC,
 ) {
     val ink = if (label.red * 0.2126f + label.green * 0.7152f + label.blue * 0.0722f > 0.45f) DeckColors.Ink else DeckColors.Paper
     Row(
@@ -188,7 +191,11 @@ fun TapeSpineView(
                 .background(label)
                 .padding(horizontal = 10.dp, vertical = 2.dp),
         ) {
-            Text(title, style = HandFont.copy(fontSize = 18.sp, color = ink, fontWeight = FontWeight.Normal), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                title,
+                style = TextStyle(fontFamily = font.family(), fontSize = (18 * font.sizeScale()).sp, color = ink),
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
         }
         if (trailing != null) {
             Spacer(Modifier.size(10.dp))

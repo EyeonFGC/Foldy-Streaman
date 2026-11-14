@@ -19,6 +19,10 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,6 +57,13 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(deckUi.phoneMode, deckUi.deckOpen) {
                 if (deckUi.phoneMode) applyPhoneOrientation(deckUi.deckOpen)
             }
+            // Foldy Streaman: a picture for a tape's J-card, from Android's photo picker.
+            var photoForTape by rememberSaveable { mutableStateOf<String?>(null) }
+            val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+                val id = photoForTape
+                if (uri != null && id != null) vm.setTapePhoto(id, uri)
+                photoForTape = null
+            }
             val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
                 if (uri != null) {
                     contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -75,6 +86,10 @@ class MainActivity : ComponentActivity() {
                     onPickFolder = { folderPicker.launch(null) },
                     onInstallApp = ::openStoreListing,
                     onAppleSignIn = { vm.appleSignInIntent()?.let(appleSignIn::launch) },
+                    onPickPhoto = { id ->
+                        photoForTape = id
+                        photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
                 )
             }
         }
@@ -108,7 +123,7 @@ class MainActivity : ComponentActivity() {
         if (vm.coverShown && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             // Holding the button counts as one press.
             if (event.repeatCount == 0) {
-                if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) vm.volumeKeyPlay() else vm.volumeKeyPause()
+                vm.volumeButton(up = keyCode == KeyEvent.KEYCODE_VOLUME_UP)
             }
             return true
         }

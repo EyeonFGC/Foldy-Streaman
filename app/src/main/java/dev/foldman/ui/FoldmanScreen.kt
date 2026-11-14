@@ -84,6 +84,7 @@ fun FoldmanScreen(
     onPickFolder: () -> Unit,
     onInstallApp: (Source) -> Unit,
     onAppleSignIn: () -> Unit,
+    onPickPhoto: (tapeId: String) -> Unit = {},
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val anim = rememberDeckAnimations(ui.transport, ui.progress)
@@ -135,7 +136,7 @@ fun FoldmanScreen(
             play = vm::playApplePlaylist,
         )
     }
-    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape, eject = vm::ejectTape) }
+    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape, eject = vm::ejectTape, pickPhoto = onPickPhoto, removePhoto = vm::removeTapePhoto) }
     val shelfActions = remember(vm) {
         ShelfActions(
             selectSource = vm::selectSource,
@@ -158,6 +159,7 @@ fun FoldmanScreen(
             pickFolder = onPickFolder,
             appleSignIn = onAppleSignIn,
             appleSignOut = vm::signOutOfApple,
+            setStopOnOpen = vm::setStopOnOpen,
         )
     }
     val fold = windowLayout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull()
@@ -182,10 +184,14 @@ fun FoldmanScreen(
                 maxWidth >= 600.dp && maxWidth > maxHeight * 0.7f -> Posture.Unfolded
                 else -> Posture.Cover
             }
+            val lastPosture = remember { arrayOfNulls<Posture>(1) }
             LaunchedEffect(posture) {
                 // Phones: the open deck in landscape is short, so it gets the whole screen too.
                 view.showSystemBars(posture != Posture.Cover && !ui.phoneMode)
                 vm.setCoverShown(posture == Posture.Cover)
+                // The Fold was just opened (not on first launch): Settings may say stop the music.
+                if (!ui.phoneMode && lastPosture[0] == Posture.Cover && posture != Posture.Cover) vm.onPhoneOpened()
+                lastPosture[0] = posture
             }
             when (posture) {
                 // The cover screen is the player itself: edge to edge, system bars hidden.
@@ -226,6 +232,10 @@ fun FoldmanScreen(
                 }
             }
             // Foldy Streaman: no tape shelf on the front screen. Tapes are changed with the phone open.
+            // The inside screen darkens from the fold out as the phone closes (and clears as it opens).
+            if (!ui.phoneMode && posture != Posture.Cover) {
+                HingeShade(verticalFold = fold?.orientation != FoldingFeature.Orientation.HORIZONTAL, modifier = Modifier.fillMaxSize())
+            }
         }
     }
 }
@@ -255,8 +265,10 @@ internal class DeckControls(
     val next: () -> Unit,
     val previous: () -> Unit,
     val volume: (Float) -> Unit,
+    /** The headphone jack: choose where the sound goes. */
+    val output: () -> Unit = {},
 ) {
-    constructor(vm: DeckViewModel) : this(vm::play, vm::pauseKey, vm::stop, vm::rewind, vm::fastForward, vm::next, vm::previous, vm::setVolume)
+    constructor(vm: DeckViewModel) : this(vm::play, vm::pauseKey, vm::stop, vm::rewind, vm::fastForward, vm::next, vm::previous, vm::setVolume, vm::openOutputSwitcher)
 }
 
 private val Serif = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Black, color = Color(0xFFF1F3F6), letterSpacing = 2.sp)
@@ -322,7 +334,7 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
 @Composable
 private fun SideStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
     BoxWithConstraints(modifier) {
-        val keyH = ((maxHeight - 400.dp) / 5 - 18.dp).coerceIn(34.dp, 64.dp)
+        val keyH = ((maxHeight - 420.dp) / 5 - 18.dp).coerceIn(34.dp, 64.dp)
         // Runs the full height of the screen; the padding keeps controls clear of the rounded corners.
         Column(
             Modifier
@@ -347,8 +359,10 @@ private fun SideStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Text("VOLUME", style = EngravedCaps.copy(fontSize = 7.sp))
             VolumeSlider(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f))
             Spacer(Modifier.height(8.dp))
-            PhonesJack(Modifier.size(18.dp))
             Text("PHONES", style = EngravedCaps.copy(fontSize = 6.sp))
+            Spacer(Modifier.height(3.dp))
+            // Foldy Streaman: a proper socket; a plug sits in it when the sound isn't on the phone.
+            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(34.dp))
         }
     }
 }

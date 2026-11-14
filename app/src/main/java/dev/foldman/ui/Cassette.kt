@@ -268,7 +268,8 @@ private fun DrawScope.drawLabel(ui: DeckUi, palette: LabelPalette, measurer: Tex
         )
         withTransform({ translate(x, y); scale(1f / u, 1f / u, Offset.Zero) }) { drawText(layout) }
     }
-    val hand = TextStyle(fontFamily = FontFamily.Cursive, color = ink, fontWeight = FontWeight.Bold)
+    val tapeFont = ui.tape?.font ?: dev.foldman.deck.TapeFont.CLASSIC
+    val hand = TextStyle(fontFamily = tapeFont.family(), color = ink, fontWeight = tapeFont.weight())
     val print = TextStyle(fontFamily = FontFamily.SansSerif, color = ink, fontWeight = FontWeight.Bold, letterSpacing = (0.3f * u).toSp())
     text("A", 12.75f, 14.4f, 3.6f, 5f, print)
     val title = ui.title.ifBlank { placeholderTitle(ui) }

@@ -42,6 +42,7 @@ class SettingsActions(
     val pickFolder: () -> Unit,
     val appleSignIn: () -> Unit,
     val appleSignOut: () -> Unit,
+    val setStopOnOpen: (Boolean) -> Unit = {},
 ) {
     companion object {
         val None = SettingsActions({}, {}, {}, {}, {}, {}, {})
@@ -89,6 +90,9 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
             Section("FEEL") {
                 ToggleRow("Click sounds", "Keys, tapes going in and out", ui.keySounds, accent) { actions.setKeySounds(!ui.keySounds) }
                 ToggleRow("Haptics", "A buzz with each click", ui.haptics, accent) { actions.setHaptics(!ui.haptics) }
+                if (!ui.phoneMode) {
+                    ToggleRow("Stop the music when I open the phone", "Like opening the lid of a real player", ui.stopOnOpen, accent) { actions.setStopOnOpen(!ui.stopOnOpen) }
+                }
             }
             Section("YT MUSIC & APPLE MUSIC") {
                 val needs = ui.status == SourceStatus.NeedsAccess

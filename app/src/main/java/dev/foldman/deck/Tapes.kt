@@ -18,8 +18,26 @@ data class CustomTape(
     val playlistId: String,
     val shell: Long,
     val label: Long,
+    /** The writing on the label, spine and J-card. */
+    val font: TapeFont = TapeFont.CLASSIC,
+    /** Our own copy of the J-card picture (in the app's files), or null. */
+    val photoPath: String? = null,
+    /** Where the picture sits in its frame: -1..1 across and down, and how far it's zoomed in (1 = just fills). */
+    val photoX: Float = 0f,
+    val photoY: Float = 0f,
+    val photoZoom: Float = 1f,
 ) {
     val playUrl: String get() = "https://music.youtube.com/watch?list=$playlistId"
+}
+
+/** Fonts for the label, spine and J-card. */
+enum class TapeFont(val label: String) {
+    CLASSIC("Classic pen"),
+    TYPE_WORN("Old typewriter"),
+    TYPE_CLEAN("Typewriter"),
+    PEN("Neat handwriting"),
+    SCRIBBLE("Scribble"),
+    MARKER("Marker"),
 }
 
 /** The colour choices offered in the tape editor. */
@@ -57,6 +75,11 @@ class TapeStore(private val prefs: SharedPreferences) {
                 playlistId = o.getString("playlist"),
                 shell = o.optLong("shell", TapeColors.shells[1]),
                 label = o.optLong("label", TapeColors.labels[0]),
+                font = runCatching { TapeFont.valueOf(o.optString("font")) }.getOrDefault(TapeFont.CLASSIC),
+                photoPath = o.optString("photo").takeIf { it.isNotBlank() },
+                photoX = o.optDouble("photoX", 0.0).toFloat(),
+                photoY = o.optDouble("photoY", 0.0).toFloat(),
+                photoZoom = o.optDouble("photoZoom", 1.0).toFloat(),
             )
         }
     }.getOrDefault(emptyList())
@@ -70,7 +93,12 @@ class TapeStore(private val prefs: SharedPreferences) {
                     .put("title", t.title)
                     .put("playlist", t.playlistId)
                     .put("shell", t.shell)
-                    .put("label", t.label),
+                    .put("label", t.label)
+                    .put("font", t.font.name)
+                    .put("photo", t.photoPath ?: "")
+                    .put("photoX", t.photoX.toDouble())
+                    .put("photoY", t.photoY.toDouble())
+                    .put("photoZoom", t.photoZoom.toDouble()),
             )
         }
         prefs.edit { putString(KEY, arr.toString()) }

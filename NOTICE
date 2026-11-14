@@ -23,4 +23,10 @@ Foldy Streaman is a personal fork of Foldman. Changed or added files include app
 app/src/main/res/values/strings.xml, deck/DeckViewModel.kt, deck/Tapes.kt, ui/Cassette.kt,
 ui/Shelf.kt, ui/Panels.kt, ui/FoldmanScreen.kt, ui/TapeEditor.kt, ui/RackDeck.kt,
 app/src/test/java/dev/foldman/ui/PreviewShots.kt, remote/RemoteBackend.kt, MainActivity.kt,
-ui/BlackGold.kt, ui/Settings.kt, ui/Keys.kt, ui/MechSounds.kt, ui/Controls.kt and .github/workflows/build-apk.yml.
+ui/BlackGold.kt, ui/Settings.kt, ui/Keys.kt, ui/MechSounds.kt, ui/Controls.kt,
+ui/JCard.kt, ui/TapeFonts.kt, ui/HeadphoneJack.kt, ui/HingeShade.kt, deck/AudioOutput.kt, deck/TapePhotos.kt
+
+Fonts bundled in Foldy Streaman (app/src/main/res/font), from Google Fonts; licences in
+app/src/main/assets/font-licenses:
+- Special Elite (Apache License 2.0), Permanent Marker (Apache License 2.0)
+- Courier Prime, Caveat, Nothing You Could Do (SIL Open Font License 1.1) and .github/workflows/build-apk.yml.

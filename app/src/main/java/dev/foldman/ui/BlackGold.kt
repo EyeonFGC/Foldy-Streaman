@@ -194,7 +194,7 @@ private fun Porthole(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
 @Composable
 private fun GoldBand(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
     BoxWithConstraints(modifier) {
-        val knob = ((maxHeight - 380.dp) / 5 - 10.dp).coerceIn(34.dp, 58.dp)
+        val knob = ((maxHeight - 400.dp) / 5 - 10.dp).coerceIn(34.dp, 58.dp)
         Column(
             Modifier
                 .fillMaxSize()
@@ -231,7 +231,9 @@ private fun GoldBand(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Text("VOL", style = EngravedCaps.copy(color = BlackGold.Ink, fontSize = 7.sp))
             VolumeSlider(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f))
             Spacer(Modifier.height(8.dp))
-            PhonesJack(Modifier.size(16.dp))
+            Text("PHONES", style = EngravedCaps.copy(color = BlackGold.Ink, fontSize = 6.sp))
+            Spacer(Modifier.height(3.dp))
+            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(34.dp), dark = true)
         }
     }
 }

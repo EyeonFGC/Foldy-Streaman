@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.foldman.deck.CustomTape
 import dev.foldman.deck.DeckTheme
+import dev.foldman.deck.TapeFont
 import dev.foldman.deck.DeckUi
 import dev.foldman.deck.Source
 import dev.foldman.deck.SourceStatus
@@ -28,12 +29,31 @@ import org.robolectric.annotation.GraphicsMode
 class PreviewShots {
     @get:Rule val rule = createComposeRule()
 
-    private val tapes = listOf(
-        CustomTape(title = "Road trip 2026", playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC),
-        CustomTape(title = "Stream hype", playlistId = "PLdef1234567", shell = 0xFF1F5FA8, label = 0xFFFFE58A),
-        CustomTape(title = "Chill beats", playlistId = "PLghi1234567", shell = 0xFF2E8B57, label = 0xFFC9F2C7),
-    )
-    private val ui = DeckUi(
+    /** A made-up picture for the J-card: a sunset over hills. */
+    private val photo: String by lazy {
+        val bmp = android.graphics.Bitmap.createBitmap(1200, 800, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        p.shader = android.graphics.LinearGradient(0f, 0f, 0f, 800f, intArrayOf(0xFF2B1B5A.toInt(), 0xFFE0567A.toInt(), 0xFFFFB347.toInt()), null, android.graphics.Shader.TileMode.CLAMP)
+        c.drawRect(0f, 0f, 1200f, 800f, p)
+        p.shader = null
+        p.color = 0xFFFFE08A.toInt(); c.drawCircle(780f, 520f, 120f, p)
+        p.color = 0xFF1E1436.toInt()
+        val hills = android.graphics.Path().apply { moveTo(0f, 620f); quadTo(300f, 480f, 600f, 600f); quadTo(900f, 700f, 1200f, 560f); lineTo(1200f, 800f); lineTo(0f, 800f); close() }
+        c.drawPath(hills, p)
+        val f = java.io.File.createTempFile("jcard", ".png")
+        f.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        f.absolutePath
+    }
+
+    private val tapes by lazy {
+        listOf(
+            CustomTape(title = "Road trip 2026", playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER, photoPath = photo, photoY = 0.3f, photoZoom = 1.2f),
+            CustomTape(title = "Stream hype", playlistId = "PLdef1234567", shell = 0xFF1F5FA8, label = 0xFFFFE58A, font = TapeFont.TYPE_WORN),
+            CustomTape(title = "Chill beats", playlistId = "PLghi1234567", shell = 0xFF2E8B57, label = 0xFFC9F2C7, font = TapeFont.PEN),
+        )
+    }
+    private val ui get() = DeckUi(
         source = Source.YT_MUSIC, status = SourceStatus.Ready, tapes = tapes, tape = tapes[0], tapeCued = true,
     )
     private val deck = DeckControls({}, {}, {}, {}, {}, {}, {}, {})
@@ -178,5 +198,67 @@ class PreviewShots {
             RackDeckLayout(phone.copy(deckOpen = true, empty = true, tape = null), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(12.dp), onClose = {})
         }
         rule.onRoot().captureRoboImage("build/shots/phone-open-empty.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
+    fun jcard() {
+        rule.setContent {
+            RackDeckLayout(ui.copy(title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp), previewCard = 3)
+        }
+        // Give the picture a moment to load before taking the shot.
+        repeat(5) { Thread.sleep(200); rule.mainClock.advanceTimeBy(200); rule.waitForIdle() }
+        rule.onRoot().captureRoboImage("build/shots/jcard.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
+    fun unfoldedPlaying() {
+        rule.setContent {
+            RackDeckLayout(ui.copy(title = "Fast Car", artist = "Tracy Chapman", tapeCued = false), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp))
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/unfolded-playing.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun jackPlugged() {
+        rule.setContent { CoverWalkman(ui.copy(audioElsewhere = true, tapeCued = false), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/jack-plugged.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun jackPluggedGold() {
+        rule.setContent { CoverBlackGold(gold.copy(audioElsewhere = true), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/jack-plugged-gold.png")
+    }
+
+    private fun shade(angle: Float, name: String) {
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+                RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp))
+                HingeShade(verticalFold = true, modifier = Modifier.fillMaxSize(), previewAngle = angle)
+            }
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/$name.png")
+    }
+
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun shade120() = shade(120f, "shade-120")
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun shade80() = shade(80f, "shade-080")
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun shade40() = shade(40f, "shade-040")
+
+    @Test
+    @Config(qualifiers = "w883dp-h412dp-land-xxhdpi")
+    fun phoneOpenPlaying() {
+        rule.setContent {
+            RackDeckLayout(phone.copy(deckOpen = true, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(12.dp), onClose = {})
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/phone-open-playing.png")
     }
 }
