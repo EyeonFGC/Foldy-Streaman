@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.31.0] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **Logged in to Spotify, PLAY still jumped to the Spotify app.** Foldy can only tell Spotify to play when Spotify is awake on the phone. It now wakes Spotify quietly in the background first and keeps asking for a few seconds, and it is better at spotting which device in Spotify's list is this phone.
+- If it still can't, a short message now says why (for example, a free account: Spotify only lets Premium accounts be started from another app) before it opens Spotify the old way.
+
 ## [0.30.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

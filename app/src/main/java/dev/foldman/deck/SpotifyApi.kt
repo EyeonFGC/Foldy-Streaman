@@ -103,34 +103,50 @@ object SpotifyApi {
         out.filter { it.id.isNotBlank() }
     }
 
-    /**
-     * Tells Spotify to play a playlist from the top on this phone. True if Spotify took it. False
-     * when Spotify on this phone isn't awake to hear it (or the account can't be driven this way).
-     */
-    suspend fun play(c: Context, playlistId: String): Boolean = withContext(Dispatchers.IO) {
+    /** How asking Spotify to play went. [noDevice] = Spotify on this phone wasn't awake to hear it. */
+    class PlayResult(val ok: Boolean, val noDevice: Boolean = false, val message: String = "")
+
+    /** Tells Spotify to play a playlist from the top on this phone. */
+    suspend fun play(c: Context, playlistId: String): PlayResult = withContext(Dispatchers.IO) {
         runCatching {
-            val device = thisPhone(c) ?: return@runCatching false
+            val (dStatus, dBody) = call(c, "GET", "https://api.spotify.com/v1/me/player/devices")
+            if (dStatus != 200) return@runCatching PlayResult(false, message = "Spotify wouldn't list its devices (${reason(dStatus, dBody)})")
+            val all = JSONObject(dBody).optJSONArray("devices").let { l -> (0 until (l?.length() ?: 0)).mapNotNull { l?.optJSONObject(it) } }
+            val device = thisPhone(c, all)
+                ?: return@runCatching PlayResult(
+                    false, noDevice = true,
+                    message = if (all.isEmpty()) "Spotify isn't awake on this phone" else "Spotify is only awake on: " + all.joinToString { it.optString("name") },
+                )
             val body = JSONObject().put("context_uri", "spotify:playlist:$playlistId").put("offset", JSONObject().put("position", 0)).put("position_ms", 0)
-            val (status, _) = call(c, "PUT", "https://api.spotify.com/v1/me/player/play?device_id=" + URLEncoder.encode(device, "UTF-8"), body.toString())
-            status in 200..299
-        }.getOrDefault(false)
+            val (status, text) = call(c, "PUT", "https://api.spotify.com/v1/me/player/play?device_id=" + URLEncoder.encode(device, "UTF-8"), body.toString())
+            when {
+                status in 200..299 -> PlayResult(true)
+                status == 403 && text.contains("PREMIUM", true) -> PlayResult(false, message = "Spotify only lets Premium accounts be started from another app")
+                // Spotify lists the phone but has let it go to sleep.
+                status == 404 -> PlayResult(false, noDevice = true, message = "Spotify isn't awake on this phone")
+                else -> PlayResult(false, message = "Spotify wouldn't start it (${reason(status, text)})")
+            }
+        }.getOrElse { PlayResult(false, message = "Couldn't reach Spotify (${it.message ?: "no internet?"})") }
     }
 
-    /** This phone in Spotify's list of places it can play, if Spotify is awake on it. */
-    private fun thisPhone(c: Context): String? {
-        val (status, body) = call(c, "GET", "https://api.spotify.com/v1/me/player/devices")
-        if (status != 200) return null
-        val list = JSONObject(body).optJSONArray("devices") ?: return null
-        val phones = (0 until list.length()).mapNotNull { list.optJSONObject(it) }
-            .filter { it.optString("type").equals("Smartphone", true) && !it.optBoolean("is_restricted") }
+    /** Spotify's own words for why it said no. */
+    private fun reason(status: Int, body: String): String =
+        runCatching { JSONObject(body).getJSONObject("error").let { e -> e.optString("message").ifBlank { e.optString("reason") } } }.getOrNull()?.takeIf { it.isNotBlank() } ?: "error $status"
+
+    /** This phone among the places Spotify can play right now. */
+    private fun thisPhone(c: Context, all: List<JSONObject>): String? {
+        val usable = all.filter { !it.optBoolean("is_restricted") && it.optString("id").isNotBlank() }
         val names = listOfNotNull(
             runCatching { Settings.Global.getString(c.contentResolver, "device_name") }.getOrNull(),
+            runCatching { Settings.Secure.getString(c.contentResolver, "bluetooth_name") }.getOrNull(),
             Build.MODEL,
-        ).map { it.lowercase() }
-        val mine = phones.firstOrNull { it.optString("name").lowercase() in names }
-            ?: phones.singleOrNull()
-            ?: phones.firstOrNull { it.optBoolean("is_active") }
-        return mine?.optString("id")?.takeIf { it.isNotBlank() }
+        ).map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+        // By name first (a folding phone can show up as a tablet), then the only phone or tablet.
+        val handhelds = usable.filter { it.optString("type").lowercase() in setOf("smartphone", "tablet") }
+        val mine = usable.firstOrNull { it.optString("name").trim().lowercase() in names }
+            ?: handhelds.singleOrNull()
+            ?: handhelds.firstOrNull { it.optBoolean("is_active") }
+        return mine?.optString("id")
     }
 
     private fun saveTokens(c: Context, o: JSONObject) {

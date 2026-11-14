@@ -821,21 +821,56 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             val app = getApplication<Application>()
             if (backend.state.value.isPlaying) backend.pause()
             viewModelScope.launch {
-                var ok = SpotifyApi.play(app, tape.playlistId)
-                if (!ok) {
-                    remotes[tape.source]?.pause()
-                    repeat(3) {
-                        if (!ok) {
-                            delay(1300)
-                            ok = SpotifyApi.play(app, tape.playlistId)
+                var r = SpotifyApi.play(app, tape.playlistId)
+                if (r.noDevice) {
+                    // Spotify is asleep: wake it quietly in the background and keep asking.
+                    wakeSpotify()
+                    repeat(7) {
+                        if (!r.ok && r.noDevice) {
+                            delay(1200)
+                            r = SpotifyApi.play(app, tape.playlistId)
                         }
                     }
                 }
-                if (!ok && loadedTape?.id == tape.id && !stopped) openPlaylistInApp(tape)
+                if (!r.ok && loadedTape?.id == tape.id && !stopped) {
+                    // Say why, then do it the old way: open the playlist in Spotify itself.
+                    android.widget.Toast.makeText(app, r.message + ". Opening Spotify instead.", android.widget.Toast.LENGTH_LONG).show()
+                    openPlaylistInApp(tape)
+                }
             }
             return
         }
         openPlaylistInApp(tape)
+    }
+
+    /** Kept while Spotify is being woken, so the connection isn't dropped straight away. */
+    private var spotifyWaker: android.media.browse.MediaBrowser? = null
+
+    /**
+     * Wakes Spotify without showing it: knocking on the door it keeps for car screens and the like
+     * starts it up in the background (whether or not it lets us in), which is enough for it to
+     * report this phone as a place it can play.
+     */
+    private fun wakeSpotify() {
+        val app = getApplication<Application>()
+        val pkg = Source.SPOTIFY.packageName ?: return
+        runCatching {
+            val door = app.packageManager.queryIntentServices(Intent("android.media.browse.MediaBrowserService").setPackage(pkg), 0)
+                .firstOrNull()?.serviceInfo ?: return
+            spotifyWaker?.disconnect()
+            val browser = android.media.browse.MediaBrowser(app, android.content.ComponentName(door.packageName, door.name), object : android.media.browse.MediaBrowser.ConnectionCallback() {}, null)
+            spotifyWaker = browser
+            browser.connect()
+            viewModelScope.launch {
+                delay(12_000)
+                if (spotifyWaker === browser) {
+                    runCatching { browser.disconnect() }
+                    spotifyWaker = null
+                }
+            }
+        }
+        // And the plain way, for when Spotify is running but dozing.
+        remotes[Source.SPOTIFY]?.pause()
     }
 
     /** Opens the tape's playlist in its own app and has it play, then comes back here. */
