@@ -6,6 +6,9 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import dev.foldman.deck.YouTubeApi
+import androidx.activity.result.IntentSenderRequest
+import com.google.android.gms.auth.api.identity.Identity
 import android.view.KeyEvent
 import android.content.pm.ActivityInfo
 import androidx.window.layout.FoldingFeature
@@ -71,6 +74,12 @@ class MainActivity : ComponentActivity() {
                 val guard = getSystemService(android.app.KeyguardManager::class.java)
                 if (deckUi.lockScreen && !deckUi.coverShown && guard?.isKeyguardLocked == true) guard.requestDismissKeyguard(this@MainActivity, null)
             }
+            // Foldy Streaman: Google's own "allow Foldy to see your YouTube playlists" screen.
+            val youTubeLogin = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { res ->
+                runCatching { Identity.getAuthorizationClient(this@MainActivity).getAuthorizationResultFromIntent(res.data) }
+                    .onSuccess { vm.setYouTubeSignedIn(it.accessToken != null, if (it.accessToken == null) "Google didn't allow it." else null) }
+                    .onFailure { vm.setYouTubeSignedIn(false, googleLoginProblem(it)) }
+            }
             // Foldy Streaman: a picture for a tape's J-card, from Android's photo picker.
             var photoForTape by rememberSaveable { mutableStateOf<String?>(null) }
             val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -104,6 +113,15 @@ class MainActivity : ComponentActivity() {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 FoldmanScreen(
                     vm, windowLayout,
+                    onYouTubeLogin = {
+                        Identity.getAuthorizationClient(this@MainActivity).authorize(YouTubeApi.request())
+                            .addOnSuccessListener { r ->
+                                val ask = r.pendingIntent
+                                if (r.hasResolution() && ask != null) youTubeLogin.launch(IntentSenderRequest.Builder(ask.intentSender).build())
+                                else vm.setYouTubeSignedIn(true)
+                            }
+                            .addOnFailureListener { vm.setYouTubeSignedIn(false, googleLoginProblem(it)) }
+                    },
                     onPickFolder = { folderPicker.launch(null) },
                     onInstallApp = ::openStoreListing,
                     onAppleSignIn = { vm.appleSignInIntent()?.let(appleSignIn::launch) },
@@ -162,6 +180,18 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         spotifyLoginFrom(intent)
+    }
+
+    /** Foldy Streaman: what went wrong with the Google login, in plain words. */
+    private fun googleLoginProblem(e: Throwable): String {
+        val code = (e as? com.google.android.gms.common.api.ApiException)?.statusCode
+        return when (code) {
+            // 10 = Google doesn't recognise this app: the Android client isn't registered (or not for this copy).
+            10 -> "Google doesn't recognise this app yet. Check the Android client in the Google Cloud project (package name and SHA-1)."
+            16, 12501 -> "The Google login was cancelled."
+            7 -> "No internet for the Google login."
+            else -> "The Google login didn't work" + (code?.let { " (code $it)" } ?: "") + (e.message?.let { ": $it" } ?: ".")
+        }
     }
 
     /** Foldy Streaman: the browser coming back from "Log in with Spotify". */

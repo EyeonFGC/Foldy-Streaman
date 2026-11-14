@@ -51,6 +51,8 @@ class SettingsActions(
     val setLockScreen: (Boolean) -> Unit = {},
     val setNoticeMode: (dev.foldman.deck.NoticeMode) -> Unit = {},
     val spotifyLogin: () -> Unit = {},
+    val youTubeLogin: () -> Unit = {},
+    val youTubeLogout: () -> Unit = {},
     val spotifyLogout: () -> Unit = {},
     val setSpotifyClientId: (String) -> Unit = {},
     val setFrontShelf: (Boolean) -> Unit = {},
@@ -183,6 +185,16 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     if (ui.apple.signedIn) "SIGN OUT" else "SIGN IN", accent,
                     if (ui.apple.signedIn) actions.appleSignOut else actions.appleSignIn,
                 )
+            }
+            Section("YOUTUBE MUSIC") {
+                ActionRow(
+                    "Google account",
+                    if (ui.youTubeSignedIn) "Logged in. Pick your YouTube Music playlists from a list when you make a tape"
+                    else "Log in to pick your YouTube Music playlists from a list instead of pasting links",
+                    if (ui.youTubeSignedIn) "LOG OUT" else "LOG IN", accent,
+                    if (ui.youTubeSignedIn) actions.youTubeLogout else actions.youTubeLogin,
+                )
+                ui.youTubeMessage?.let { Text(it, style = Note.copy(color = Color(0xFFFF8A80))) }
             }
             Section("SPOTIFY") {
                 val name = ui.spotifyName

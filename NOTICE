@@ -24,7 +24,7 @@ app/src/main/res/values/strings.xml, deck/DeckViewModel.kt, deck/Tapes.kt, ui/Ca
 ui/Shelf.kt, ui/Panels.kt, ui/FoldmanScreen.kt, ui/TapeEditor.kt, ui/RackDeck.kt,
 app/src/test/java/dev/foldman/ui/PreviewShots.kt, remote/RemoteBackend.kt, MainActivity.kt,
 ui/BlackGold.kt, ui/Settings.kt, ui/Keys.kt, ui/MechSounds.kt, ui/Controls.kt,
-ui/JCard.kt, ui/TapeFonts.kt, ui/HeadphoneJack.kt, ui/HingeShade.kt, ui/CherryRed.kt, ui/RedChrome.kt, ui/SilverBlue.kt, ui/VolumeWheel.kt, ui/VolumeDial.kt, ui/KeyWell.kt, ui/InsideTheme.kt, ui/Hinges.kt, deck/Backup.kt, ui/SilverBlue.kt, deck/AudioOutput.kt, deck/TapePhotos.kt, deck/CoverSearch.kt, deck/SpotifyApi.kt, ui/BattLed.kt, ui/SportYellow.kt, ui/Notices.kt, ui/LockBadge.kt, remote/MediaListenerService.kt
+ui/JCard.kt, ui/TapeFonts.kt, ui/HeadphoneJack.kt, ui/HingeShade.kt, ui/CherryRed.kt, ui/RedChrome.kt, ui/SilverBlue.kt, ui/VolumeWheel.kt, ui/VolumeDial.kt, ui/KeyWell.kt, ui/InsideTheme.kt, ui/Hinges.kt, deck/Backup.kt, ui/SilverBlue.kt, deck/AudioOutput.kt, deck/TapePhotos.kt, deck/CoverSearch.kt, deck/SpotifyApi.kt, deck/YouTubeApi.kt, ui/BattLed.kt, ui/SportYellow.kt, ui/Notices.kt, ui/LockBadge.kt, remote/MediaListenerService.kt
 
 Fonts bundled in Foldy Streaman (app/src/main/res/font), from Google Fonts; licences in
 app/src/main/assets/font-licenses:

@@ -110,6 +110,10 @@ data class DeckUi(
     val lockScreen: Boolean = false,
     /** The folded front screen (the player) is what's showing, not the inside. */
     val coverShown: Boolean = false,
+    /** Logged in with Google, for picking YouTube Music playlists. */
+    val youTubeSignedIn: Boolean = false,
+    /** The last thing the Google login had to say (an error, usually). */
+    val youTubeMessage: String? = null,
     /** The logged-in Spotify account's name, or null when not logged in. */
     val spotifyName: String? = null,
     /** The Spotify app's Client ID as Foldy has it (blank = not set up yet). */
@@ -239,6 +243,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var spotifyName: String? = SpotifyApi.name(app)
     private var spotifyClientId: String = SpotifyApi.clientId(app)
     private var spotifyMessage: String? = null
+    private var youTubeSignedIn = prefs.getBoolean(KEY_YT_SIGNED_IN, false)
+    private var youTubeMessage: String? = null
     private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
     private var jcardDark = prefs.getBoolean(KEY_JCARD_DARK, false)
 
@@ -627,6 +633,14 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     fun setFrontShelf(on: Boolean) {
         frontShelf = on
         prefs.edit { putBoolean(KEY_FRONT_SHELF, on) }
+        tick()
+    }
+
+    /** The Google login finished (or was logged out of): remember it, and anything it had to say. */
+    fun setYouTubeSignedIn(on: Boolean, message: String? = null) {
+        youTubeSignedIn = on
+        youTubeMessage = message
+        prefs.edit { putBoolean(KEY_YT_SIGNED_IN, on) }
         tick()
     }
 
@@ -1286,6 +1300,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             spotifyName = spotifyName,
             spotifyClientId = spotifyClientId,
             spotifyMessage = spotifyMessage,
+            youTubeSignedIn = youTubeSignedIn,
+            youTubeMessage = youTubeMessage,
             audioElsewhere = audioElsewhere,
             frontShelf = frontShelf,
             jcardDark = jcardDark,
@@ -1342,6 +1358,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
         private const val KEY_VOLUME_KEYS = "volume_keys"
+        private const val KEY_YT_SIGNED_IN = "youtube_signed_in"
         private const val KEY_LOCK_SCREEN = "lock_screen"
         private const val KEY_NOTICES = "notices_on_player"
         private const val KEY_FRONT_SHELF = "front_shelf"

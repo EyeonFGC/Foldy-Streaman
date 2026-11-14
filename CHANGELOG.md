@@ -2,6 +2,13 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.35.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Log in with Google for YouTube Music** (Settings > YouTube Music). Once logged in, a blank tape's J-card and the PLAYLIST button offer "Pick from my YT Music playlists": your own playlists, with "Liked music" first. The tape takes the playlist's name and cover picture if it has none yet.
+- Foldy only asks to see your YouTube playlists (read-only). The login is Google's own screen; Foldy never sees the password.
+- Needs: a Google Cloud project with the YouTube Data API v3 switched on, your Google account added as a test user, and an Android client registered for package `dev.foldman.streaman` with the app's SHA-1 fingerprint.
+
 ## [0.34.4] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

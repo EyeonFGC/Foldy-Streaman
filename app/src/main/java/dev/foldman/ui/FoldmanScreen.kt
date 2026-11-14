@@ -87,6 +87,7 @@ fun FoldmanScreen(
     onPickPhoto: (tapeId: String) -> Unit = {},
     onBackup: () -> Unit = {},
     onRestore: () -> Unit = {},
+    onYouTubeLogin: () -> Unit = {},
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val anim = rememberDeckAnimations(ui.transport, ui.progress)
@@ -168,6 +169,8 @@ fun FoldmanScreen(
             setLockScreen = vm::setLockScreen,
             setNoticeMode = vm::setNoticeMode,
             spotifyLogin = vm::spotifyLogin,
+            youTubeLogin = onYouTubeLogin,
+            youTubeLogout = { vm.setYouTubeSignedIn(false) },
             spotifyLogout = vm::spotifyLogout,
             setSpotifyClientId = vm::setSpotifyClientId,
             setFrontShelf = vm::setFrontShelf,

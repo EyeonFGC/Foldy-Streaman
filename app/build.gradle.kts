@@ -21,8 +21,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "0.34.4"
-val appVersionCode = 60
+val appVersionName = "0.35.0"
+val appVersionCode = 61
 
 base {
     archivesName = "FoldyStreaman-$appVersionName"
@@ -119,6 +119,8 @@ dependencies {
     implementation("androidx.media3:media3-session:1.11.1")
     implementation("androidx.window:window:1.5.1")
     implementation("androidx.palette:palette-ktx:1.0.0")
+    // Foldy Streaman: "Log in with Google" for listing YouTube Music playlists.
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
 
     // Apple's MusicKit for Android AARs (musickitauth-release-*.aar, mediaplayback-release-*.aar),
     // downloaded from developer.apple.com. Optional: the app finds them at runtime.
