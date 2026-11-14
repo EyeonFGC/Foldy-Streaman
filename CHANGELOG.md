@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.14.4] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **Moving and zooming the J-card picture is smooth.** Each swipe or pinch used to move the picture only a tiny bit, because the gesture restarted every time the picture moved; now it follows your fingers all the way.
+
 ## [0.14.3] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed

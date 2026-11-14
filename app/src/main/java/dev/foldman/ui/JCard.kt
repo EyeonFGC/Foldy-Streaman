@@ -101,16 +101,19 @@ fun TapePhoto(
 ) {
     val photo = rememberPhoto(path)
     var frame by remember { mutableStateOf(IntSize.Zero) }
-    val gestures = if (onMove == null || photo == null) Modifier else Modifier.pointerInput(photo, x, y, zoom) {
-        var px = x
-        var py = y
-        var pz = zoom
+    // Where the picture is during a gesture. Kept here (not restarting the gesture each time the
+    // picture moves) so one swipe or pinch follows the fingers all the way.
+    val pos = remember { floatArrayOf(x, y, zoom) }
+    androidx.compose.runtime.SideEffect { pos[0] = x; pos[1] = y; pos[2] = zoom }
+    val move by androidx.compose.runtime.rememberUpdatedState(onMove)
+    val gestures = if (onMove == null || photo == null) Modifier else Modifier.pointerInput(photo) {
         detectTransformGestures { _, pan, z, _ ->
-            pz = (pz * z).coerceIn(1f, 4f)
+            val pz = (pos[2] * z).coerceIn(1f, 4f)
             val (ox, oy) = overflow(photo, frame, pz)
-            px = if (ox > 0f) (px + pan.x / ox).coerceIn(-1f, 1f) else 0f
-            py = if (oy > 0f) (py + pan.y / oy).coerceIn(-1f, 1f) else 0f
-            onMove(px, py, pz)
+            val px = if (ox > 0f) (pos[0] + pan.x / ox).coerceIn(-1f, 1f) else 0f
+            val py = if (oy > 0f) (pos[1] + pan.y / oy).coerceIn(-1f, 1f) else 0f
+            pos[0] = px; pos[1] = py; pos[2] = pz
+            move?.invoke(px, py, pz)
         }
     }
     Box(modifier.clip(RoundedCornerShape(2.dp)).background(Color(0xFFD9CFBC)).then(gestures), contentAlignment = Alignment.Center) {
