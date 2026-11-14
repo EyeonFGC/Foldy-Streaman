@@ -207,9 +207,12 @@ internal fun RackDeckLayout(
     }
 
     Box(modifier.onGloballyPositioned { boxOrigin = it.positionInRoot() }) {
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // On a Fold the rack and the deck are equal halves either side of the fold, with hinges
+        // down the gap between them. A phone that doesn't fold keeps the rack a little narrower.
+        val hinges = !ui.phoneMode && ui.hingeStyle != dev.foldman.deck.HingeStyle.NONE
+        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(if (hinges) 0.dp else 12.dp)) {
             // The rack.
-            Column(Modifier.weight(0.46f).fillMaxHeight()) {
+            Column(Modifier.weight(if (hinges) 0.5f else 0.46f).fillMaxHeight()) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text("CASSETTE RACK", style = EngravedCaps.copy(color = look.label, fontSize = 13.sp, letterSpacing = 2.sp))
                     Spacer(Modifier.width(14.dp))
@@ -285,8 +288,12 @@ internal fun RackDeckLayout(
                 )
             }
 
+            if (hinges) {
+                if (ui.hingeStyle == dev.foldman.deck.HingeStyle.PIANO) PianoHinge(theme = ui.theme) else FoldHinges(theme = ui.theme)
+            }
+
             // The open deck.
-            Column(Modifier.weight(0.54f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(if (hinges) 0.5f else 0.54f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                 // The deck floor, with a slot only a millimetre or so bigger than the tape.
                 BoxWithConstraints(
                     Modifier

@@ -64,6 +64,13 @@ class MainActivity : ComponentActivity() {
                 if (uri != null && id != null) vm.setTapePhoto(id, uri)
                 photoForTape = null
             }
+            // Foldy Streaman: back up tapes to a file, and load them back.
+            val backupSaver = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+                if (uri != null) vm.exportBackup(uri)
+            }
+            val backupLoader = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                if (uri != null) vm.importBackup(uri)
+            }
             val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
                 if (uri != null) {
                     contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -86,6 +93,8 @@ class MainActivity : ComponentActivity() {
                     onPickFolder = { folderPicker.launch(null) },
                     onInstallApp = ::openStoreListing,
                     onAppleSignIn = { vm.appleSignInIntent()?.let(appleSignIn::launch) },
+                    onBackup = { backupSaver.launch("foldy-streaman-tapes.json") },
+                    onRestore = { backupLoader.launch(arrayOf("application/json", "application/octet-stream", "text/plain", "*/*")) },
                     onPickPhoto = { id ->
                         photoForTape = id
                         photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))

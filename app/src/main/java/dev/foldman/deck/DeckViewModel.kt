@@ -42,6 +42,13 @@ data class LabelPalette(val paper: Color, val stripe: Color, val stripe2: Color,
     }
 }
 
+/** Foldy Streaman: what runs down the fold of the open player. */
+enum class HingeStyle(val label: String) {
+    PIANO("One long hinge"),
+    THREE("Three hinges"),
+    NONE("None"),
+}
+
 /** Foldy Streaman: how the player looks. */
 enum class DeckTheme(val label: String) {
     ORIGINAL("Original"),
@@ -94,6 +101,9 @@ data class DeckUi(
     val frontShelf: Boolean = false,
     /** Settings: adapters switched off, left off the rack. */
     val hiddenSources: Set<Source> = emptySet(),
+    val hingeStyle: HingeStyle = HingeStyle.PIANO,
+    /** The last backup or restore, said in plain words (shown in Settings). */
+    val backupMessage: String? = null,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -201,6 +211,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private var hiddenSources: Set<Source> = prefs.getStringSet(KEY_HIDDEN_SOURCES, emptySet()).orEmpty()
         .mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
+    private var hingeStyle = runCatching { HingeStyle.valueOf(prefs.getString(KEY_HINGES, null) ?: "") }.getOrDefault(HingeStyle.PIANO)
+    private var backupMessage: String? = null
 
     init {
         prefs.getString(KEY_FOLDER, null)?.let { loadFolder(Uri.parse(it), firstLoad = true) }
@@ -457,6 +469,68 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     // region Opening the phone, audio output, J-card photos (Foldy Streaman)
 
+
+    fun setHingeStyle(h: HingeStyle) {
+        hingeStyle = h
+        prefs.edit { putString(KEY_HINGES, h.name) }
+        tick()
+    }
+
+    // region Backup (Foldy Streaman)
+
+    private fun settingsJson() = org.json.JSONObject()
+        .put("theme", theme.name)
+        .put("keySounds", prefs.getBoolean(KEY_SOUNDS, true))
+        .put("haptics", prefs.getBoolean(KEY_HAPTICS, true))
+        .put("stopOnOpen", stopOnOpen)
+        .put("frontShelf", frontShelf)
+        .put("hiddenSources", org.json.JSONArray(hiddenSources.map { it.name }))
+        .put("hinges", hingeStyle.name)
+
+    /** Saves every tape (pictures included) and the settings to the file the person picked. */
+    fun exportBackup(uri: Uri) {
+        val app = getApplication<Application>()
+        val snapshot = tapes
+        val settings = settingsJson()
+        viewModelScope.launch {
+            backupMessage = runCatching {
+                withContext(Dispatchers.IO) { TapeBackup.write(app, uri, snapshot, settings) }
+                "Backed up ${snapshot.size} tape${if (snapshot.size == 1) "" else "s"} and your settings."
+            }.getOrElse { "Backup didn't work: ${it.message ?: "unknown problem"}" }
+            tick()
+        }
+    }
+
+    /** Loads a backup: its tapes join the rack (a tape already here is replaced), and its settings apply. */
+    fun importBackup(uri: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            backupMessage = runCatching {
+                val (restored, settings) = withContext(Dispatchers.IO) { TapeBackup.read(app, uri) }
+                val ids = restored.map { it.id }.toSet()
+                tapes = tapes.filterNot { it.id in ids } + restored
+                tapeStore.save(tapes)
+                settings?.let { applySettings(it) }
+                "Restored ${restored.size} tape${if (restored.size == 1) "" else "s"}${if (settings != null) " and your settings" else ""}."
+            }.getOrElse { "Restore didn't work: ${it.message ?: "unknown problem"}" }
+            tick()
+        }
+    }
+
+    private fun applySettings(o: org.json.JSONObject) {
+        runCatching { DeckTheme.valueOf(o.optString("theme")) }.getOrNull()?.let { setTheme(it) }
+        if (o.has("keySounds")) prefs.edit { putBoolean(KEY_SOUNDS, o.optBoolean("keySounds", true)) }
+        if (o.has("haptics")) prefs.edit { putBoolean(KEY_HAPTICS, o.optBoolean("haptics", true)) }
+        if (o.has("stopOnOpen")) setStopOnOpen(o.optBoolean("stopOnOpen"))
+        if (o.has("frontShelf")) setFrontShelf(o.optBoolean("frontShelf"))
+        o.optJSONArray("hiddenSources")?.let { arr ->
+            hiddenSources = List(arr.length()) { arr.optString(it) }.mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
+            prefs.edit { putStringSet(KEY_HIDDEN_SOURCES, hiddenSources.map { it.name }.toSet()) }
+        }
+        runCatching { HingeStyle.valueOf(o.optString("hinges")) }.getOrNull()?.let { setHingeStyle(it) }
+    }
+
+    // endregion
 
     /** Settings > Adapters on the rack: show or hide one adapter (your own tapes aren't affected). */
     fun setSourceShown(s: Source, shown: Boolean) {
@@ -948,6 +1022,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             audioElsewhere = audioElsewhere,
             frontShelf = frontShelf,
             hiddenSources = hiddenSources,
+            hingeStyle = hingeStyle,
+            backupMessage = backupMessage,
         )
     }
 
@@ -998,6 +1074,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
         private const val KEY_FRONT_SHELF = "front_shelf"
         private const val KEY_HIDDEN_SOURCES = "hidden_sources"
+        private const val KEY_HINGES = "hinges"
         /** How long to wait for another volume-button tap before acting. */
         private const val MULTI_TAP_MS = 380L
         private const val KEY_FOLDER = "folder"

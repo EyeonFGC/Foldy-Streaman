@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.16.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Hinges down the fold** (Fold only): a long piano hinge in the theme's colours (blue and chrome, gold, red and chrome, silver and blue), centred in a gap between the rack and the deck, which are now equal halves. Settings > Theme > Hinges: One long hinge (default), Three hinges, or None.
+- **Back up and restore tapes** (Settings > Backup): SAVE writes every tape (pictures, fonts, colours, positions and all) and your settings to one file wherever you choose; LOAD brings them all back, e.g. after reinstalling.
+
 ## [0.15.1] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed

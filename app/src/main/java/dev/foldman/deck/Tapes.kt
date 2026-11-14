@@ -100,48 +100,46 @@ fun playlistIdFrom(text: String): String? {
     return runCatching { Uri.parse(withScheme).getQueryParameter("list") }.getOrNull()?.takeIf { it.isNotBlank() }
 }
 
+/** One tape as JSON (used for the app's own storage and for backups). */
+fun CustomTape.toJson(): JSONObject = JSONObject()
+    .put("id", id)
+    .put("title", title)
+    .put("playlist", playlistId)
+    .put("service", service.name)
+    .put("shell", shell)
+    .put("label", label)
+    .put("font", font.name)
+    .put("photo", photoPath ?: "")
+    .put("photoX", photoX.toDouble())
+    .put("photoY", photoY.toDouble())
+    .put("photoZoom", photoZoom.toDouble())
+    .put("photoOnLabel", photoOnLabel)
+
+fun tapeFromJson(o: JSONObject): CustomTape = CustomTape(
+    id = o.getString("id"),
+    title = o.optString("title"),
+    playlistId = o.getString("playlist"),
+    service = runCatching { TapeService.valueOf(o.optString("service")) }.getOrDefault(TapeService.YT_MUSIC),
+    shell = o.optLong("shell", TapeColors.shells[1]),
+    label = o.optLong("label", TapeColors.labels[0]),
+    font = runCatching { TapeFont.valueOf(o.optString("font")) }.getOrDefault(TapeFont.CLASSIC),
+    photoPath = o.optString("photo").takeIf { it.isNotBlank() },
+    photoX = o.optDouble("photoX", 0.0).toFloat(),
+    photoY = o.optDouble("photoY", 0.0).toFloat(),
+    photoZoom = o.optDouble("photoZoom", 1.0).toFloat(),
+    photoOnLabel = o.optBoolean("photoOnLabel", false),
+)
+
 /** Keeps the tapes in the app's settings as JSON. */
 class TapeStore(private val prefs: SharedPreferences) {
     fun load(): List<CustomTape> = runCatching {
         val arr = JSONArray(prefs.getString(KEY, "[]"))
-        List(arr.length()) { i ->
-            val o = arr.getJSONObject(i)
-            CustomTape(
-                id = o.getString("id"),
-                title = o.optString("title"),
-                playlistId = o.getString("playlist"),
-                service = runCatching { TapeService.valueOf(o.optString("service")) }.getOrDefault(TapeService.YT_MUSIC),
-                shell = o.optLong("shell", TapeColors.shells[1]),
-                label = o.optLong("label", TapeColors.labels[0]),
-                font = runCatching { TapeFont.valueOf(o.optString("font")) }.getOrDefault(TapeFont.CLASSIC),
-                photoPath = o.optString("photo").takeIf { it.isNotBlank() },
-                photoX = o.optDouble("photoX", 0.0).toFloat(),
-                photoY = o.optDouble("photoY", 0.0).toFloat(),
-                photoZoom = o.optDouble("photoZoom", 1.0).toFloat(),
-                photoOnLabel = o.optBoolean("photoOnLabel", false),
-            )
-        }
+        List(arr.length()) { i -> tapeFromJson(arr.getJSONObject(i)) }
     }.getOrDefault(emptyList())
 
     fun save(tapes: List<CustomTape>) {
         val arr = JSONArray()
-        tapes.forEach { t ->
-            arr.put(
-                JSONObject()
-                    .put("id", t.id)
-                    .put("title", t.title)
-                    .put("playlist", t.playlistId)
-                    .put("service", t.service.name)
-                    .put("shell", t.shell)
-                    .put("label", t.label)
-                    .put("font", t.font.name)
-                    .put("photo", t.photoPath ?: "")
-                    .put("photoX", t.photoX.toDouble())
-                    .put("photoY", t.photoY.toDouble())
-                    .put("photoZoom", t.photoZoom.toDouble())
-                    .put("photoOnLabel", t.photoOnLabel),
-            )
-        }
+        tapes.forEach { arr.put(it.toJson()) }
         prefs.edit { putString(KEY, arr.toString()) }
     }
 

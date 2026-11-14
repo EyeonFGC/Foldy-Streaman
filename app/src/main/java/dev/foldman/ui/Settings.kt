@@ -45,6 +45,9 @@ class SettingsActions(
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setFrontShelf: (Boolean) -> Unit = {},
     val setSourceShown: (dev.foldman.deck.Source, Boolean) -> Unit = { _, _ -> },
+    val setHingeStyle: (dev.foldman.deck.HingeStyle) -> Unit = {},
+    val backup: () -> Unit = {},
+    val restore: () -> Unit = {},
 ) {
     companion object {
         val None = SettingsActions({}, {}, {}, {}, {}, {}, {})
@@ -96,6 +99,25 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                 }
                 Spacer(Modifier.height(6.dp))
                 Text("Changes the front screen player and the highlights in here.", style = Note)
+                if (!ui.phoneMode) {
+                    Spacer(Modifier.height(14.dp))
+                    Text("Hinges down the fold", style = Label)
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        dev.foldman.deck.HingeStyle.entries.forEach { h ->
+                            val on = ui.hingeStyle == h
+                            Text(
+                                h.label.uppercase(),
+                                style = EngravedCaps.copy(color = if (on) accent else Color(0xFFD9D2C8), fontSize = 10.sp, letterSpacing = 1.5.sp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .border(if (on) 2.dp else 1.dp, if (on) accent else Color.White.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                    .clickable { actions.setHingeStyle(h) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+                }
             }
             Section("FEEL") {
                 ToggleRow("Click sounds", "Keys, tapes going in and out", ui.keySounds, accent) { actions.setKeySounds(!ui.keySounds) }
@@ -135,6 +157,11 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     val on = src !in ui.hiddenSources
                     ToggleRow(words.first, words.second, on, accent) { actions.setSourceShown(src, !on) }
                 }
+            }
+            Section("BACKUP") {
+                ActionRow("Back up tapes", "Saves every tape (pictures and all) and your settings to one file", "SAVE", accent, actions.backup)
+                ActionRow("Restore tapes", "Loads a backup file, e.g. after reinstalling the app", "LOAD", accent, actions.restore)
+                ui.backupMessage?.let { Text(it, style = Note.copy(color = accent)) }
             }
             Section("MY MUSIC FILES") {
                 ActionRow(

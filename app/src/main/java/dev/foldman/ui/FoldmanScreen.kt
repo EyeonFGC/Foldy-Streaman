@@ -85,6 +85,8 @@ fun FoldmanScreen(
     onInstallApp: (Source) -> Unit,
     onAppleSignIn: () -> Unit,
     onPickPhoto: (tapeId: String) -> Unit = {},
+    onBackup: () -> Unit = {},
+    onRestore: () -> Unit = {},
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val anim = rememberDeckAnimations(ui.transport, ui.progress)
@@ -164,6 +166,9 @@ fun FoldmanScreen(
             setStopOnOpen = vm::setStopOnOpen,
             setFrontShelf = vm::setFrontShelf,
             setSourceShown = vm::setSourceShown,
+            setHingeStyle = vm::setHingeStyle,
+            backup = onBackup,
+            restore = onRestore,
         )
     }
     val fold = windowLayout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull()

@@ -329,8 +329,9 @@ class PreviewShots {
     }
 
     private fun inside(theme: DeckTheme, name: String) {
-        val t0 = tapes[0].copy(photoOnLabel = true)
-        val u = ui.copy(theme = theme, tape = t0, tapes = listOf(t0) + tapes.drop(1), tapeCued = false, title = "Fast Car", artist = "Tracy Chapman")
+        // No pictures here: the preview tool crashes drawing them in this layout (phones are fine).
+        val plain = tapes.map { it.copy(photoPath = null) }
+        val u = ui.copy(theme = theme, tape = plain[0], tapes = plain, tapeCued = false, title = "Fast Car", artist = "Tracy Chapman")
         rule.setContent {
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(theme)) {
                 RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp))
