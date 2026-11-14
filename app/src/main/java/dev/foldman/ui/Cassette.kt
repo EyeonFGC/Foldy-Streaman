@@ -15,6 +15,7 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
@@ -64,6 +65,7 @@ const val TAPE_WINDOW_ASPECT = 84f / 36f
 @Composable
 fun TapeWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, vertical: Boolean = false) {
     val measurer = rememberTextMeasurer()
+    val labelPhoto = rememberPhoto(ui.tape?.takeIf { it.photoOnLabel }?.photoPath)
     val shell by androidx.compose.animation.animateColorAsState(shellColor(ui), tween(600), label = "shell")
     Canvas(
         modifier
@@ -94,7 +96,7 @@ fun TapeWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, 
                     translate(-CROP.left * u, -CROP.top * u)
                     scale(u, u, Offset.Zero)
                 }) {
-                    if (!ui.empty) drawCassette(ui, anim.reels, shell, measurer, u)
+                    if (!ui.empty) drawCassette(ui, anim.reels, shell, measurer, u, labelPhoto)
                 }
             }
             // Smoked glass: tint, a long diagonal reflection and a soft top glare.
@@ -118,7 +120,7 @@ fun TapeWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, 
 }
 
 /** Draws the cassette in its own millimetre space; [u] only scales stroke widths of text. */
-private fun DrawScope.drawCassette(ui: DeckUi, reels: ReelMotion, shell: Color, measurer: TextMeasurer, u: Float) {
+private fun DrawScope.drawCassette(ui: DeckUi, reels: ReelMotion, shell: Color, measurer: TextMeasurer, u: Float, labelPhoto: ImageBitmap? = null) {
     val light = shell.luminance() > 0.5f
     val shellRR = RoundRect(0f, 0f, 100f, 64f, CornerRadius(3.4f))
     val shellPath = Path().apply { addRoundRect(shellRR) }
@@ -162,7 +164,7 @@ private fun DrawScope.drawCassette(ui: DeckUi, reels: ReelMotion, shell: Color, 
     }
     drawPath(windowPath, Color.Black.copy(alpha = 0.55f), style = Stroke(0.5f))
 
-    drawLabel(ui, ui.tape?.let(::tapePalette) ?: ui.label, measurer, windowRR, u)
+    drawLabel(ui, ui.tape?.let(::tapePalette) ?: ui.label, measurer, windowRR, u, labelPhoto)
     drawBottomBridge(shell, light)
 
     listOf(Offset(4.4f, 4.4f), Offset(95.6f, 4.4f), Offset(4.4f, 59.6f), Offset(95.6f, 59.6f), Offset(50f, 55.5f))
@@ -230,17 +232,26 @@ private fun DrawScope.drawHub(center: Offset, angle: Float, delta: Float) {
     drawCircle(Color(0xFF2B2C2F), 0.5f, center)
 }
 
-private fun DrawScope.drawLabel(ui: DeckUi, palette: LabelPalette, measurer: TextMeasurer, window: RoundRect, u: Float) {
+private fun DrawScope.drawLabel(ui: DeckUi, palette: LabelPalette, measurer: TextMeasurer, window: RoundRect, u: Float, labelPhoto: ImageBitmap? = null) {
     val labelRect = RoundRect(5.5f, 4f, 94.5f, 48.5f, CornerRadius(2f))
     val labelPath = Path().apply {
         fillType = PathFillType.EvenOdd
         addRoundRect(labelRect)
         addRoundRect(RoundRect(window.left - 1f, window.top - 1f, window.right + 1f, window.bottom + 1f, CornerRadius(4f)))
     }
-    // Your own tapes show the label you designed, not the album cover.
-    val art = if (ui.tape != null) null else ui.artwork
+    // Your own tapes show the label you designed (with its J-card picture if you switched that on),
+    // not the album cover.
+    val tape = ui.tape
+    val art = if (tape != null) labelPhoto else ui.artwork
     clipPath(labelPath) {
-        if (art != null) {
+        if (art != null && tape != null) {
+            // The J-card picture where the label colour goes, placed as on the J-card, under the stripes.
+            drawPlacedImage(art, Rect(labelRect.left, labelRect.top, labelRect.right, labelRect.bottom), tape.photoX, tape.photoY, tape.photoZoom)
+            drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.1f), Color.Transparent, Color.Black.copy(alpha = 0.25f)), 4f, 48.5f), Offset(5.5f, 4f), Size(89f, 44.5f))
+            drawRect(palette.stripe, Offset(5.5f, 27f), Size(89f, 3.6f))
+            drawRect(palette.stripe2, Offset(5.5f, 31.4f), Size(89f, 2.2f))
+            drawRect(palette.stripe.copy(alpha = 0.55f), Offset(5.5f, 34.4f), Size(89f, 1.0f))
+        } else if (art != null) {
             drawCroppedImage(art, Rect(labelRect.left, labelRect.top, labelRect.right, labelRect.bottom))
             drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.15f), Color.Transparent, Color.Black.copy(alpha = 0.3f)), 4f, 48.5f), Offset(5.5f, 4f), Size(89f, 44.5f))
         } else {
@@ -344,15 +355,49 @@ fun tapePalette(tape: dev.foldman.deck.CustomTape): LabelPalette {
 @Composable
 fun FullCassette(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, vertical: Boolean = true) {
     val measurer = rememberTextMeasurer()
+    val labelPhoto = rememberPhoto(ui.tape?.takeIf { it.photoOnLabel }?.photoPath)
     val shell by androidx.compose.animation.animateColorAsState(shellColor(ui), tween(600), label = "shell")
-    Canvas(modifier.quarterTurn(vertical).aspectRatio(100f / 64f)) {
-        val u = size.width / 100f
-        // Slides in from above (the right of the canvas once stood on end) when a tape is loaded.
-        val slide = anim.insert.value
-        translate(0f, -slide * size.height * 1.2f - anim.pop.value * u * 5f) {
-            withTransform({ scale(u, u, Offset.Zero) }) {
-                if (!ui.empty) drawCassette(ui, anim.reels, shell, measurer, u)
+    Canvas(modifier.aspectRatio(if (vertical) 64f / 100f else 100f / 64f)) {
+        // Stood on end, the cassette is drawn turned a quarter anticlockwise (label to the left)
+        // right here, rather than drawn flat and the whole layer rotated afterwards.
+        val long = if (vertical) size.height else size.width
+        val short = if (vertical) size.width else size.height
+        val u = long / 100f
+        withTransform({
+            if (vertical) {
+                translate(0f, size.height)
+                rotate(-90f, Offset.Zero)
+            }
+        }) {
+            // Slides in from above (the right once stood on end) when a tape is loaded.
+            val slide = anim.insert.value
+            translate(0f, -slide * short * 1.2f - anim.pop.value * u * 5f) {
+                withTransform({ scale(u, u, Offset.Zero) }) {
+                    if (!ui.empty) drawCassette(ui, anim.reels, shell, measurer, u, labelPhoto)
+                }
             }
         }
     }
+}
+
+/** Draws [image] covering [dst], positioned like the J-card picture: [x], [y] -1..1, [zoom] 1 = just covers. */
+private fun DrawScope.drawPlacedImage(image: ImageBitmap, dst: Rect, x: Float, y: Float, zoom: Float) {
+    // The slice of the picture that shows: the frame's shape, smaller as you zoom in, kept inside
+    // the picture (an out-of-range slice would crash the drawing).
+    val s = maxOf(dst.width / image.width, dst.height / image.height) * zoom.coerceAtLeast(1f)
+    val sw = (dst.width / s).roundToInt().coerceIn(1, image.width)
+    val sh = (dst.height / s).roundToInt().coerceIn(1, image.height)
+    val sx = ((image.width - sw) / 2f * (1f - x.coerceIn(-1f, 1f))).roundToInt().coerceIn(0, image.width - sw)
+    val sy = ((image.height - sh) / 2f * (1f - y.coerceIn(-1f, 1f))).roundToInt().coerceIn(0, image.height - sh)
+    // Paint the label with the picture as a pattern fill, placed so the chosen slice fills [dst].
+    // (Drawing the bitmap directly inside the cassette's cut-out label crashed the renderer.)
+    val perPx = dst.width / sw
+    val shader = android.graphics.BitmapShader(image.asAndroidBitmap(), android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP)
+    shader.setLocalMatrix(
+        android.graphics.Matrix().apply {
+            setScale(perPx, dst.height / sh)
+            postTranslate(dst.left - sx * perPx, dst.top - sy * (dst.height / sh))
+        },
+    )
+    drawRect(androidx.compose.ui.graphics.ShaderBrush(shader), topLeft = Offset(dst.left, dst.top), size = Size(dst.width, dst.height))
 }

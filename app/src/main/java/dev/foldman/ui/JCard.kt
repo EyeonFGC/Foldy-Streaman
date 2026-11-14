@@ -78,7 +78,7 @@ const val PHOTO_STRIP_ASPECT = 2.4f
 
 /** The picture, loaded off the main thread. Null while loading or when there isn't one. */
 @Composable
-private fun rememberPhoto(path: String?): ImageBitmap? {
+internal fun rememberPhoto(path: String?): ImageBitmap? {
     val bmp by produceState<ImageBitmap?>(null, path) {
         value = if (path == null) null else withContext(Dispatchers.IO) { TapePhotos.load(path)?.asImageBitmap() }
     }
@@ -247,6 +247,35 @@ fun JCardSheet(
                 CardButton("◐", "COLOURS", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.COLOURS }
                 CardButton("♫", "PLAYLIST", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.PLAYLIST }
                 CardButton("✕", "DELETE", Modifier.weight(1f), JButtonStyle.METAL, ui.theme) { edit = JEdit.DELETE }
+            }
+            // Show the picture on the cassette itself, where the label colour normally goes.
+            Spacer(Modifier.height(14.dp))
+            val hasPhoto = tape.photoPath != null
+            val on = tape.photoOnLabel && hasPhoto
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(enabled = hasPhoto) { actions.save(tape.copy(photoOnLabel = !tape.photoOnLabel)) }
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("PICTURE ON THE CASSETTE", style = Typed.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp, color = if (hasPhoto) JInk else JInk.copy(alpha = 0.4f)))
+                    Text(
+                        if (hasPhoto) "Shows the picture on the tape's label, under the stripes" else "Add a picture first (PHOTO)",
+                        style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)),
+                    )
+                }
+                Box(
+                    Modifier
+                        .size(46.dp, 24.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (on) JRed else JInk.copy(alpha = if (hasPhoto) 0.35f else 0.15f)),
+                    contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
+                ) {
+                    Box(Modifier.padding(3.dp).size(18.dp).clip(RoundedCornerShape(9.dp)).background(JPaper))
+                }
             }
         }
         Spacer(Modifier.height(10.dp))

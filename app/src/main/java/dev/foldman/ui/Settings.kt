@@ -44,6 +44,7 @@ class SettingsActions(
     val appleSignOut: () -> Unit,
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setFrontShelf: (Boolean) -> Unit = {},
+    val setSourceShown: (dev.foldman.deck.Source, Boolean) -> Unit = { _, _ -> },
 ) {
     companion object {
         val None = SettingsActions({}, {}, {}, {}, {}, {}, {})
@@ -121,6 +122,19 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     if (ui.apple.signedIn) "SIGN OUT" else "SIGN IN", accent,
                     if (ui.apple.signedIn) actions.appleSignOut else actions.appleSignIn,
                 )
+            }
+            Section("ADAPTERS ON THE RACK") {
+                Text("Switch off the ones you don't use. Your own playlist tapes stay either way.", style = Note)
+                Spacer(Modifier.height(6.dp))
+                listOf(
+                    dev.foldman.deck.Source.LOCAL to ("My music files" to "Music files saved on this phone"),
+                    dev.foldman.deck.Source.YT_MUSIC to ("YT Music adapter" to "Controls whatever YT Music is playing"),
+                    dev.foldman.deck.Source.SPOTIFY to ("Spotify adapter" to "Controls whatever Spotify is playing"),
+                    dev.foldman.deck.Source.APPLE_MUSIC to ("Apple Music adapter" to "Controls whatever Apple Music is playing"),
+                ).forEach { (src, words) ->
+                    val on = src !in ui.hiddenSources
+                    ToggleRow(words.first, words.second, on, accent) { actions.setSourceShown(src, !on) }
+                }
             }
             Section("MY MUSIC FILES") {
                 ActionRow(

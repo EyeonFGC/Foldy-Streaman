@@ -79,7 +79,7 @@ object CherryRed {
 }
 
 /** Glossy injection-moulded plastic: a bright sheen up top, a black trim band along the bottom. */
-private fun Modifier.glossyRed(trim: Dp): Modifier = drawWithCache {
+internal fun Modifier.glossyRed(trim: Dp): Modifier = drawWithCache {
     val body = Brush.verticalGradient(listOf(CherryRed.BodyHi, CherryRed.Body, CherryRed.BodyLo))
     val sheen = Brush.linearGradient(
         listOf(Color.White.copy(alpha = 0.22f), Color.Transparent),

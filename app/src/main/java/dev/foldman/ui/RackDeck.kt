@@ -151,6 +151,8 @@ internal fun RackDeckLayout(
     previewCard: Int? = null,
 ) {
     var showSettings by remember { mutableStateOf(previewSettings) }
+    // Lettering on the body follows the theme (light on blue, black or red; dark blue on silver).
+    val look = insideLook(ui.theme)
     val view = LocalView.current
     val density = LocalDensity.current
     var boxOrigin by remember { mutableStateOf(Offset.Zero) }
@@ -193,7 +195,9 @@ internal fun RackDeckLayout(
         }
     }
 
-    val items = remember(ui.tapes) { Source.entries.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) } }
+    val items = remember(ui.tapes, ui.hiddenSources) {
+        Source.entries.filter { it !in ui.hiddenSources }.map { RackItem.Src(it) } + ui.tapes.map { RackItem.Mine(it) }
+    }
     LaunchedEffect(previewCard) { previewCard?.let { card = items[it] } }
     LaunchedEffect(previewDrag, deckBounds) {
         val (i, over) = previewDrag ?: return@LaunchedEffect
@@ -207,19 +211,19 @@ internal fun RackDeckLayout(
             // The rack.
             Column(Modifier.weight(0.46f).fillMaxHeight()) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("CASSETTE RACK", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 13.sp, letterSpacing = 2.sp))
+                    Text("CASSETTE RACK", style = EngravedCaps.copy(color = look.label, fontSize = 13.sp, letterSpacing = 2.sp))
                     Spacer(Modifier.width(14.dp))
                     Text(
                         "⚙ SETTINGS",
-                        style = EngravedCaps.copy(color = accentFor(ui.theme), fontSize = 10.sp, letterSpacing = 1.5.sp),
+                        style = EngravedCaps.copy(color = look.accent, fontSize = 10.sp, letterSpacing = 1.5.sp),
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .border(1.dp, accentFor(ui.theme).copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                            .border(1.dp, look.accent.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
                             .clickable { showSettings = true }
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                     Spacer(Modifier.weight(1f))
-                    Text("${items.size} TAPES", style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp))
+                    Text("${items.size} TAPES", style = EngravedCaps.copy(color = look.muted, fontSize = 9.sp))
                 }
                 Spacer(Modifier.height(10.dp))
                 Column(
@@ -276,7 +280,7 @@ internal fun RackDeckLayout(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "TAP A TAPE TO READ IT  ·  HOLD TO DRAG IT IN",
-                    style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 8.sp),
+                    style = EngravedCaps.copy(color = look.muted, fontSize = 8.sp),
                     maxLines = 2,
                 )
             }
@@ -377,19 +381,19 @@ internal fun RackDeckLayout(
                                 onClose != null -> "CLOSE THE LID TO PLAY  ·  SWIPE RIGHT TO EJECT"
                                 else -> "CLOSE LID TO PLAY  ·  SWIPE RIGHT TO EJECT"
                             },
-                            style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = if (onClose != null) 10.sp else 12.sp, letterSpacing = 2.sp),
+                            style = EngravedCaps.copy(color = look.label, fontSize = if (onClose != null) 10.sp else 12.sp, letterSpacing = 2.sp),
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                         Spacer(Modifier.height(3.dp))
                         Text(
                             deckStatus(ui),
-                            style = EngravedCaps.copy(color = Color(0xFF8C857C), fontSize = 9.sp),
+                            style = EngravedCaps.copy(color = look.muted, fontSize = 9.sp),
                             maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                         )
                     }
                     if (onClose != null) {
                         Spacer(Modifier.width(14.dp))
-                        CloseLidButton(accentFor(ui.theme), onClose)
+                        CloseLidButton(look.accent, onClose)
                     }
                 }
                 // No keys in here: like a real player, you open it to change the tape and close it to play.

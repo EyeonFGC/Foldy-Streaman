@@ -28,6 +28,8 @@ data class CustomTape(
     val photoX: Float = 0f,
     val photoY: Float = 0f,
     val photoZoom: Float = 1f,
+    /** Show the J-card picture on the cassette's label too, where the label colour goes. */
+    val photoOnLabel: Boolean = false,
 ) {
     /** The link that opens and plays the playlist in its app. */
     val playUrl: String get() = when (service) {
@@ -116,6 +118,7 @@ class TapeStore(private val prefs: SharedPreferences) {
                 photoX = o.optDouble("photoX", 0.0).toFloat(),
                 photoY = o.optDouble("photoY", 0.0).toFloat(),
                 photoZoom = o.optDouble("photoZoom", 1.0).toFloat(),
+                photoOnLabel = o.optBoolean("photoOnLabel", false),
             )
         }
     }.getOrDefault(emptyList())
@@ -135,7 +138,8 @@ class TapeStore(private val prefs: SharedPreferences) {
                     .put("photo", t.photoPath ?: "")
                     .put("photoX", t.photoX.toDouble())
                     .put("photoY", t.photoY.toDouble())
-                    .put("photoZoom", t.photoZoom.toDouble()),
+                    .put("photoZoom", t.photoZoom.toDouble())
+                    .put("photoOnLabel", t.photoOnLabel),
             )
         }
         prefs.edit { putString(KEY, arr.toString()) }

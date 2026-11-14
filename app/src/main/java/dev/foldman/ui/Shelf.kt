@@ -83,7 +83,7 @@ fun TapeShelf(ui: DeckUi, actions: ShelfActions, modifier: Modifier = Modifier) 
         var editing by remember { mutableStateOf<CustomTape?>(null) }
         var creating by remember { mutableStateOf(false) }
         Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
-            Source.entries.forEach { s ->
+            Source.entries.filter { it !in ui.hiddenSources }.forEach { s ->
                 TapeSpine(s, inDeck = s == ui.source && ui.tape == null, onClick = { actions.selectSource(s) })
                 Spacer(Modifier.height(8.dp))
             }

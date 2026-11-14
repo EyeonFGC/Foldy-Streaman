@@ -163,6 +163,7 @@ fun FoldmanScreen(
             appleSignOut = vm::signOutOfApple,
             setStopOnOpen = vm::setStopOnOpen,
             setFrontShelf = vm::setFrontShelf,
+            setSourceShown = vm::setSourceShown,
         )
     }
     val fold = windowLayout?.displayFeatures?.filterIsInstance<FoldingFeature>()?.firstOrNull()
@@ -205,12 +206,15 @@ fun FoldmanScreen(
                     DeckTheme.CHERRY_RED -> CoverCherryRed(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                 }
                 // Foldy Streaman: open to pick a tape, close to play.
-                Posture.Unfolded -> RackDeckLayout(
-                    ui, anim, deck, shelfActions,
-                    Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
-                    settings = settingsActions,
-                    onClose = if (ui.phoneMode) vm::closeDeck else null,
-                )
+                // Inside, the body round the rack and deck is the theme's own material.
+                Posture.Unfolded -> Box(Modifier.fillMaxSize().insideBody(ui.theme)) {
+                    RackDeckLayout(
+                        ui, anim, deck, shelfActions,
+                        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+                        settings = settingsActions,
+                        onClose = if (ui.phoneMode) vm::closeDeck else null,
+                    )
+                }
                 Posture.Tabletop -> {
                     val (topH, gap) = with(density) {
                         fold!!.bounds.top.toDp() to (fold.bounds.bottom - fold.bounds.top).toDp()

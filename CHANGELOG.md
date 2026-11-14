@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.15.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **The inside matches the theme.** Opened up, the body round the rack and the deck is the theme's own material (blue enamel, matte black, glossy cherry red, brushed silver), with lettering and highlights to match.
+- **Picture on the cassette** (per tape, on its J-card under the buttons): the J-card picture fills the cassette's label where the colour goes, under the stripes and the title strip.
+- **Settings > Adapters on the rack:** switch each adapter (My music files, YT Music, Spotify, Apple Music) off or on. Your own playlist tapes stay either way.
+
+### Changed
+- The upright cassette in the deck is drawn turned in place (no rotated layer), which also keeps the screen previews working.
+
 ## [0.14.5] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed

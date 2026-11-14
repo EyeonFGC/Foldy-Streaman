@@ -92,6 +92,8 @@ data class DeckUi(
     val audioElsewhere: Boolean = false,
     /** Settings: a TAPES button on the front screen opens a tape shelf there. */
     val frontShelf: Boolean = false,
+    /** Settings: adapters switched off, left off the rack. */
+    val hiddenSources: Set<Source> = emptySet(),
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -449,6 +451,16 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
     private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
+
+    private var hiddenSources: Set<Source> = prefs.getStringSet(KEY_HIDDEN_SOURCES, emptySet()).orEmpty()
+        .mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
+
+    /** Settings > Adapters on the rack: show or hide one adapter (your own tapes aren't affected). */
+    fun setSourceShown(s: Source, shown: Boolean) {
+        hiddenSources = if (shown) hiddenSources - s else hiddenSources + s
+        prefs.edit { putStringSet(KEY_HIDDEN_SOURCES, hiddenSources.map { it.name }.toSet()) }
+        tick()
+    }
 
     fun setFrontShelf(on: Boolean) {
         frontShelf = on
@@ -932,6 +944,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             stopOnOpen = stopOnOpen,
             audioElsewhere = audioElsewhere,
             frontShelf = frontShelf,
+            hiddenSources = hiddenSources,
         )
     }
 
@@ -981,6 +994,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_DECK_OPEN = "phone_deck_open"
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
         private const val KEY_FRONT_SHELF = "front_shelf"
+        private const val KEY_HIDDEN_SOURCES = "hidden_sources"
         /** How long to wait for another volume-button tap before acting. */
         private const val MULTI_TAP_MS = 380L
         private const val KEY_FOLDER = "folder"

@@ -327,4 +327,21 @@ class PreviewShots {
         rule.setContent { CoverSilverBlue(ui.copy(theme = DeckTheme.SILVER_BLUE, tapeCued = false, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, {}, Modifier.fillMaxSize()) }
         rule.onRoot().captureRoboImage("build/shots/folded-silverblue.png")
     }
+
+    private fun inside(theme: DeckTheme, name: String) {
+        val t0 = tapes[0].copy(photoOnLabel = true)
+        val u = ui.copy(theme = theme, tape = t0, tapes = listOf(t0) + tapes.drop(1), tapeCued = false, title = "Fast Car", artist = "Tracy Chapman")
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(theme)) {
+                RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp))
+            }
+        }
+        repeat(5) { Thread.sleep(200); rule.mainClock.advanceTimeBy(200); rule.waitForIdle() }
+        rule.onRoot().captureRoboImage("build/shots/$name.png")
+    }
+
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideOriginal() = inside(DeckTheme.ORIGINAL, "inside-original")
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideBlackGold() = inside(DeckTheme.BLACK_GOLD, "inside-blackgold")
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideCherry() = inside(DeckTheme.CHERRY_RED, "inside-cherry")
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideSilver() = inside(DeckTheme.SILVER_BLUE, "inside-silver")
 }
