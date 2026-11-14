@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.18.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **New theme: Red Chrome**, after an early-80s auto-reverse player: metallic red body, a big black glass panel with a white "STEREO CASSETTE PLAYER" label and AUTO REVERSE lettering, a chrome band with a green light, FOLDY top left and a big white STREAMAN wordmark. Silver keys with a green PLAY, the volume thumbwheel, a chrome hinge inside.
+
 ## [0.17.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

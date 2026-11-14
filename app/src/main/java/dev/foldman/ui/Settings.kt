@@ -60,6 +60,7 @@ fun accentFor(theme: DeckTheme): Color = when (theme) {
     DeckTheme.BLACK_GOLD -> BlackGold.Gold
     DeckTheme.CHERRY_RED -> Color(0xFFFF6F84)
     DeckTheme.SILVER_BLUE -> Color(0xFF6F8CFF)
+    DeckTheme.RED_CHROME -> Color(0xFFFF5A66)
 }
 
 private val Label = TextStyle(fontFamily = FontFamily.Monospace, color = Color(0xFFD9D2C8), fontSize = 13.sp)
@@ -201,6 +202,12 @@ private fun ThemeCard(theme: DeckTheme, selected: Boolean, accent: Color, onClic
                 DeckTheme.ORIGINAL -> {
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF5B92D0), Color(0xFF2F6FB5), Color(0xFF214F86)))))
                     Box(Modifier.weight(0.28f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFFB7BABF), Color(0xFFE4E5E7), Color(0xFFB0B3B8)))))
+                }
+                DeckTheme.RED_CHROME -> {
+                    Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(RedChrome.RedHi, RedChrome.Red, RedChrome.RedLo))), contentAlignment = Alignment.Center) {
+                        Box(Modifier.fillMaxSize(0.6f).clip(RoundedCornerShape(3.dp)).background(RedChrome.Glass))
+                    }
+                    Box(Modifier.weight(0.28f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFFF7F8F9), RedChrome.Red, RedChrome.RedLo))))
                 }
                 DeckTheme.SILVER_BLUE -> {
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFFB7BABF), Color(0xFFE4E5E7), Color(0xFFB0B3B8)))), contentAlignment = Alignment.Center) {

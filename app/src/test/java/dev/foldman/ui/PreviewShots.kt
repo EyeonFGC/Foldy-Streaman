@@ -381,4 +381,13 @@ class PreviewShots {
         rule.waitForIdle()
         rule.onRoot().captureRoboImage("build/shots/reorder.png")
     }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun foldedRedChrome() {
+        rule.setContent { CoverRedChrome(ui.copy(theme = DeckTheme.RED_CHROME, tapeCued = false, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-redchrome.png")
+    }
+
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideRedChrome() = inside(DeckTheme.RED_CHROME, "inside-redchrome")
 }
