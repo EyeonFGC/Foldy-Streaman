@@ -280,11 +280,11 @@ private fun SlantKey(
     val action by rememberUpdatedState(onPress)
     val depth by animateFloatAsState(
         when {
-            pressed -> 1f
-            latched -> 0.92f
+            pressed -> 1.14f
+            latched -> 0.9f
             else -> 0f
         },
-        spring(dampingRatio = 0.8f, stiffness = 420f), label = "slantKey",
+        spring(dampingRatio = 0.82f, stiffness = 1100f), label = "slantKey",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(caption, style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = SilverBlue.Ink, fontSize = 7.sp, letterSpacing = 1.sp), maxLines = 1)
@@ -346,14 +346,14 @@ private fun DrawScope.drawSlantKey(symbol: KeySymbol, depth: Float, edge: Color?
             ),
         )
         // A bright top edge while raised, and fine ridges across the face for grip.
-        drawLine(Color.White.copy(alpha = 0.9f * (1f - depth)), Offset(xL(pad) + 2f, top + 1.5f), Offset(xR(pad) - 2f, top + 1.5f), 2.5f)
+        drawLine(Color.White.copy(alpha = (0.9f * (1f - depth)).coerceIn(0f, 1f)), Offset(xL(pad) + 2f, top + 1.5f), Offset(xR(pad) - 2f, top + 1.5f), 2.5f)
         for (i in 1..3) {
             val y = top + (faceBottom - top) * (0.18f * i)
             drawLine(Color.Black.copy(alpha = 0.10f), Offset(xL(pad) + w * 0.08f, y), Offset(xR(h - pad) - w * 0.08f, y), 1f)
         }
         if (depth > 0.01f) {
             val reach = (faceBottom - top) * 0.4f
-            drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f * depth), Color.Transparent), top, top + reach), topLeft = Offset(0f, top), size = Size(w, reach))
+            drawRect(Brush.verticalGradient(listOf(Color.Black.copy(alpha = (0.55f * depth).coerceIn(0f, 1f)), Color.Transparent), top, top + reach), topLeft = Offset(0f, top), size = Size(w, reach))
         }
     }
     drawSymbol(symbol, Offset(w / 2f, top + (faceBottom - top) * 0.55f), minOf(w, faceBottom - top) * 0.24f, Color(0xFF2A2D33))

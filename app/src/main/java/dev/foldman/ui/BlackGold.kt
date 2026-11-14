@@ -274,11 +274,11 @@ private fun KnobKey(
     val action by rememberUpdatedState(onPress)
     val depth by animateFloatAsState(
         when {
-            pressed -> 1f
-            latched -> 0.92f
+            pressed -> 1.14f
+            latched -> 0.9f
             else -> 0f
         },
-        spring(dampingRatio = 0.8f, stiffness = 420f), label = "knob",
+        spring(dampingRatio = 0.82f, stiffness = 1100f), label = "knob",
     )
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (showSymbol) {
@@ -326,7 +326,7 @@ private fun DrawScope.drawKnob(depth: Float, gold: Boolean) {
     drawCircle(face, r * 0.94f, c)
     drawCircle(Color.White.copy(alpha = if (gold) 0.35f else 0.12f), r * 0.94f, c, style = Stroke(1.2f))
     // Darker when pressed in.
-    if (depth > 0f) drawCircle(Color.Black.copy(alpha = 0.18f * depth), r * 0.94f, c)
+    if (depth > 0f) drawCircle(Color.Black.copy(alpha = (0.18f * depth).coerceIn(0f, 1f)), r * 0.94f, c)
 }
 
 /**

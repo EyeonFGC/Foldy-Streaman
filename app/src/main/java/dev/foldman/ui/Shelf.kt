@@ -2,7 +2,14 @@ package dev.foldman.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -71,24 +78,41 @@ class ShelfActions(
  * the tape that's in, with its cover and track list.
  */
 @Composable
-fun TapeShelf(ui: DeckUi, actions: ShelfActions, modifier: Modifier = Modifier) {
+fun TapeShelf(ui: DeckUi, actions: ShelfActions, modifier: Modifier = Modifier, settings: SettingsActions? = null) {
+    // The Settings button at the bottom swaps the drawer over to the Settings page.
+    var showSettings by remember { mutableStateOf(false) }
+    if (showSettings && settings != null) {
+        SettingsPanel(ui, settings, onClose = { showSettings = false }, modifier = modifier.insideBody(ui.theme).padding(12.dp))
+        return
+    }
     Column(
         modifier
-            .background(Brush.verticalGradient(listOf(Color(0xFF2A1F17), Color(0xFF1C1510))))
+            // The drawer is made of the same stuff as the player: the theme's body, with its lettering colours.
+            .insideBody(ui.theme)
             .padding(16.dp),
     ) {
-        Text("TAPES", style = EngravedCaps.copy(color = Color(0xFFB59B80), fontSize = 10.sp, letterSpacing = 3.sp))
+        val look = insideLook(ui.theme)
+        // The IN DECK tag sits on the tape's own shell, so it needs to read on any colour.
+        val tag = if (ui.theme == dev.foldman.deck.DeckTheme.SILVER_BLUE) Color.White else look.accent
+        Text("TAPES", style = EngravedCaps.copy(color = look.label, fontSize = 11.sp, letterSpacing = 3.sp))
         Spacer(Modifier.height(10.dp))
         // Foldy Streaman: the rack scrolls once you have more tapes than fit.
         var editing by remember { mutableStateOf<CustomTape?>(null) }
         var creating by remember { mutableStateOf(false) }
-        Column(Modifier.heightIn(max = 300.dp).verticalScroll(rememberScrollState())) {
+        Column(
+            Modifier
+                .heightIn(max = 300.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF0E0D0C))
+                .verticalScroll(rememberScrollState())
+                .padding(start = 10.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
+        ) {
             Source.entries.filter { it !in ui.hiddenSources }.forEach { s ->
-                TapeSpine(s, inDeck = s == ui.source && ui.tape == null, onClick = { actions.selectSource(s) })
+                TapeSpine(s, inDeck = s == ui.source && ui.tape == null, accent = tag, onClick = { actions.selectSource(s) })
                 Spacer(Modifier.height(8.dp))
             }
             ui.tapes.forEach { t ->
-                CustomTapeSpine(t, inDeck = ui.tape?.id == t.id, onLoad = { actions.tapes.load(t) }, onEdit = { editing = t })
+                CustomTapeSpine(t, inDeck = ui.tape?.id == t.id, accent = tag, onLoad = { actions.tapes.load(t) }, onEdit = { editing = t })
                 Spacer(Modifier.height(8.dp))
             }
             NewTapeButton { creating = true }
@@ -97,20 +121,34 @@ fun TapeShelf(ui: DeckUi, actions: ShelfActions, modifier: Modifier = Modifier) 
         editing?.let { t -> TapeEditorDialog(t, actions.tapes) { editing = null } }
         Spacer(Modifier.height(8.dp))
         JCard(ui, actions, Modifier.weight(1f).fillMaxWidth())
+        if (settings != null) {
+            Spacer(Modifier.height(10.dp))
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(1.5.dp, look.accent.copy(alpha = 0.8f), RoundedCornerShape(4.dp))
+                    .clickable { showSettings = true }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("⚙  SETTINGS", style = EngravedCaps.copy(color = look.accent, fontSize = 11.sp, letterSpacing = 2.sp))
+            }
+        }
     }
 }
 
 @Composable
-private fun TapeSpine(source: Source, inDeck: Boolean, onClick: () -> Unit) {
+private fun TapeSpine(source: Source, inDeck: Boolean, accent: Color, onClick: () -> Unit) {
     val shell = DeckColors.shell(source)
+    val press = remember { MutableInteractionSource() }
     Row(
         Modifier
             .fillMaxWidth()
-            .offset(x = if (inDeck) 10.dp else 0.dp)
-            .shadow(if (inDeck) 10.dp else 3.dp, RoundedCornerShape(4.dp))
+            .slideOut(inDeck, press)
             .clip(RoundedCornerShape(4.dp))
             .background(Brush.verticalGradient(listOf(lerp(shell, Color.White, 0.15f), shell, lerp(shell, Color.Black, 0.25f))))
-            .clickable(onClick = onClick)
+            .clickable(interactionSource = press, indication = null, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -129,13 +167,31 @@ private fun TapeSpine(source: Source, inDeck: Boolean, onClick: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Text(
             if (inDeck) "IN DECK" else "LOAD",
-            style = EngravedCaps.copy(color = if (inDeck) DeckColors.Accent else Color.White.copy(alpha = 0.7f), fontSize = 8.sp),
+            style = EngravedCaps.copy(color = if (inDeck) accent else Color.White.copy(alpha = 0.7f), fontSize = 8.sp),
         )
     }
 }
 
+/**
+ * How a tape on the drawer moves: it slides out a little and lifts when it's the one in the deck,
+ * and dips slightly under your finger, all as smooth glides rather than jumps.
+ */
 @Composable
-private fun CustomTapeSpine(tape: CustomTape, inDeck: Boolean, onLoad: () -> Unit, onEdit: () -> Unit) {
+private fun Modifier.slideOut(inDeck: Boolean, press: MutableInteractionSource): Modifier {
+    val pressed by press.collectIsPressedAsState()
+    val out by animateDpAsState(if (inDeck) 10.dp else 0.dp, spring(dampingRatio = 0.75f, stiffness = 380f), label = "out")
+    val lift by animateDpAsState(if (inDeck) 10.dp else 3.dp, tween(260), label = "lift")
+    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, spring(dampingRatio = 0.7f, stiffness = 600f), label = "press")
+    return this
+        .offset(x = out)
+        .graphicsLayer { scaleX = scale; scaleY = scale }
+        .shadow(lift, RoundedCornerShape(4.dp))
+}
+
+@Composable
+private fun CustomTapeSpine(tape: CustomTape, inDeck: Boolean, accent: Color, onLoad: () -> Unit, onEdit: () -> Unit) {
+    val press = remember { MutableInteractionSource() }
+    val gap by animateDpAsState(if (inDeck) 14.dp else 4.dp, spring(dampingRatio = 0.75f, stiffness = 380f), label = "gap")
     Row(verticalAlignment = Alignment.CenterVertically) {
         TapeSpineView(
             title = tape.title.ifBlank { "my tape" },
@@ -143,18 +199,18 @@ private fun CustomTapeSpine(tape: CustomTape, inDeck: Boolean, onLoad: () -> Uni
             shell = Color(tape.shell),
             label = Color(tape.label),
             trailing = if (inDeck) "IN DECK" else "LOAD",
-            trailingColor = if (inDeck) DeckColors.Accent else Color.White.copy(alpha = 0.7f),
+            trailingColor = if (inDeck) accent else Color.White.copy(alpha = 0.7f),
+            photoOf = tape,
             modifier = Modifier
                 .weight(1f)
-                .offset(x = if (inDeck) 10.dp else 0.dp)
-                .shadow(if (inDeck) 10.dp else 3.dp, RoundedCornerShape(4.dp))
-                .clickable(onClick = onLoad),
+                .slideOut(inDeck, press)
+                .clickable(interactionSource = press, indication = null, onClick = onLoad),
         )
-        Spacer(Modifier.width(if (inDeck) 14.dp else 4.dp))
+        Spacer(Modifier.width(gap))
         Text(
             "EDIT",
             style = EngravedCaps.copy(color = Color(0xFFB59B80), fontSize = 9.sp),
-            modifier = Modifier.clickable(onClick = onEdit).padding(horizontal = 6.dp, vertical = 10.dp),
+            modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onEdit).padding(horizontal = 6.dp, vertical = 10.dp),
         )
     }
 }

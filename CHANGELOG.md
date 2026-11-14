@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.20.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Settings button at the bottom of the front-screen tape drawer**, opening the same Settings page.
+
+### Changed
+- **Key presses are snappier** (still smooth), and a key goes a little deeper while your finger is on it than where it rests when held down.
+- **The front-screen tape drawer matches the theme**: the theme's body, lettering and highlight colours, with the tapes on a dark rack. Tapes with a picture show it there too.
+- **Tapes in the drawer move smoothly**: they dip under your finger, and slide out and lift as a glide when loaded.
+
 ## [0.19.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

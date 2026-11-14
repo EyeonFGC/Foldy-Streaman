@@ -119,11 +119,11 @@ fun DeckKey(
     val action by rememberUpdatedState(onPress)
     val depth by animateFloatAsState(
         when {
-            pressed -> 1f
-            latched -> 0.92f
+            pressed -> 1.14f
+            latched -> 0.9f
             else -> 0f
         },
-        spring(dampingRatio = 0.8f, stiffness = 420f), label = "key",
+        spring(dampingRatio = 0.82f, stiffness = 1100f), label = "key",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(

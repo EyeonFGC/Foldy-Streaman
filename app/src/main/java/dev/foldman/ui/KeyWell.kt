@@ -45,7 +45,7 @@ internal inline fun DrawScope.keyWell(depth: Float, corner: CornerRadius, block:
             val box = keyBox(depth)
             val reach = box.faceH * 0.38f
             drawRect(
-                Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f * depth), Color.Transparent), box.top, box.top + reach),
+                Brush.verticalGradient(listOf(Color.Black.copy(alpha = (0.55f * depth).coerceIn(0f, 1f)), Color.Transparent), box.top, box.top + reach),
                 topLeft = Offset(0f, box.top), size = Size(size.width, reach),
             )
         }

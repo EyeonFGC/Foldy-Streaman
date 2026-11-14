@@ -271,11 +271,11 @@ private fun ChromeKey(
     val action by rememberUpdatedState(onPress)
     val depth by animateFloatAsState(
         when {
-            pressed -> 1f
-            latched -> 0.92f
+            pressed -> 1.14f
+            latched -> 0.9f
             else -> 0f
         },
-        spring(dampingRatio = 0.8f, stiffness = 420f), label = "chromeKey",
+        spring(dampingRatio = 0.82f, stiffness = 1100f), label = "chromeKey",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(caption, style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Color(0xFFD9D9DC), fontSize = 7.sp, letterSpacing = 1.sp), maxLines = 1)

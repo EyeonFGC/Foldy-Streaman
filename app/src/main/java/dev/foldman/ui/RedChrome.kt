@@ -346,11 +346,11 @@ private fun SilverKey(
     val action by rememberUpdatedState(onPress)
     val depth by animateFloatAsState(
         when {
-            pressed -> 1f
-            latched -> 0.92f
+            pressed -> 1.14f
+            latched -> 0.9f
             else -> 0f
         },
-        spring(dampingRatio = 0.8f, stiffness = 420f), label = "silverKey",
+        spring(dampingRatio = 0.82f, stiffness = 1100f), label = "silverKey",
     )
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(caption, style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 7.sp, letterSpacing = 1.sp), maxLines = 1)

@@ -262,7 +262,7 @@ fun FoldmanScreen(
                 ModalBottomSheet(
                     onDismissRequest = { shelfOpen = false },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = Color(0xFF1C1510),
+                    containerColor = drawerColor(ui.theme),
                 ) {
                     TapeShelf(
                         ui,
@@ -277,6 +277,7 @@ fun FoldmanScreen(
                             tapes = tapeActions,
                         ),
                         Modifier.fillMaxWidth().height(sheetHeight),
+                        settings = settingsActions,
                     )
                 }
             }

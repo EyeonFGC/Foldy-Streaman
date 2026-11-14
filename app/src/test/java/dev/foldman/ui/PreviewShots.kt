@@ -407,4 +407,18 @@ class PreviewShots {
     @Test
     @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun keysRedChrome() { val u = ui.copy(theme = DeckTheme.RED_CHROME, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING); rule.setContent { CoverRedChrome(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-5.png") }
+
+    private fun drawer(theme: DeckTheme, name: String) {
+        val plain = tapes.map { it.copy(photoPath = null) }
+        val u = ui.copy(theme = theme, tapes = plain, tape = plain[0], tapeCued = false, frontShelf = true, title = "Fast Car", artist = "Tracy Chapman")
+        rule.setContent { TapeShelf(u, actions, Modifier.fillMaxSize(), settings = SettingsActions.None) }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/$name.png")
+    }
+
+    @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerOriginal() = drawer(DeckTheme.ORIGINAL, "drawer-1")
+    @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerGold() = drawer(DeckTheme.BLACK_GOLD, "drawer-2")
+    @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerCherry() = drawer(DeckTheme.CHERRY_RED, "drawer-3")
+    @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerSilver() = drawer(DeckTheme.SILVER_BLUE, "drawer-4")
+    @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerRedChrome() = drawer(DeckTheme.RED_CHROME, "drawer-5")
 }
