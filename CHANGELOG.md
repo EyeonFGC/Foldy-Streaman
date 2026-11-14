@@ -2,6 +2,14 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.14.5] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **A newly made tape bounced back from an empty deck.** Each tape on the rack kept the deck's state from when it first appeared, so a new tape still thought the deck was full. Tapes now always check the deck as it is.
+
+### Changed
+- In Cherry Red the "drop to load" glow is yellow, so red only ever means "eject the tape first".
+
 ## [0.14.4] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed

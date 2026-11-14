@@ -50,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -516,17 +517,24 @@ private fun RackSpine(
     onDragEnd: () -> Unit,
 ) {
     var coords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    // The gesture loops below keep running while the tape sits on the rack, so they call the
+    // latest actions (which know whether the deck is empty now), not the ones from when the
+    // tape first appeared.
+    val start by rememberUpdatedState(onDragStart)
+    val drag by rememberUpdatedState(onDrag)
+    val end by rememberUpdatedState(onDragEnd)
+    val tap by rememberUpdatedState(onTap)
     val gestures = Modifier
         .onGloballyPositioned { coords = it; onWidth(it.size.width) }
         .pointerInput(item.key) {
             detectDragGesturesAfterLongPress(
-                onDragStart = { off -> onDragStart(coords?.localToRoot(off) ?: off) },
-                onDrag = { change, amount -> change.consume(); onDrag(amount) },
-                onDragEnd = onDragEnd,
-                onDragCancel = onDragEnd,
+                onDragStart = { off -> start(coords?.localToRoot(off) ?: off) },
+                onDrag = { change, amount -> change.consume(); drag(amount) },
+                onDragEnd = { end() },
+                onDragCancel = { end() },
             )
         }
-        .pointerInput(item.key) { detectTapGestures(onTap = { onTap() }) }
+        .pointerInput(item.key) { detectTapGestures(onTap = { tap() }) }
 
     if (inDeck) {
         // The slot the tape came out of: an empty gap in the rack.
@@ -631,14 +639,14 @@ private val BlockedEdge = Color(0xFFE53935)
 private fun glowLightFor(theme: DeckTheme) = when (theme) {
     DeckTheme.ORIGINAL -> GlowBlue
     DeckTheme.BLACK_GOLD -> BlackGold.GoldHi
-    DeckTheme.CHERRY_RED -> Color(0xFFFF9AAA)
+    DeckTheme.CHERRY_RED -> Color(0xFFFFE08A)
     DeckTheme.SILVER_BLUE -> Color(0xFF9DB4FF)
 }
 
 private fun glowEdgeFor(theme: DeckTheme) = when (theme) {
     DeckTheme.ORIGINAL -> GlowEdge
     DeckTheme.BLACK_GOLD -> BlackGold.Gold
-    DeckTheme.CHERRY_RED -> CherryRed.Body
+    DeckTheme.CHERRY_RED -> CherryRed.Yellow
     DeckTheme.SILVER_BLUE -> SilverBlue.Blue
 }
 private val HeldCassetteWidth = 230.dp
