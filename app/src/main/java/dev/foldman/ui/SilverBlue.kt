@@ -93,15 +93,7 @@ internal fun CoverSilverBlue(ui: DeckUi, anim: DeckAnimations, deck: DeckControl
                 Text("STEREO CASSETTE PLAYER", style = blue.copy(fontSize = 7.sp, letterSpacing = 1.5.sp))
                 Spacer(Modifier.weight(1f))
                 if (ui.frontShelf) {
-                    Text(
-                        "TAPES",
-                        style = blue.copy(color = Color.White, fontSize = 10.sp, letterSpacing = 2.sp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(SilverBlue.Blue)
-                            .clickable(onClick = onTapes)
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                    )
+                    TapesButton(SilverBlue.Blue, Color.White, onTapes)
                 } else {
                     Text(changeTapesHint(ui), style = blue.copy(fontSize = 6.sp, letterSpacing = 1.sp, color = SilverBlue.Ink.copy(alpha = 0.75f)))
                 }

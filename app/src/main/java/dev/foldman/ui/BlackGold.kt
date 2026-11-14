@@ -126,16 +126,7 @@ internal fun CoverBlackGold(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
         ) {
             if (ui.frontShelf) {
                 // Settings > Tape shelf on the front screen: a small gold-edged TAPES button.
-                Text(
-                    "TAPES",
-                    style = print.copy(color = BlackGold.Gold, fontSize = 10.sp),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.Black.copy(alpha = 0.3f))
-                        .border(1.dp, BlackGold.Gold, RoundedCornerShape(4.dp))
-                        .clickable(onClick = onTapes)
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                )
+                TapesButton(Color(0xFF242427), BlackGold.Gold, onTapes, rim = BlackGold.Gold)
             } else {
                 Text(changeTapesHint(ui), style = print.copy(fontSize = 7.sp))
             }

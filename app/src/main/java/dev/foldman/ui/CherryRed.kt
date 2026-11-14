@@ -116,15 +116,7 @@ internal fun CoverCherryRed(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                 Text("TYPE I · NORMAL", style = white.copy(fontSize = 7.sp, letterSpacing = 1.sp, color = Color.White.copy(alpha = 0.85f)))
                 Spacer(Modifier.weight(1f))
                 if (ui.frontShelf) {
-                    Text(
-                        "TAPES",
-                        style = white.copy(fontSize = 10.sp, letterSpacing = 2.sp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(CherryRed.Trim)
-                            .clickable(onClick = onTapes)
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                    )
+                    TapesButton(CherryRed.Trim, Color.White, onTapes)
                 } else {
                     Text(changeTapesHint(ui), style = white.copy(fontSize = 6.sp, letterSpacing = 1.sp, color = Color.White.copy(alpha = 0.8f)))
                 }

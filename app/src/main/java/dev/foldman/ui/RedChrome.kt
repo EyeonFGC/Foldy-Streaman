@@ -117,15 +117,7 @@ internal fun CoverRedChrome(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
             // Top line: the hint (or TAPES button) on the left, the maker's name on the right.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 if (ui.frontShelf) {
-                    Text(
-                        "TAPES",
-                        style = white.copy(fontSize = 10.sp, letterSpacing = 2.sp),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(RedChrome.Glass)
-                            .clickable(onClick = onTapes)
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                    )
+                    TapesButton(Color(0xFF26272C), Color.White, onTapes)
                 } else {
                     Text(changeTapesHint(ui), style = white.copy(fontSize = 6.sp, letterSpacing = 1.sp, color = Color.White.copy(alpha = 0.8f)))
                 }

@@ -320,6 +320,55 @@ fun HotlineButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Foldy Streaman: the TAPES button on the themed front screens (it opens the tape drawer). Built
+ * like the Original theme's yellow button: a raised cap in the theme's own [color] with a darker
+ * side and a shadow, that sinks when pressed, with TAPES lettered on top in [ink].
+ */
+@Composable
+fun TapesButton(color: Color, ink: Color, onClick: () -> Unit, modifier: Modifier = Modifier, rim: Color? = null) {
+    val action by rememberUpdatedState(onClick)
+    val view = LocalView.current
+    val haptics = LocalHaptics.current
+    val sounds = LocalMechSounds.current
+    var down by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val depth by animateFloatAsState(if (down) 1f else 0f, spring(stiffness = 2500f), label = "tapesButton")
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val label = remember(ink) {
+        measurer.measure("TAPES", androidx.compose.ui.text.TextStyle(color = ink, fontSize = 9.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, letterSpacing = 2.sp))
+    }
+    Canvas(
+        modifier
+            .size(66.dp, 34.dp)
+            .semantics { role = Role.Button; contentDescription = "Tapes" }
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    down = true
+                    if (haptics) view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_PRESS)
+                    sounds?.keyDown()
+                    tryAwaitRelease()
+                    down = false
+                    sounds?.keyUp()
+                }, onTap = { action() })
+            },
+    ) {
+        val h = size.height
+        val lift = h * 0.25f * (1f - depth)
+        val r = CornerRadius(4.dp.toPx())
+        val capTop = h * 0.25f - lift
+        val capH = h * 0.52f
+        val hi = androidx.compose.ui.graphics.lerp(color, Color.White, 0.22f)
+        val lo = androidx.compose.ui.graphics.lerp(color, Color.Black, 0.45f)
+        // Shadow on the case, the cap's side below it, then the cap itself.
+        drawRoundRect(Color.Black.copy(alpha = 0.45f), Offset(0f, h * 0.25f), Size(size.width, h * 0.75f), r)
+        drawRoundRect(lo, Offset(0f, capTop + h * 0.3f), Size(size.width, h * 0.45f), r)
+        drawRoundRect(Brush.verticalGradient(listOf(hi, color), capTop, capTop + capH), Offset(0f, capTop), Size(size.width, capH), r)
+        if (rim != null) drawRoundRect(rim, Offset(0.5.dp.toPx(), capTop + 0.5.dp.toPx()), Size(size.width - 1.dp.toPx(), capH - 1.dp.toPx()), r, style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
+        drawLine(Color.White.copy(alpha = 0.45f), Offset(5f, capTop + 2f), Offset(size.width - 5f, capTop + 2f), 1.2f)
+        drawText(label, topLeft = Offset((size.width - label.size.width) / 2f, capTop + (capH - label.size.height) / 2f))
+    }
+}
+
 /** Perforated microphone grille, as on the side of the original. */
 @Composable
 fun MicGrille(modifier: Modifier = Modifier) {

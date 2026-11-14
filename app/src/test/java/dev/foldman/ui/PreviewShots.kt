@@ -421,6 +421,12 @@ class PreviewShots {
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockRedChrome() = locked("5", DeckTheme.RED_CHROME) { CoverRedChrome(it, anim(), deck, {}, Modifier.fillMaxSize()) }
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockSport() = locked("6", DeckTheme.SPORT_YELLOW) { CoverSportYellow(it, anim(), deck, {}, Modifier.fillMaxSize()) }
 
+    private fun shelfBtn(theme: DeckTheme) = playing(theme).copy(frontShelf = true)
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun tapesBtnGold() { rule.setContent { CoverBlackGold(shelfBtn(DeckTheme.BLACK_GOLD), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/tapesbtn-2.png") }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun tapesBtnCherry() { rule.setContent { CoverCherryRed(shelfBtn(DeckTheme.CHERRY_RED), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/tapesbtn-3.png") }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun tapesBtnSilver() { rule.setContent { CoverSilverBlue(shelfBtn(DeckTheme.SILVER_BLUE), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/tapesbtn-4.png") }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun tapesBtnRed() { rule.setContent { CoverRedChrome(shelfBtn(DeckTheme.RED_CHROME), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/tapesbtn-5.png") }
+
     private fun logoPart(title: String, name: String) {
         val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)
         val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = listOf(t), tape = t, tapeCued = false)

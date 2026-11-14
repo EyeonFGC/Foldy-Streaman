@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.34.3] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- The TAPES button on the front screen (when the front tape shelf is on) is now a proper raised button on Black & Gold, Cherry Red, Silver & Blue and Red Chrome: built like the Original theme's yellow one, with a shadow and a cap that presses down, in each theme's own colour.
+
 ## [0.34.2] — 2026-11-14 (Foldy Streaman)
 
 ### Changed
