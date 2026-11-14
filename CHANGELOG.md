@@ -2,6 +2,13 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.25.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **New theme: Sport Yellow** (Settings > Theme), after a late-80s sports player. Bright yellow body; a thick grey rubber window surround that runs off the edge of the case, with a very tight window on the tape; a raised radio-dial strip across the top with the FM band on it; FOLDY beside the window; STREAMAN over a big blue SPORT at the bottom.
+- Its side strip is slimmer, with grey pill keys standing on end (PLAY and FF point up, REW points down) that stand proud of the case and sink in when pressed, round previous/next keys, and a yellow volume dial with black numbers.
+- The inside, hinge, tape drawer and J-card buttons follow the new theme.
+
 ## [0.24.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

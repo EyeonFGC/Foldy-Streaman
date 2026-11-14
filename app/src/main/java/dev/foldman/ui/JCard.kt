@@ -87,6 +87,7 @@ private fun stampInk(theme: dev.foldman.deck.DeckTheme, dark: Boolean): Color = 
     dev.foldman.deck.DeckTheme.BLACK_GOLD -> if (dark) Color(0xFFDAD5C9) else Color(0xFF3A3A3E)
     dev.foldman.deck.DeckTheme.CHERRY_RED -> if (dark) Color(0xFFFF8597) else Color(0xFFC22A44)
     dev.foldman.deck.DeckTheme.RED_CHROME -> if (dark) Color(0xFFFF7A82) else Color(0xFFB3202B)
+    dev.foldman.deck.DeckTheme.SPORT_YELLOW -> if (dark) Color(0xFFFFD83A) else SportYellow.Blue
     dev.foldman.deck.DeckTheme.SILVER_BLUE -> if (dark) Color(0xFF9DB4FF) else Color(0xFF2347C6)
 }
 

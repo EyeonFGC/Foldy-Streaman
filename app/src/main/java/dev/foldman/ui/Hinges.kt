@@ -35,6 +35,7 @@ fun hingeLook(theme: dev.foldman.deck.DeckTheme): HingeLook = when (theme) {
     dev.foldman.deck.DeckTheme.ORIGINAL -> oneColour(0xFF7AAAE0, 0xFF3D7CC2, 0xFF22508A, 0xFF2C5E9C, 0xFF153A66)
     dev.foldman.deck.DeckTheme.BLACK_GOLD -> oneColour(0xFFFFDE7A, 0xFFF2B51E, 0xFFB98310, 0xFFC28E14, 0xFF7A5606)
     dev.foldman.deck.DeckTheme.CHERRY_RED -> oneColour(0xFFF27A8C, 0xFFE23A55, 0xFFA82038, 0xFFB52A42, 0xFF6E1222)
+    dev.foldman.deck.DeckTheme.SPORT_YELLOW -> oneColour(0xFFFFE97A, 0xFFF7C600, 0xFFC29700, 0xFFC9A000, 0xFF7A5E00)
     dev.foldman.deck.DeckTheme.RED_CHROME -> oneColour(0xFFF7F8F9, 0xFFC6C9CE, 0xFF8C9096, 0xFF9DA2A9, 0xFF5E636A)
     dev.foldman.deck.DeckTheme.SILVER_BLUE -> oneColour(0xFFF1F2F4, 0xFFC4C8CD, 0xFF8E939A, 0xFF9DA2A9, 0xFF5E636A)
 }

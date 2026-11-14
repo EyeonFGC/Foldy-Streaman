@@ -44,7 +44,7 @@ private const val DIAL_STEP = 30f
  * volume up. [marker] is the little pointer above it showing the current number.
  */
 @Composable
-fun VolumeDial(volume: Float, onVolume: (Float) -> Unit, modifier: Modifier = Modifier, marker: Color = Color.White) {
+fun VolumeDial(volume: Float, onVolume: (Float) -> Unit, modifier: Modifier = Modifier, marker: Color = Color.White, yellow: Boolean = false) {
     val view = LocalView.current
     val sounds = LocalMechSounds.current
     val haptics = LocalHaptics.current
@@ -88,18 +88,18 @@ fun VolumeDial(volume: Float, onVolume: (Float) -> Unit, modifier: Modifier = Mo
         val turn = (value - 1f) * DIAL_STEP
         // Shadow under the dial, then the knurled rim: a ring of small grips that turn with it.
         drawCircle(Color.Black.copy(alpha = 0.45f), r * 1.02f, c + Offset(r * 0.04f, r * 0.08f))
-        drawCircle(Color(0xFF0A0A0B), r, c)
+        drawCircle(if (yellow) Color(0xFFB88E00) else Color(0xFF0A0A0B), r, c)
         val grips = 44
         for (i in 0 until grips) {
             val a = (i * 360f / grips + turn) * PI.toFloat() / 180f
             val dir = Offset(cos(a), sin(a))
             // Lit from the top left.
             val light = ((-dir.x - dir.y) * 0.5f + 0.5f).coerceIn(0f, 1f)
-            drawLine(Color.White.copy(alpha = 0.05f + 0.22f * light), c + dir * (r * 0.86f), c + dir * (r * 0.99f), r * 0.045f)
+            drawLine(if (yellow) Color(0xFF3A2C00).copy(alpha = 0.55f - 0.3f * light) else Color.White.copy(alpha = 0.05f + 0.22f * light), c + dir * (r * 0.86f), c + dir * (r * 0.99f), r * 0.045f)
         }
         // The face.
-        drawCircle(Brush.radialGradient(listOf(Color(0xFF3A3A3E), Color(0xFF1B1B1E), Color(0xFF0D0D0F)), c - Offset(r * 0.3f, r * 0.35f), r * 1.5f), r * 0.84f, c)
-        drawCircle(Color.White.copy(alpha = 0.10f), r * 0.84f, c, style = Stroke(1.2f))
+        drawCircle(Brush.radialGradient(if (yellow) listOf(Color(0xFFFFEC7A), Color(0xFFFFD21A), Color(0xFFE0AE00)) else listOf(Color(0xFF3A3A3E), Color(0xFF1B1B1E), Color(0xFF0D0D0F)), c - Offset(r * 0.3f, r * 0.35f), r * 1.5f), r * 0.84f, c)
+        drawCircle(if (yellow) Color.Black.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.10f), r * 0.84f, c, style = Stroke(1.2f))
         // The numbers, printed round the face and turning with it. Clockwise is louder, so the
         // numbers climb anticlockwise and come round to the marker at the top.
         val current = value.roundToInt()
@@ -110,10 +110,10 @@ fun VolumeDial(volume: Float, onVolume: (Float) -> Unit, modifier: Modifier = Mo
             // The current number swells as it reaches the marker.
             val near = (1f - abs(value - n)).coerceIn(0f, 1f)
             val style = TextStyle(
-                color = Color.White.copy(alpha = if (on) 1f else 0.7f),
+                color = (if (yellow) Color(0xFF17150C) else Color.White).copy(alpha = if (on) 1f else 0.7f),
                 fontSize = (9f + 5f * near).sp,
-                fontWeight = FontWeight.Bold,
-                shadow = if (on) Shadow(Color.White.copy(alpha = 0.9f), Offset.Zero, 14f) else null,
+                fontWeight = if (yellow && on) FontWeight.Black else FontWeight.Bold,
+                shadow = if (on && !yellow) Shadow(Color.White.copy(alpha = 0.9f), Offset.Zero, 14f) else null,
             )
             val layout = measurer.measure(n.toString(), style)
             rotate(ang, pivot = c) {
@@ -121,7 +121,7 @@ fun VolumeDial(volume: Float, onVolume: (Float) -> Unit, modifier: Modifier = Mo
             }
         }
         // The hub in the middle.
-        drawCircle(Brush.radialGradient(listOf(Color(0xFF2C2C30), Color(0xFF0A0A0B)), c, r * 0.22f), r * 0.2f, c)
+        drawCircle(Brush.radialGradient(if (yellow) listOf(Color(0xFFE0AE00), Color(0xFF9C7600)) else listOf(Color(0xFF2C2C30), Color(0xFF0A0A0B)), c, r * 0.22f), r * 0.2f, c)
         // The marker on the body, pointing down at the current number.
         val tip = Path().apply {
             moveTo(c.x, c.y - r + markerH * 0.2f)

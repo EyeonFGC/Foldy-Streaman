@@ -19,8 +19,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "0.24.0"
-val appVersionCode = 42
+val appVersionName = "0.25.0"
+val appVersionCode = 43
 
 base {
     archivesName = "FoldyStreaman-$appVersionName"

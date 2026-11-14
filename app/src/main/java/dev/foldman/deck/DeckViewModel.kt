@@ -56,6 +56,7 @@ enum class DeckTheme(val label: String) {
     CHERRY_RED("Cherry Red"),
     SILVER_BLUE("Silver & Blue"),
     RED_CHROME("Red Chrome"),
+    SPORT_YELLOW("Sport Yellow"),
 }
 
 data class DeckUi(

@@ -389,6 +389,14 @@ class PreviewShots {
         rule.onRoot().captureRoboImage("build/shots/folded-redchrome.png")
     }
 
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun foldedSportYellow() {
+        rule.setContent { CoverSportYellow(ui.copy(theme = DeckTheme.SPORT_YELLOW, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-sport.png")
+    }
+
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideSport() = inside(DeckTheme.SPORT_YELLOW, "inside-sport")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideRedChrome() = inside(DeckTheme.RED_CHROME, "inside-redchrome")
 
     /** Every theme with PLAY latched down, to compare raised keys with a pressed one. */
@@ -426,6 +434,7 @@ class PreviewShots {
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerCherry() = drawer(DeckTheme.CHERRY_RED, "drawer-3")
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerSilver() = drawer(DeckTheme.SILVER_BLUE, "drawer-4")
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerRedChrome() = drawer(DeckTheme.RED_CHROME, "drawer-5")
+    @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerSport() = drawer(DeckTheme.SPORT_YELLOW, "drawer-6")
 
     private fun card(theme: DeckTheme, dark: Boolean, name: String, blank: Boolean = false) {
         val plain = tapes.map { it.copy(photoPath = null) } + CustomTape(title = "", playlistId = "", shell = 0xFFB8322A, label = 0xFFF2EBDC)
