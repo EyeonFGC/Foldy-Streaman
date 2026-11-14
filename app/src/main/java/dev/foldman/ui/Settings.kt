@@ -48,6 +48,9 @@ class SettingsActions(
     val appleSignOut: () -> Unit,
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setVolumeKeys: (Boolean) -> Unit = {},
+    val spotifyLogin: () -> Unit = {},
+    val spotifyLogout: () -> Unit = {},
+    val setSpotifyClientId: (String) -> Unit = {},
     val setFrontShelf: (Boolean) -> Unit = {},
     val setJcardDark: (Boolean) -> Unit = {},
     val setSourceShown: (dev.foldman.deck.Source, Boolean) -> Unit = { _, _ -> },
@@ -155,6 +158,30 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     if (ui.apple.signedIn) "SIGN OUT" else "SIGN IN", accent,
                     if (ui.apple.signedIn) actions.appleSignOut else actions.appleSignIn,
                 )
+            }
+            Section("SPOTIFY") {
+                val name = ui.spotifyName
+                ActionRow(
+                    "Spotify account",
+                    if (name != null) "Logged in as $name. Spotify tapes start without leaving Foldy, and you can pick playlists from a list"
+                    else "Log in to pick your playlists from a list and start Spotify tapes without leaving Foldy (needs Premium)",
+                    if (name != null) "LOG OUT" else "LOG IN", accent,
+                    if (name != null) actions.spotifyLogout else actions.spotifyLogin,
+                )
+                ui.spotifyMessage?.let { Text(it, style = Note.copy(color = Color(0xFFFF8A80))) }
+                if (name == null) {
+                    // The ID of the Spotify "app" this login goes through (from developer.spotify.com).
+                    var id by remember(ui.spotifyClientId) { mutableStateOf(ui.spotifyClientId) }
+                    Text("Client ID (from the Spotify developer dashboard)", style = Note)
+                    androidx.compose.foundation.text.BasicTextField(
+                        value = id,
+                        onValueChange = { id = it.trim().take(64); actions.setSpotifyClientId(id) },
+                        singleLine = true,
+                        textStyle = Label.copy(fontSize = 13.sp),
+                        cursorBrush = androidx.compose.ui.graphics.SolidColor(accent),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp).border(1.dp, accent.copy(alpha = 0.6f), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 8.dp),
+                    )
+                }
             }
             Section("ADAPTERS ON THE RACK") {
                 Text("Switch off the ones you don't use. Your own playlist tapes stay either way.", style = Note)

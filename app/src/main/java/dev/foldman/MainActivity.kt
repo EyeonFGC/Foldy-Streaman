@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        spotifyLoginFrom(intent)
         // Foldy Streaman: phones that don't fold get EJECT-to-open and CLOSE-to-play instead.
         val foldable = isFoldable()
         vm.setPhoneMode(!foldable)
@@ -145,6 +146,20 @@ class MainActivity : ComponentActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         if (vm.coverShown && vm.volumeKeysOn && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) return true
         return super.onKeyUp(keyCode, event)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        spotifyLoginFrom(intent)
+    }
+
+    /** Foldy Streaman: the browser coming back from "Log in with Spotify". */
+    private fun spotifyLoginFrom(intent: Intent?) {
+        val back = intent?.data ?: return
+        if (back.scheme == "foldystreaman" && back.host == "spotify-login") {
+            vm.finishSpotifyLogin(back)
+            intent.data = null
+        }
     }
 
     override fun onPause() {

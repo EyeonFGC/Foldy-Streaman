@@ -11,6 +11,7 @@ val appleProps = Properties().apply {
     rootProject.file("apple-music.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
 val appleDeveloperToken: String = appleProps.getProperty("apple.developerToken", "").trim()
+val spotifyClientId = ""
 
 // Release signing, from the git-ignored signing.properties (storeFile, storePassword, keyAlias,
 // keyPassword). Without it, release builds fall back to the debug key.
@@ -19,8 +20,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "0.29.0"
-val appVersionCode = 50
+val appVersionName = "0.30.0"
+val appVersionCode = 51
 
 base {
     archivesName = "FoldyStreaman-$appVersionName"
@@ -38,6 +39,8 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         buildConfigField("String", "APPLE_DEVELOPER_TOKEN", "\"$appleDeveloperToken\"")
+        // Foldy Streaman: the Spotify app's Client ID for "Log in with Spotify" (an ID, not a secret).
+        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$spotifyClientId\"")
         // Every current foldable is 64-bit ARM; leaving out the rest halves the APK.
         ndk {
             abiFilters += "arm64-v8a"

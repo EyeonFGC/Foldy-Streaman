@@ -2,6 +2,15 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.30.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Log in with Spotify** (Settings > Spotify). Once logged in:
+  - Spotify tapes start **without switching to the Spotify app**: Foldy tells Spotify over the internet to play the tape's playlist on this phone. (If Spotify can't be reached that way, it falls back to opening the playlist in Spotify as before.)
+  - **Pick playlists from a list:** a blank tape's J-card, and the PLAYLIST button, offer "Pick from my Spotify playlists". The tape takes the playlist's name and cover picture if it has none yet.
+- The login is Spotify's own page in the browser. Foldy never sees the password.
+- Needs: a Spotify Premium account, and a free app registered at developer.spotify.com/dashboard with the redirect URI `foldystreaman://spotify-login`; its Client ID goes in Settings > Spotify.
+
 ## [0.29.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

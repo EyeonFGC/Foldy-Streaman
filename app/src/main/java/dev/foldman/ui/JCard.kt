@@ -238,6 +238,21 @@ fun JCardSheet(
     val font = tape.font
     if (jDark != ui.jcardDark) jDark = ui.jcardDark
     val card = tornCard()
+    // Picking one of the logged-in Spotify account's playlists: the card turns over to the list.
+    var pickingSpotify by remember { mutableStateOf(false) }
+    if (pickingSpotify) {
+        SpotifyPickCard(
+            onPick = { p ->
+                actions.save(tape.copy(playlistId = p.id, service = dev.foldman.deck.TapeService.SPOTIFY, title = tape.title.ifBlank { p.name.take(40) }))
+                // A tape with no picture yet takes the playlist's own cover.
+                if (tape.photoPath == null && p.imageUrl != null) actions.pickCover(tape.id, p.imageUrl)
+                pickingSpotify = false
+            },
+            onBack = { pickingSpotify = false },
+            modifier = modifier.shadow(18.dp, card).clip(card).paper(ui.jcardDark).padding(horizontal = 20.dp, vertical = 16.dp),
+        )
+        return
+    }
     // Searching for an album cover: the card turns over to a search page.
     var searching by remember { mutableStateOf(false) }
     if (searching) {
@@ -300,6 +315,14 @@ fun JCardSheet(
             if (tape.playlistId.isBlank()) {
                 // A blank tape: paste its playlist link right here on the card.
                 var link by remember { mutableStateOf("") }
+                if (ui.spotifyName != null) {
+                    Text(
+                        "PICK FROM MY SPOTIFY PLAYLISTS",
+                        style = Typed.copy(color = JPaper, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp),
+                        modifier = Modifier.padding(vertical = 6.dp).clip(RoundedCornerShape(3.dp)).background(JInk).clickable { pickingSpotify = true }.padding(horizontal = 12.dp, vertical = 9.dp),
+                    )
+                    Text("or", style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)))
+                }
                 Text("Paste a YouTube Music or Spotify playlist link:", style = Typed.copy(fontSize = 12.sp))
                 Spacer(Modifier.height(4.dp))
                 androidx.compose.foundation.text.BasicTextField(
@@ -403,7 +426,7 @@ fun JCardSheet(
 
     when (edit) {
         JEdit.LABEL -> TextDialog("Write on the label", tape.title, onDismiss = { edit = null }) { actions.save(tape.copy(title = it.trim().take(40))) }
-        JEdit.PLAYLIST -> PlaylistDialog(tape, onDismiss = { edit = null }) { ref -> actions.save(tape.copy(playlistId = ref.id, service = ref.service)) }
+        JEdit.PLAYLIST -> PlaylistDialog(tape, onDismiss = { edit = null }, onSpotify = if (ui.spotifyName != null) ({ edit = null; pickingSpotify = true }) else null) { ref -> actions.save(tape.copy(playlistId = ref.id, service = ref.service)) }
         JEdit.FONT -> FontDialog(tape, onDismiss = { edit = null }) { f -> actions.save(tape.copy(font = f)) }
         JEdit.COLOURS -> ColoursDialog(tape, onDismiss = { edit = null }) { s, l -> actions.save(tape.copy(shell = s, label = l)) }
         JEdit.PHOTO_MENU -> AlertDialog(
@@ -576,19 +599,22 @@ private fun TextDialog(title: String, start: String, onDismiss: () -> Unit, onSa
 }
 
 @Composable
-private fun PlaylistDialog(tape: CustomTape, onDismiss: () -> Unit, onSave: (PlaylistRef) -> Unit) {
+private fun PlaylistDialog(tape: CustomTape, onDismiss: () -> Unit, onSpotify: (() -> Unit)? = null, onSave: (PlaylistRef) -> Unit) {
     var link by remember { mutableStateOf(tape.shareUrl) }
     val id = parsePlaylist(link)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Playlist") },
         text = {
-            OutlinedTextField(
-                link, { link = it }, singleLine = true, isError = id == null,
-                label = { Text("YouTube Music or Spotify playlist link") },
-                supportingText = { Text(if (id == null) "That doesn't look like a YouTube Music or Spotify playlist link." else "${id.service.label} playlist found ✓") },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column {
+                OutlinedTextField(
+                    link, { link = it }, singleLine = true, isError = id == null,
+                    label = { Text("YouTube Music or Spotify playlist link") },
+                    supportingText = { Text(if (id == null) "That doesn't look like a YouTube Music or Spotify playlist link." else "${id.service.label} playlist found ✓") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (onSpotify != null) TextButton(onClick = onSpotify) { Text("Pick from my Spotify playlists") }
+            }
         },
         confirmButton = { TextButton(enabled = id != null, onClick = { id?.let(onSave); onDismiss() }) { Text("Save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
@@ -796,5 +822,40 @@ private fun CoverSearchCard(startWith: String, onPick: (dev.foldman.deck.CoverHi
             }
         }
         Text("Covers from MusicBrainz and the Cover Art Archive.", style = Typed.copy(fontSize = 9.sp, color = JInk.copy(alpha = 0.5f)))
+    }
+}
+
+/** The logged-in Spotify account's playlists, on the same paper as the J-card: tap one to use it. */
+@Composable
+private fun SpotifyPickCard(onPick: (dev.foldman.deck.SpotifyPlaylist) -> Unit, onBack: () -> Unit, modifier: Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var lists by remember { mutableStateOf<List<dev.foldman.deck.SpotifyPlaylist>>(emptyList()) }
+    var note by remember { mutableStateOf("Getting your playlists…") }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        runCatching { dev.foldman.deck.SpotifyApi.playlists(context) }
+            .onSuccess { lists = it; note = if (it.isEmpty()) "No playlists on this account yet." else "Tap a playlist to put it on this tape." }
+            .onFailure { note = "Couldn't get your playlists: ${it.message ?: "check the internet connection"}" }
+    }
+    Column(modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("MY SPOTIFY PLAYLISTS", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 2.sp), modifier = Modifier.weight(1f))
+            Text("BACK", style = Typed.copy(fontWeight = FontWeight.Bold), modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onBack).padding(end = 22.dp).padding(6.dp))
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(note, style = Typed.copy(fontSize = 11.sp, color = JInk.copy(alpha = 0.7f)))
+        Spacer(Modifier.height(8.dp))
+        androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(lists.size, key = { lists[it].id }) { i ->
+                val p = lists[i]
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(3.dp)).clickable { onPick(p) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    UrlThumb(p.imageUrl, Modifier.size(44.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(p.name, style = Typed.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (p.tracks > 0) Text("${p.tracks} songs", style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.65f)))
+                    }
+                }
+            }
+        }
     }
 }

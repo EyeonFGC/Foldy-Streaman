@@ -99,6 +99,12 @@ data class DeckUi(
     val stopOnOpen: Boolean = false,
     /** Front screen: the volume buttons work the player (play, pause, skip) instead of the volume. */
     val volumeKeys: Boolean = true,
+    /** The logged-in Spotify account's name, or null when not logged in. */
+    val spotifyName: String? = null,
+    /** The Spotify app's Client ID as Foldy has it (blank = not set up yet). */
+    val spotifyClientId: String = "",
+    /** The last thing the Spotify login had to say (an error, usually). */
+    val spotifyMessage: String? = null,
     /** Sound is going to headphones, a speaker or the car rather than this phone: a plug sits in the jack. */
     val audioElsewhere: Boolean = false,
     /** Settings: a TAPES button on the front screen opens a tape shelf there. */
@@ -217,6 +223,9 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var stopOnOpen = prefs.getBoolean(KEY_STOP_ON_OPEN, false)
     var volumeKeysOn = prefs.getBoolean(KEY_VOLUME_KEYS, true)
         private set
+    private var spotifyName: String? = SpotifyApi.name(app)
+    private var spotifyClientId: String = SpotifyApi.clientId(app)
+    private var spotifyMessage: String? = null
     private var frontShelf = prefs.getBoolean(KEY_FRONT_SHELF, false)
     private var jcardDark = prefs.getBoolean(KEY_JCARD_DARK, false)
 
@@ -589,6 +598,46 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         tick()
     }
 
+    // region Spotify login
+
+    fun setSpotifyClientId(id: String) {
+        SpotifyApi.setClientId(getApplication(), id)
+        spotifyClientId = SpotifyApi.clientId(getApplication())
+        tick()
+    }
+
+    /** Opens Spotify's own login page in the browser; it comes back through [finishSpotifyLogin]. */
+    fun spotifyLogin() {
+        val app = getApplication<Application>()
+        if (SpotifyApi.clientId(app).isBlank()) {
+            spotifyMessage = "Add the Spotify Client ID first."
+            tick()
+            return
+        }
+        spotifyMessage = null
+        runCatching { app.startActivity(Intent(Intent.ACTION_VIEW, SpotifyApi.loginPage(app)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            .onFailure { spotifyMessage = "Couldn't open the browser for the Spotify login." }
+        tick()
+    }
+
+    fun finishSpotifyLogin(back: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            spotifyMessage = SpotifyApi.finishLogin(app, back)
+            spotifyName = SpotifyApi.name(app)
+            tick()
+        }
+    }
+
+    fun spotifyLogout() {
+        SpotifyApi.logOut(getApplication())
+        spotifyName = null
+        spotifyMessage = null
+        tick()
+    }
+
+    // endregion
+
     fun setVolumeKeys(on: Boolean) {
         volumeKeysOn = on
         prefs.edit { putBoolean(KEY_VOLUME_KEYS, on) }
@@ -765,6 +814,33 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         // shows for a moment, then Foldy comes back).
         val spotify = tape.service == TapeService.SPOTIFY
         if (!spotify && remotes[tape.source]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
+        // Logged in to Spotify: tell it over the internet to play the tape on this phone, with no
+        // switching apps. That needs Spotify awake on the phone; if it isn't, nudge it and try a
+        // few more times, and only then fall back to opening the playlist in Spotify itself.
+        if (spotify && spotifyName != null) {
+            val app = getApplication<Application>()
+            if (backend.state.value.isPlaying) backend.pause()
+            viewModelScope.launch {
+                var ok = SpotifyApi.play(app, tape.playlistId)
+                if (!ok) {
+                    remotes[tape.source]?.pause()
+                    repeat(3) {
+                        if (!ok) {
+                            delay(1300)
+                            ok = SpotifyApi.play(app, tape.playlistId)
+                        }
+                    }
+                }
+                if (!ok && loadedTape?.id == tape.id && !stopped) openPlaylistInApp(tape)
+            }
+            return
+        }
+        openPlaylistInApp(tape)
+    }
+
+    /** Opens the tape's playlist in its own app and has it play, then comes back here. */
+    private fun openPlaylistInApp(tape: CustomTape) {
+        val spotify = tape.service == TapeService.SPOTIFY
         if (spotify) {
             // Stop the old music first, so if Spotify is slow the wrong playlist isn't heard.
             if (backend.state.value.isPlaying) backend.pause()
@@ -1138,6 +1214,9 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             deckOpen = phoneMode && deckOpen,
             stopOnOpen = stopOnOpen,
             volumeKeys = volumeKeysOn,
+            spotifyName = spotifyName,
+            spotifyClientId = spotifyClientId,
+            spotifyMessage = spotifyMessage,
             audioElsewhere = audioElsewhere,
             frontShelf = frontShelf,
             jcardDark = jcardDark,
