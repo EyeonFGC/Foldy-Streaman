@@ -29,4 +29,4 @@ ui/JCard.kt, ui/TapeFonts.kt, ui/HeadphoneJack.kt, ui/HingeShade.kt, ui/CherryRe
 Fonts bundled in Foldy Streaman (app/src/main/res/font), from Google Fonts; licences in
 app/src/main/assets/font-licenses:
 - Special Elite (Apache License 2.0), Permanent Marker (Apache License 2.0)
-- Courier Prime, Caveat, Nothing You Could Do (SIL Open Font License 1.1) and .github/workflows/build-apk.yml.
+- Courier Prime, Caveat, Nothing You Could Do, Anton (SIL Open Font License 1.1) and .github/workflows/build-apk.yml.

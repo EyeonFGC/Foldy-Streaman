@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.18.4] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Red Chrome:** AUTO REVERSE is now a heavy Impact-style font, slanted, drawn as a white outline only.
+
 ## [0.18.3] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

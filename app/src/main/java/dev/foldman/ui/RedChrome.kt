@@ -82,6 +82,9 @@ object RedChrome {
     val Glass = Color(0xFF0E0F12)
 }
 
+/** Anton: a free font in the style of Impact (licence in assets/font-licenses). */
+private val ImpactStyle = FontFamily(androidx.compose.ui.text.font.Font(dev.foldman.R.font.impact_style))
+
 private val ChromeBand = listOf(Color(0xFF8C9096), Color(0xFFF7F8F9), Color(0xFFC6C9CE), Color(0xFF7B7F86))
 
 /** Metallic red paint: a deep red with a soft sheen and fine brushing. */
@@ -259,7 +262,12 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                 }
                 Text(
                     "AUTO REVERSE",
-                    style = TextStyle(fontFamily = FontFamily.Serif, color = Color.White, fontSize = 17.sp, letterSpacing = 1.sp),
+                    // A heavy Impact-style face (Anton), slanted, drawn as a white outline only.
+                    style = TextStyle(
+                        fontFamily = ImpactStyle, fontStyle = FontStyle.Italic, color = Color.White,
+                        fontSize = 22.sp, letterSpacing = 1.5.sp,
+                        drawStyle = Stroke(width = 2.6f, join = androidx.compose.ui.graphics.StrokeJoin.Round),
+                    ),
                     maxLines = 1, softWrap = false,
                     modifier = Modifier.offset(x = (-8).dp, y = (-14).dp).rotate(-slope),
                 )
