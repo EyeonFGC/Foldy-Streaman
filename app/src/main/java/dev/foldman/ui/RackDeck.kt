@@ -288,9 +288,8 @@ internal fun RackDeckLayout(
                 )
             }
 
-            if (hinges) {
-                if (ui.hingeStyle == dev.foldman.deck.HingeStyle.PIANO) PianoHinge(theme = ui.theme) else FoldHinges(theme = ui.theme)
-            }
+            // The gap down the fold; the hinge itself is drawn behind, the full height of the screen.
+            if (hinges) Spacer(Modifier.width(HingeGap))
 
             // The open deck.
             Column(Modifier.weight(if (hinges) 0.5f else 0.54f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -411,17 +410,28 @@ internal fun RackDeckLayout(
         // Tapping one of your tapes slides its J-card out over the rack.
         val cardTape = (card as? RackItem.Mine)?.let { m -> ui.tapes.firstOrNull { it.id == m.tape.id } }
         if (card is RackItem.Mine && cardTape == null) card = null
-        if (cardTape != null) {
-            Box(Modifier.fillMaxHeight().fillMaxWidth(0.46f)) {
+        // The J-card slides in from the left: quick at first, then easing gently to a stop. It slides
+        // back out (a little quicker) when closed. The last tape shown stays drawn while it leaves.
+        val shownTape = remember { arrayOfNulls<CustomTape>(1) }
+        if (cardTape != null) shownTape[0] = cardTape
+        androidx.compose.animation.AnimatedVisibility(
+            visible = cardTape != null,
+            enter = androidx.compose.animation.slideInHorizontally(tween(560, easing = CardEaseOut)) { -it - 40 } +
+                androidx.compose.animation.fadeIn(tween(160)),
+            exit = androidx.compose.animation.slideOutHorizontally(tween(280, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { -it - 40 },
+            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.46f),
+        ) {
+            val t = shownTape[0]
+            if (t != null) {
                 JCardSheet(
-                    cardTape, ui,
+                    t, ui,
                     JCardActions(
                         save = actions.tapes.save,
                         delete = actions.tapes.delete,
                         pickPhoto = actions.tapes.pickPhoto,
                         removePhoto = actions.tapes.removePhoto,
                     ),
-                    onLoad = { if (ui.empty) load(RackItem.Mine(cardTape)); card = null },
+                    onLoad = { if (ui.empty) load(RackItem.Mine(t)); card = null },
                     onClose = { card = null },
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -641,6 +651,9 @@ private fun TapeCardDialog(
 }
 
 /** The app's light blue (the front player's enamel, lightened) for the glowing drop area. */
+/** Fast out of the gate, then a long gentle settle (an "ease-out" curve). */
+private val CardEaseOut = androidx.compose.animation.core.CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
+
 private val GlowBlue = Color(0xFF8CC4FF)
 private val GlowEdge = Color(0xFF4A9BFF)
 private val BlockedLight = Color(0xFFFF7A6E)

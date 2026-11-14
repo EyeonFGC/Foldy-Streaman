@@ -213,6 +213,16 @@ fun FoldmanScreen(
                 // Foldy Streaman: open to pick a tape, close to play.
                 // Inside, the body round the rack and deck is the theme's own material.
                 Posture.Unfolded -> Box(Modifier.fillMaxSize().insideBody(ui.theme)) {
+                    // The hinge runs the whole height of the screen, top edge to bottom, right on the fold.
+                    if (!ui.phoneMode) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                            when (ui.hingeStyle) {
+                                dev.foldman.deck.HingeStyle.PIANO -> PianoHinge(theme = ui.theme)
+                                dev.foldman.deck.HingeStyle.THREE -> FoldHinges(theme = ui.theme)
+                                dev.foldman.deck.HingeStyle.NONE -> Unit
+                            }
+                        }
+                    }
                     RackDeckLayout(
                         ui, anim, deck, shelfActions,
                         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),

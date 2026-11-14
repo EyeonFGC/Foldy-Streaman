@@ -334,6 +334,7 @@ class PreviewShots {
         val u = ui.copy(theme = theme, tape = plain[0], tapes = plain, tapeCued = false, title = "Fast Car", artist = "Tracy Chapman")
         rule.setContent {
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(theme)) {
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.TopCenter) { PianoHinge(theme = theme) }
                 RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp))
             }
         }
@@ -345,4 +346,24 @@ class PreviewShots {
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideBlackGold() = inside(DeckTheme.BLACK_GOLD, "inside-blackgold")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideCherry() = inside(DeckTheme.CHERRY_RED, "inside-cherry")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideSilver() = inside(DeckTheme.SILVER_BLUE, "inside-silver")
+
+    /** Frames of the J-card sliding in (plain tapes: the preview tool can't draw pictures here). */
+    @Test
+    @Config(qualifiers = "w832dp-h628dp-xxhdpi")
+    fun jcardSlide() {
+        val plain = tapes.map { it.copy(photoPath = null) }
+        val u = ui.copy(tapes = plain, tape = plain[0], tapeCued = false)
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(DeckTheme.ORIGINAL)) {
+                RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp), previewCard = 5)
+            }
+        }
+        rule.mainClock.advanceTimeByFrame()
+        var t = 0L
+        for (ms in listOf(60L, 140L, 260L, 600L)) {
+            rule.mainClock.advanceTimeBy(ms - t); t = ms
+            rule.onRoot().captureRoboImage("build/shots/slide-$ms.png")
+        }
+    }
 }

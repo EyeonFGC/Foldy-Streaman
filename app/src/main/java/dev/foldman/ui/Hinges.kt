@@ -24,22 +24,18 @@ import androidx.compose.ui.unit.dp
 /** A hinge's colours, following the theme: painted leaves, a polished barrel and screws. */
 class HingeLook(val leaf: List<Color>, val barrel: List<Color>, val screw: List<Color>)
 
-private val Chrome = listOf(Color(0xFF6E737A), Color(0xFFF4F5F7), Color(0xFFC3C7CC), Color(0xFF7D828A))
-private val ChromeScrew = listOf(Color(0xFFF1F2F4), Color(0xFF8D9299))
+/** One colour, shaded like metal: light, mid, dark. The screws are a darker shade of it. */
+private fun oneColour(hi: Long, mid: Long, lo: Long, screwHi: Long, screwLo: Long) = HingeLook(
+    leaf = listOf(Color(hi), Color(mid), Color(lo)),
+    barrel = listOf(Color(lo), Color(hi), Color(mid), Color(lo)),
+    screw = listOf(Color(screwHi), Color(screwLo)),
+)
 
 fun hingeLook(theme: dev.foldman.deck.DeckTheme): HingeLook = when (theme) {
-    dev.foldman.deck.DeckTheme.ORIGINAL -> HingeLook(listOf(Color(0xFF6A9FDA), Color(0xFF2F6FB5), Color(0xFF214F86)), Chrome, ChromeScrew)
-    dev.foldman.deck.DeckTheme.BLACK_GOLD -> HingeLook(
-        listOf(BlackGold.GoldHi, BlackGold.Gold, BlackGold.GoldLo),
-        listOf(Color(0xFF8A6208), BlackGold.GoldHi, BlackGold.Gold, Color(0xFF8A6208)),
-        listOf(Color(0xFFFFE08A), Color(0xFF9C7410)),
-    )
-    dev.foldman.deck.DeckTheme.CHERRY_RED -> HingeLook(listOf(CherryRed.BodyHi, CherryRed.Body, CherryRed.BodyLo), Chrome, ChromeScrew)
-    dev.foldman.deck.DeckTheme.SILVER_BLUE -> HingeLook(
-        listOf(Color(0xFFE9EBEE), Color(0xFFB9BDC3), Color(0xFFA2A7AE)),
-        listOf(SilverBlue.BlueLo, SilverBlue.BlueHi, SilverBlue.Blue, SilverBlue.BlueLo),
-        ChromeScrew,
-    )
+    dev.foldman.deck.DeckTheme.ORIGINAL -> oneColour(0xFF7AAAE0, 0xFF3D7CC2, 0xFF22508A, 0xFF2C5E9C, 0xFF153A66)
+    dev.foldman.deck.DeckTheme.BLACK_GOLD -> oneColour(0xFFFFDE7A, 0xFFF2B51E, 0xFFB98310, 0xFFC28E14, 0xFF7A5606)
+    dev.foldman.deck.DeckTheme.CHERRY_RED -> oneColour(0xFFF27A8C, 0xFFE23A55, 0xFFA82038, 0xFFB52A42, 0xFF6E1222)
+    dev.foldman.deck.DeckTheme.SILVER_BLUE -> oneColour(0xFFF1F2F4, 0xFFC4C8CD, 0xFF8E939A, 0xFF9DA2A9, 0xFF5E636A)
 }
 
 /** How wide the gap down the fold is: room for the hinges without touching either side. */
@@ -114,7 +110,7 @@ private fun DrawScope.drawScrew(c: Offset, r: Float, head: List<Color>) {
 fun PianoHinge(modifier: Modifier = Modifier, theme: dev.foldman.deck.DeckTheme = dev.foldman.deck.DeckTheme.ORIGINAL) {
     val look = hingeLook(theme)
     androidx.compose.foundation.layout.Box(modifier.width(HingeGap).fillMaxHeight(), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.width(30.dp).fillMaxHeight(0.97f)) {
+        Canvas(Modifier.width(30.dp).fillMaxHeight()) {
             val w = size.width
             val h = size.height
             val barrelL = w * 0.36f

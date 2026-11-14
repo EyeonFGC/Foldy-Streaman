@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.16.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **The J-card slides in from the left**: quick at first, then easing gently to a stop. Closing it slides it back out to the left.
+- **The hinge runs the full height of the screen**, top edge to bottom edge, right on the fold, so it looks like what the phone folds on. It's one colour per theme (blue, gold, red, silver) with darker screws.
+
 ## [0.16.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
