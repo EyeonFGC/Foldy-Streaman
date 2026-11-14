@@ -759,15 +759,21 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
      * soon as it starts playing.
      */
     private fun startPlaylist(tape: CustomTape) {
-        if (remotes[tape.source]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
-        // The app isn't running (or we can't reach its player yet), so open the playlist in it.
-        // Spotify only shows a playlist opened this way, it doesn't start it, and pressing PLAY
-        // then carries on with whatever it played last. So ask it to start (":play"), and as a
-        // second line, hand the playlist to its player the moment that becomes reachable.
-        pendingTape = tape
-        pendingUntil = SystemClock.elapsedRealtime() + COME_BACK_MS
+        // Spotify's player says it accepts links handed to it in the background, but then just
+        // carries on with whatever it was playing. The way that does work is to open the playlist
+        // in Spotify itself with ":play" on the end, so Spotify tapes always go that way (Spotify
+        // shows for a moment, then Foldy comes back).
+        val spotify = tape.service == TapeService.SPOTIFY
+        if (!spotify && remotes[tape.source]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
+        if (spotify) {
+            // Stop the old music first, so if Spotify is slow the wrong playlist isn't heard.
+            if (backend.state.value.isPlaying) backend.pause()
+        } else {
+            pendingTape = tape
+            pendingUntil = SystemClock.elapsedRealtime() + COME_BACK_MS
+        }
         val app = getApplication<Application>()
-        val open = if (tape.service == TapeService.SPOTIFY) tape.playUrl + ":play" else tape.playUrl
+        val open = if (spotify) tape.playUrl + ":play" else tape.playUrl
         val base = Intent(Intent.ACTION_VIEW, Uri.parse(open))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
         runCatching { app.startActivity(Intent(base).setPackage(tape.source.packageName)) }

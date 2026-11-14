@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.28.0] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **Spotify tapes still played whatever Spotify had on last.** Handing the playlist to Spotify quietly in the background doesn't work: Spotify says yes and then carries on with its old music. Spotify tapes now always open the playlist in Spotify itself and tell it to play, the same way YT Music tapes do: Spotify shows for a moment, then Foldy comes back.
+
 ## [0.27.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
