@@ -15,7 +15,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
+      # GitHub's Ubuntu machines come with the Android SDK already installed.
       - uses: gradle/actions/setup-gradle@v4
       # Optional: with the FOLDY_KEYSTORE_B64 and FOLDY_KEY_PASSWORD secrets set, every build is
       # signed with the same key, so new APKs install over old ones without losing your tapes.
