@@ -805,9 +805,14 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     /** Until when to jump back to Foldy once the other app starts playing. */
     private var comeBackBy = 0L
 
+    /** Whether the other app has actually taken over the screen since we opened it. */
+    private var leftForOtherApp = false
+
     fun onScreenShown(shown: Boolean) {
         screenShown = shown
-        if (shown) comeBackBy = 0L
+        if (!shown) leftForOtherApp = true
+        // Back on our own screen after the other app had it: nothing left to do.
+        else if (leftForOtherApp) comeBackBy = 0L
     }
 
     /**
@@ -818,6 +823,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         val now = SystemClock.elapsedRealtime()
         comeBackBy = now + COME_BACK_MS
         comeBackAnywayAt = now + COME_BACK_BLIND_MS
+        leftForOtherApp = false
     }
 
     /** Without notification access we can't tell when YT Music starts, so come back after a pause. */
@@ -825,10 +831,13 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun maybeComeBack(state: BackendState, now: Long) {
         if (comeBackBy == 0L) return
-        if (now > comeBackBy || screenShown) {
+        if (now > comeBackBy) {
             comeBackBy = 0L
             return
         }
+        // The other app takes a moment to cover our screen. Until it has, wait: giving up here
+        // (as this used to) meant a slower phone stayed in Spotify instead of coming back.
+        if (!leftForOtherApp) return
         val canSee = remotes[source]?.hasSession == true
         if (!state.isPlaying && (canSee || now < comeBackAnywayAt)) return
         comeBackBy = 0L

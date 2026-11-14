@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.28.1] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- After starting a Spotify (or YT Music) tape, Foldy sometimes stayed in the music app instead of coming back by itself. It gave up if the music app was slow to appear; now it waits for it.
+
 ## [0.28.0] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed
