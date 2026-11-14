@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.26.0] — 2026-11-14 (Foldy Streaman)
+
+### Fixed
+- **Spotify tapes could play the wrong playlist.** When Spotify wasn't already running, Foldy opened the tape's playlist in Spotify but Spotify only showed it without starting it, so PLAY carried on with whatever Spotify played last. Foldy now tells Spotify to start the playlist, and hands it to Spotify's player again as soon as that player can be reached.
+- Needs: notification access turned on for Foldy on that phone (Foldy asks for it on the front screen), so it can reach Spotify's player.
+
 ## [0.25.2] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

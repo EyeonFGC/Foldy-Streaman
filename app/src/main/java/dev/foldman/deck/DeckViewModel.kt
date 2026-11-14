@@ -748,12 +748,38 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
      */
     private fun startPlaylist(tape: CustomTape) {
         if (remotes[tape.source]?.playFromUri(Uri.parse(tape.playUrl)) == true) return
+        // The app isn't running (or we can't reach its player yet), so open the playlist in it.
+        // Spotify only shows a playlist opened this way, it doesn't start it, and pressing PLAY
+        // then carries on with whatever it played last. So ask it to start (":play"), and as a
+        // second line, hand the playlist to its player the moment that becomes reachable.
+        pendingTape = tape
+        pendingUntil = SystemClock.elapsedRealtime() + COME_BACK_MS
         val app = getApplication<Application>()
-        val base = Intent(Intent.ACTION_VIEW, Uri.parse(tape.playUrl))
+        val open = if (tape.service == TapeService.SPOTIFY) tape.playUrl + ":play" else tape.playUrl
+        val base = Intent(Intent.ACTION_VIEW, Uri.parse(open))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
         runCatching { app.startActivity(Intent(base).setPackage(tape.source.packageName)) }
             .recoverCatching { app.startActivity(base) }
         comeBackWhenPlaying()
+    }
+
+    /** A tape whose playlist was opened in its app but may not have started playing there yet. */
+    private var pendingTape: CustomTape? = null
+    private var pendingUntil = 0L
+
+    /** Starts [pendingTape] inside the app's own player once that player can be reached. */
+    private fun maybeStartPending(state: BackendState, now: Long) {
+        val tape = pendingTape ?: return
+        if (now > pendingUntil || loadedTape?.id != tape.id || stopped) {
+            pendingTape = null
+            return
+        }
+        // Already playing: the app started it itself.
+        if (state.isPlaying) {
+            pendingTape = null
+            return
+        }
+        if (remotes[tape.source]?.playFromUri(Uri.parse(tape.playUrl)) == true) pendingTape = null
     }
 
     /** Whether our screen is the one showing (set by MainActivity). */
@@ -1028,6 +1054,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         val state = backend.state.value
         val now = SystemClock.elapsedRealtime()
         if (winding != 0) windStep(state)
+        maybeStartPending(state, now)
         maybeComeBack(state, now)
         if (state.ended) stopped = true
         // Just after STOP the other app may still say "playing" for a moment: don't let that undo the stop.
