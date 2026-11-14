@@ -42,6 +42,13 @@ data class LabelPalette(val paper: Color, val stripe: Color, val stripe2: Color,
     }
 }
 
+/** Foldy Streaman: whether the phone's notifications show on the front player, and how much of them. */
+enum class NoticeMode(val label: String) {
+    OFF("Off"),
+    APP_ONLY("App name only"),
+    FULL("Full message"),
+}
+
 /** Foldy Streaman: what runs down the fold of the open player. */
 enum class HingeStyle(val label: String) {
     PIANO("One long hinge"),
@@ -118,6 +125,7 @@ data class DeckUi(
     /** Settings: adapters switched off, left off the rack. */
     val hiddenSources: Set<Source> = emptySet(),
     val hingeStyle: HingeStyle = HingeStyle.PIANO,
+    val noticeMode: NoticeMode = NoticeMode.OFF,
     /** The last backup or restore, said in plain words (shown in Settings). */
     val backupMessage: String? = null,
 ) {
@@ -236,6 +244,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     private var hiddenSources: Set<Source> = prefs.getStringSet(KEY_HIDDEN_SOURCES, emptySet()).orEmpty()
         .mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
+    private var noticeMode = runCatching { NoticeMode.valueOf(prefs.getString(KEY_NOTICES, null) ?: "") }.getOrDefault(NoticeMode.OFF)
     private var hingeStyle = runCatching { HingeStyle.valueOf(prefs.getString(KEY_HINGES, null) ?: "") }.getOrDefault(HingeStyle.PIANO)
     private var backupMessage: String? = null
 
@@ -483,6 +492,12 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         tick()
     }
 
+    fun setNoticeMode(mode: NoticeMode) {
+        noticeMode = mode
+        prefs.edit { putString(KEY_NOTICES, mode.name) }
+        tick()
+    }
+
     fun setLockScreen(on: Boolean) {
         lockScreen = on
         prefs.edit { putBoolean(KEY_LOCK_SCREEN, on) }
@@ -546,6 +561,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         .put("frontShelf", frontShelf)
         .put("hiddenSources", org.json.JSONArray(hiddenSources.map { it.name }))
         .put("hinges", hingeStyle.name)
+        .put("notices", noticeMode.name)
 
     /** Saves every tape (pictures included) and the settings to the file the person picked. */
     fun exportBackup(uri: Uri) {
@@ -584,6 +600,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (o.has("stopOnOpen")) setStopOnOpen(o.optBoolean("stopOnOpen"))
         if (o.has("volumeKeys")) setVolumeKeys(o.optBoolean("volumeKeys"))
         if (o.has("lockScreen")) setLockScreen(o.optBoolean("lockScreen"))
+        runCatching { NoticeMode.valueOf(o.optString("notices")) }.getOrNull()?.let { setNoticeMode(it) }
         if (o.has("frontShelf")) setFrontShelf(o.optBoolean("frontShelf"))
         o.optJSONArray("hiddenSources")?.let { arr ->
             hiddenSources = List(arr.length()) { arr.optString(it) }.mapNotNull { runCatching { Source.valueOf(it) }.getOrNull() }.toSet()
@@ -1274,6 +1291,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             jcardDark = jcardDark,
             hiddenSources = hiddenSources,
             hingeStyle = hingeStyle,
+            noticeMode = noticeMode,
             backupMessage = backupMessage,
         )
     }
@@ -1325,6 +1343,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_STOP_ON_OPEN = "stop_on_open"
         private const val KEY_VOLUME_KEYS = "volume_keys"
         private const val KEY_LOCK_SCREEN = "lock_screen"
+        private const val KEY_NOTICES = "notices_on_player"
         private const val KEY_FRONT_SHELF = "front_shelf"
         private const val KEY_JCARD_DARK = "jcard_dark"
         private const val KEY_HIDDEN_SOURCES = "hidden_sources"

@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -199,44 +200,78 @@ internal fun CoverSportYellow(ui: DeckUi, anim: DeckAnimations, deck: DeckContro
     }
 }
 
-/** The long pill at the top, like a radio dial: the words of [top] spread above its dark line, [bottom] below. */
+/**
+ * The long pill at the top, like a radio dial: the words of [top] spread above its dark line,
+ * [bottom] below. When a notification arrives, all of that slides down out of the pill and the
+ * notification slides in from the top; a few seconds later they swap back.
+ */
 @Composable
 private fun DialStrip(top: String, bottom: String, modifier: Modifier) {
     val ink = TextStyle(fontFamily = FontFamily.SansSerif, color = SportYellow.Ink, fontWeight = FontWeight.Bold)
-    Column(
-        modifier.drawBehind {
-            val r = CornerRadius(size.height / 2f)
-            // Set slightly into the body: a paler face with a dark rim and a shadow along the top.
-            // A raised pill moulded into the body: no black outline, just a darker-yellow edge that
-            // catches the light along the top and falls into shade along the bottom.
-            drawRoundRect(Color(0xFF8A6800).copy(alpha = 0.35f), topLeft = Offset(0f, 2.5.dp.toPx()), size = size, cornerRadius = r)
-            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFEE96), Color(0xFFFFDD4A))), cornerRadius = r)
-            drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFD9AA00), Color(0xFFB98C00))), cornerRadius = r, style = Stroke(2.dp.toPx()))
-            val inner = 2.dp.toPx()
-            drawRoundRect(
-                Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), Color.Transparent), 0f, size.height * 0.5f),
-                topLeft = Offset(inner, inner), size = Size(size.width - inner * 2, size.height - inner * 2), cornerRadius = CornerRadius(size.height / 2f - inner), style = Stroke(1.dp.toPx()),
-            )
-            // The dark line through the middle, with rounded ends.
-            val inset = size.height * 0.55f
-            drawLine(SportYellow.Ink, Offset(inset, size.height / 2f), Offset(size.width - inset, size.height / 2f), 4.dp.toPx(), StrokeCap.Round)
-        },
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val (t, notice) = noticeSlide()
+    Box(
+        modifier
+            .drawBehind {
+                val r = CornerRadius(size.height / 2f)
+                // A raised pill moulded into the body: no black outline, just a darker-yellow edge that
+                // catches the light along the top and falls into shade along the bottom.
+                drawRoundRect(Color(0xFF8A6800).copy(alpha = 0.35f), topLeft = Offset(0f, 2.5.dp.toPx()), size = size, cornerRadius = r)
+                drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFFFEE96), Color(0xFFFFDD4A))), cornerRadius = r)
+                drawRoundRect(Brush.verticalGradient(listOf(Color(0xFFD9AA00), Color(0xFFB98C00))), cornerRadius = r, style = Stroke(2.dp.toPx()))
+                val inner = 2.dp.toPx()
+                drawRoundRect(
+                    Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.7f), Color.Transparent), 0f, size.height * 0.5f),
+                    topLeft = Offset(inner, inner), size = Size(size.width - inner * 2, size.height - inner * 2), cornerRadius = CornerRadius(size.height / 2f - inner), style = Stroke(1.dp.toPx()),
+                )
+            }
+            .padding(2.dp)
+            .clip(RoundedCornerShape(50)),
     ) {
-        // The FM band lettered along the top of the line, like a radio dial.
-        Row(
-            Modifier.weight(1f).fillMaxWidth().padding(start = 26.dp, end = 26.dp, top = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        Column(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { translationY = t * size.height; alpha = 1f - t }
+                .drawBehind {
+                    // The dark line through the middle, with rounded ends.
+                    val inset = size.height * 0.55f
+                    drawLine(SportYellow.Ink, Offset(inset, size.height / 2f), Offset(size.width - inset, size.height / 2f), 4.dp.toPx(), StrokeCap.Round)
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            top.split(' ').forEachIndexed { i, word ->
-                val edge = i == 0 || word == "MHz"
-                Text(word, style = ink.copy(fontSize = if (edge) 8.sp else 11.sp, fontWeight = if (edge) FontWeight.Bold else FontWeight.Black), maxLines = 1)
+            // The FM band lettered along the top of the line, like a radio dial.
+            Row(
+                Modifier.weight(1f).fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                top.split(' ').forEachIndexed { i, word ->
+                    val edge = i == 0 || word == "MHz"
+                    Text(word, style = ink.copy(fontSize = if (edge) 8.sp else 11.sp, fontWeight = if (edge) FontWeight.Bold else FontWeight.Black), maxLines = 1)
+                }
+            }
+            Spacer(Modifier.height(5.dp))
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(bottom, style = ink.copy(fontSize = 7.sp, letterSpacing = 2.sp), maxLines = 1)
             }
         }
-        Spacer(Modifier.height(5.dp))
-        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            Text(bottom, style = ink.copy(fontSize = 7.sp, letterSpacing = 2.sp), maxLines = 1)
+        if (t > 0.001f && notice != null) {
+            Row(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { translationY = -(1f - t) * size.height; alpha = t }
+                    .padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                NoticeIcon(notice, 26)
+                Spacer(Modifier.width(9.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        (notice.app.uppercase() + "  ·  " + notice.title).trim(),
+                        style = ink.copy(fontSize = 11.sp, fontWeight = FontWeight.Black), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    if (notice.text.isNotBlank()) Text(notice.text, style = ink.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
         }
     }
 }

@@ -396,6 +396,19 @@ class PreviewShots {
         rule.onRoot().captureRoboImage("build/shots/folded-sport.png")
     }
 
+    private val sampleNotice = Notice("k", "Messages", "Sam", "Running 10 minutes late, save me a seat by the window!", null, 0L)
+    private fun withNotice(name: String, content: @androidx.compose.runtime.Composable () -> Unit) {
+        rule.setContent { androidx.compose.runtime.CompositionLocalProvider(LocalPreviewNotice provides sampleNotice) { content() } }
+        rule.onRoot().captureRoboImage("build/shots/notice-$name.png")
+    }
+    private fun playing(theme: DeckTheme) = ui.copy(theme = theme, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING)
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeOriginal() = withNotice("1") { CoverWalkman(playing(DeckTheme.ORIGINAL), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeGold() = withNotice("2") { CoverBlackGold(playing(DeckTheme.BLACK_GOLD), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeCherry() = withNotice("3") { CoverCherryRed(playing(DeckTheme.CHERRY_RED), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeSilver() = withNotice("4") { CoverSilverBlue(playing(DeckTheme.SILVER_BLUE), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeRedChrome() = withNotice("5") { CoverRedChrome(playing(DeckTheme.RED_CHROME), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeSport() = withNotice("6") { CoverSportYellow(playing(DeckTheme.SPORT_YELLOW), anim(), deck, {}, Modifier.fillMaxSize()) }
+
     private fun logoPart(title: String, name: String) {
         val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)
         val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = listOf(t), tape = t, tapeCued = false)

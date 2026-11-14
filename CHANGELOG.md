@@ -2,6 +2,17 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.33.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Notifications on the player** (Settings > Notifications on the player: Off / App name only / Full message; off to begin with). A new notification shows on the front player for about five seconds, each theme in its own spot:
+  - Sport Yellow: the FM numbers, bar and "unfold to change tapes" slide down out of the top pill and the notification slides in, then they swap back.
+  - Original, Cherry Red, Red Chrome: the tape window darkens and the notification slides down into it in white.
+  - Silver & Blue: the same, turned on its side to run up the tall window.
+  - Black & Gold: in the middle of the round window.
+- Silent notifications and music players' own "now playing" cards are left out. Nothing is stored.
+- Needs: notification access turned on for Foldy. The phone's own pop-up still appears as well.
+
 ## [0.32.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

@@ -49,6 +49,7 @@ class SettingsActions(
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setVolumeKeys: (Boolean) -> Unit = {},
     val setLockScreen: (Boolean) -> Unit = {},
+    val setNoticeMode: (dev.foldman.deck.NoticeMode) -> Unit = {},
     val spotifyLogin: () -> Unit = {},
     val spotifyLogout: () -> Unit = {},
     val setSpotifyClientId: (String) -> Unit = {},
@@ -128,6 +129,24 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                             )
                         }
+                    }
+                }
+            }
+            Section("NOTIFICATIONS ON THE PLAYER") {
+                Text("New notifications show on the front player for a few seconds, each theme in its own spot. Needs notification access. The phone's own pop-up still appears too.", style = Note)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    dev.foldman.deck.NoticeMode.entries.forEach { m ->
+                        val on = ui.noticeMode == m
+                        Text(
+                            m.label.uppercase(),
+                            style = EngravedCaps.copy(color = if (on) accent else Color(0xFFD9D2C8), fontSize = 10.sp, letterSpacing = 1.5.sp),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(if (on) 2.dp else 1.dp, if (on) accent else Color.White.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                .clickable { actions.setNoticeMode(m) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        )
                     }
                 }
             }

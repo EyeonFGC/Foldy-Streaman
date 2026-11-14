@@ -166,6 +166,7 @@ fun FoldmanScreen(
             setStopOnOpen = vm::setStopOnOpen,
             setVolumeKeys = vm::setVolumeKeys,
             setLockScreen = vm::setLockScreen,
+            setNoticeMode = vm::setNoticeMode,
             spotifyLogin = vm::spotifyLogin,
             spotifyLogout = vm::spotifyLogout,
             setSpotifyClientId = vm::setSpotifyClientId,
@@ -182,6 +183,7 @@ fun FoldmanScreen(
     CompositionLocalProvider(
         LocalMechSounds provides sounds.takeIf { ui.keySounds },
         LocalHaptics provides ui.haptics,
+        LocalNoticeMode provides ui.noticeMode,
     ) {
         BoxWithConstraints(
             Modifier
@@ -362,6 +364,8 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                 Row(Modifier.weight(1f).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                         TapeWindow(ui, anim, vertical = true)
+                        // A notification, when one arrives, comes in over the window (same shape, stood on end).
+                        NoticeOverlay(NoticeStyle.WINDOW, Modifier.originalWindowOnEnd())
                     }
                 }
                 Spacer(Modifier.height(14.dp))

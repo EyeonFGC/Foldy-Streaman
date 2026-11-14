@@ -204,6 +204,8 @@ private fun PillWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                     )
                     drawLine(Color.White.copy(alpha = 0.25f), Offset(size.width * 0.75f, size.height * 0.04f), Offset(size.width * 0.55f, size.height * 0.96f), 1.5f)
                 }
+                // A notification, when one arrives, comes in over the darkened window.
+                NoticeOverlay(NoticeStyle.SIDEWAYS, Modifier.fillMaxSize())
             }
             // Thin chrome edge where the glass meets the blue frame.
             Canvas(Modifier.size(winW + 4.dp, winH + 4.dp)) {

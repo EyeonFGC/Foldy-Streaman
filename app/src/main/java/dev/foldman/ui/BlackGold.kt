@@ -187,6 +187,8 @@ private fun Porthole(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
             } else {
                 FullCassette(ui, anim, Modifier.requiredSize(w, h), vertical = true)
             }
+            // A notification, when one arrives, shows in the middle of the round window.
+            NoticeOverlay(NoticeStyle.ROUND, Modifier.fillMaxSize())
         }
         // Glass and rim.
         Canvas(Modifier.fillMaxSize()) {
