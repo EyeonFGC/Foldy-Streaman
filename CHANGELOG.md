@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.25.2] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- App icon: the tape deck and FOLDY are a little smaller, so the deck's corners no longer touch the edge of the icon.
+
 ## [0.25.1] — 2026-11-14 (Foldy Streaman)
 
 ### Changed
