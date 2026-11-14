@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.34.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **A small glowing padlock on the player while it is showing over the lock screen**, so you can tell the phone is still locked. Each time the phone wakes, the padlock starts open, swings down and clicks shut. Same padlock on every theme, in the theme's colour and its own spot (on Sport Yellow: white, on the grey surround under the window). Only with "Show the player on the lock screen" switched on.
+
 ## [0.33.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

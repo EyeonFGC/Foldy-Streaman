@@ -212,13 +212,17 @@ fun FoldmanScreen(
             }
             when (posture) {
                 // The cover screen is the player itself: edge to edge, system bars hidden.
-                Posture.Cover -> when (ui.theme) {
-                    DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
-                    DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
-                    DeckTheme.SPORT_YELLOW -> CoverSportYellow(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
-                    DeckTheme.RED_CHROME -> CoverRedChrome(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
-                    DeckTheme.SILVER_BLUE -> CoverSilverBlue(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
-                    DeckTheme.CHERRY_RED -> CoverCherryRed(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                Posture.Cover -> {
+                    when (ui.theme) {
+                        DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                        DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                        DeckTheme.SPORT_YELLOW -> CoverSportYellow(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                        DeckTheme.RED_CHROME -> CoverRedChrome(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                        DeckTheme.SILVER_BLUE -> CoverSilverBlue(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                        DeckTheme.CHERRY_RED -> CoverCherryRed(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                    }
+                    // Showing over the lock screen: a small glowing padlock says so.
+                    if (ui.lockScreen) LockBadgeFor(ui)
                 }
                 // Foldy Streaman: open to pick a tape, close to play.
                 // Inside, the body round the rack and deck is the theme's own material.

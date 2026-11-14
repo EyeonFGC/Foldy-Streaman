@@ -409,6 +409,18 @@ class PreviewShots {
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeRedChrome() = withNotice("5") { CoverRedChrome(playing(DeckTheme.RED_CHROME), anim(), deck, {}, Modifier.fillMaxSize()) }
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun noticeSport() = withNotice("6") { CoverSportYellow(playing(DeckTheme.SPORT_YELLOW), anim(), deck, {}, Modifier.fillMaxSize()) }
 
+    private fun locked(name: String, theme: DeckTheme, content: @androidx.compose.runtime.Composable (DeckUi) -> Unit) {
+        val u = playing(theme).copy(lockScreen = true)
+        rule.setContent { androidx.compose.runtime.CompositionLocalProvider(LocalPreviewLocked provides true) { androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) { content(u); LockBadgeFor(u) } } }
+        rule.onRoot().captureRoboImage("build/shots/lock-$name.png")
+    }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockOriginal() = locked("1", DeckTheme.ORIGINAL) { CoverWalkman(it, anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockGold() = locked("2", DeckTheme.BLACK_GOLD) { CoverBlackGold(it, anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockCherry() = locked("3", DeckTheme.CHERRY_RED) { CoverCherryRed(it, anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockSilver() = locked("4", DeckTheme.SILVER_BLUE) { CoverSilverBlue(it, anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockRedChrome() = locked("5", DeckTheme.RED_CHROME) { CoverRedChrome(it, anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun lockSport() = locked("6", DeckTheme.SPORT_YELLOW) { CoverSportYellow(it, anim(), deck, {}, Modifier.fillMaxSize()) }
+
     private fun logoPart(title: String, name: String) {
         val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)
         val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = listOf(t), tape = t, tapeCued = false)
