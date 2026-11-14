@@ -2,6 +2,16 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.6.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **Swipe the tape right to eject it.** It slides off the side of the screen with a click, the music stops and the deck is left empty ("No tape" on the front screen too).
+- **Click when a tape goes in**: the tape slides the last bit into the slot and clicks as it seats, with a buzz.
+
+### Changed
+- The deck's slot is now only a millimetre or so bigger than the tape, so it fits snug.
+- Front screen: the keys run top to bottom with a **red PLAY key at the top**, then REW, FF, PAUSE and STOP·EJECT.
+
 ## [0.5.0] — 2026-11-14 (Foldy Streaman)
 
 ### Changed

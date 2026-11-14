@@ -49,6 +49,7 @@ class TapeActions(
     val load: (CustomTape) -> Unit,
     val save: (CustomTape) -> Unit,
     val delete: (String) -> Unit,
+    val eject: () -> Unit = {},
 )
 
 private val HandFont = TextStyle(fontFamily = FontFamily.Cursive, fontWeight = FontWeight.Bold)

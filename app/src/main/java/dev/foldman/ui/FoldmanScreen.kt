@@ -93,10 +93,13 @@ fun FoldmanScreen(
     val feel by rememberUpdatedState(ui)
 
     // A new tape drops into the deck whenever the source changes (and when the app opens).
-    LaunchedEffect(ui.source, ui.tape?.id) {
-        anim.insert.snapTo(1f)
-        anim.insert.animateTo(0f, spring(dampingRatio = 0.62f, stiffness = 220f))
-        if (feel.keySounds) sounds.autoStop()
+    // Foldy Streaman: the tape slides the last bit into the slot and clicks as it seats.
+    LaunchedEffect(ui.source, ui.tape?.id, ui.empty) {
+        if (ui.empty) return@LaunchedEffect
+        anim.insert.snapTo(0.35f)
+        anim.insert.animateTo(0f, tween(230, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+        if (feel.keySounds) sounds.tapeIn()
+        if (feel.haptics) view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
     }
     LaunchedEffect(vm) {
         vm.events.collect { e ->
@@ -125,7 +128,7 @@ fun FoldmanScreen(
             play = vm::playApplePlaylist,
         )
     }
-    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape) }
+    val tapeActions = remember(vm) { TapeActions(load = vm::loadTape, save = vm::saveTape, delete = vm::deleteTape, eject = vm::ejectTape) }
     val shelfActions = remember(vm) {
         ShelfActions(
             selectSource = vm::selectSource,
@@ -259,7 +262,7 @@ internal fun CoverWalkman(ui: DeckUi, anim: DeckAnimations, deck: DeckControls, 
                 }
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ").ifBlank { ui.tape?.title?.ifBlank { "my tape" } ?: "NO TAPE" }.uppercase(),
+                    listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ").ifBlank { ui.tape?.title?.ifBlank { "my tape" } ?: "NO TAPE" }.let { if (ui.empty) "NO TAPE" else it }.uppercase(),
                     style = OnEnamel.copy(fontSize = 9.sp, letterSpacing = 1.5.sp),
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
@@ -308,7 +311,7 @@ private fun SideStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
                 MiniButton("AMS", deck.next, symbol = KeySymbol.NEXT, diameter = 26.dp, enabled = ui.hasNext)
             }
             Spacer(Modifier.height(10.dp))
-            TransportKeys(ui, deck.stop, deck.rewind, deck.play, deck.fastForward, deck.pause, Modifier.fillMaxWidth(), keyHeight = keyH, vertical = true)
+            TransportKeys(ui, deck.stop, deck.rewind, deck.play, deck.fastForward, deck.pause, Modifier.fillMaxWidth(), keyHeight = keyH, vertical = true, redPlay = true)
             Spacer(Modifier.height(12.dp))
             Text("VOLUME", style = EngravedCaps.copy(fontSize = 7.sp))
             VolumeSlider(ui.volume, deck.volume, Modifier.fillMaxWidth().weight(1f))

@@ -64,16 +64,22 @@ fun TransportKeys(
     modifier: Modifier = Modifier,
     keyHeight: Dp = 86.dp,
     vertical: Boolean = false,
+    /** Foldy Streaman: a red PLAY key, first in the stack when [vertical]. */
+    redPlay: Boolean = false,
 ) {
     val t = ui.transport
     // Captions sit on the silver strip when stacked, on the dark key well otherwise.
     val cc = if (vertical) DeckColors.Engrave else Color(0xFF9EA1A7)
     val keys: @Composable (Modifier, Modifier) -> Unit = { k, play ->
+        val playKey: @Composable () -> Unit = {
+            DeckKey(
+                KeySymbol.PLAY, "PLAY", latched = t == Transport.PLAYING || t == Transport.PAUSED, onPress = onPlay,
+                modifier = play, height = keyHeight, captionColor = cc, accent = true, red = redPlay,
+            )
+        }
+        if (redPlay && vertical) playKey()
         DeckKey(KeySymbol.REW, "REW", latched = t == Transport.REWINDING, onPress = onRewind, modifier = k, height = keyHeight, captionColor = cc)
-        DeckKey(
-            KeySymbol.PLAY, "PLAY", latched = t == Transport.PLAYING || t == Transport.PAUSED, onPress = onPlay,
-            modifier = play, height = keyHeight, captionColor = cc, accent = true,
-        )
+        if (!(redPlay && vertical)) playKey()
         DeckKey(KeySymbol.FF, "FF", latched = t == Transport.FAST_FORWARDING, onPress = onFastForward, modifier = k, height = keyHeight, captionColor = cc)
         DeckKey(KeySymbol.PAUSE, "PAUSE", latched = t == Transport.PAUSED, onPress = onPause, modifier = k, height = keyHeight, captionColor = cc, mark = Color(0xFF3E9C5A))
         DeckKey(KeySymbol.STOP, "STOP·EJECT", latched = false, onPress = onStop, modifier = k, height = keyHeight, captionColor = cc, mark = Color(0xFFC8352B))
@@ -103,6 +109,7 @@ fun DeckKey(
     accent: Boolean = false,
     mark: Color? = null,
     captionColor: Color = Color(0xFF9EA1A7),
+    red: Boolean = false,
 ) {
     var pressed by remember { mutableStateOf(false) }
     val view = LocalView.current
@@ -145,8 +152,42 @@ fun DeckKey(
                         sounds?.keyUp()
                     })
                 },
-        ) { drawKey(symbol, depth, accent, latched, mark) }
+        ) { if (red) drawRedKey(symbol, depth) else drawKey(symbol, depth, accent, latched, mark) }
     }
+}
+
+/**
+ * Foldy Streaman: the same key in red anodised metal, for PLAY on the front screen. Same shape,
+ * travel, ribbing and highlight as the silver keys, so it sits in the strip like the others.
+ */
+private fun DrawScope.drawRedKey(symbol: KeySymbol, depth: Float) {
+    val w = size.width
+    val h = size.height
+    val travel = h * 0.16f
+    val front = h * 0.17f * (1f - depth * 0.85f)
+    val top = travel * depth
+    val faceH = h - travel - h * 0.17f
+    val r = CornerRadius(w * 0.09f)
+    drawRoundRect(Color.Black.copy(alpha = 0.7f), topLeft = Offset(-1f, top + 2f), size = Size(w + 2f, faceH + front + 2f), cornerRadius = r)
+    drawRoundRect(
+        Brush.verticalGradient(listOf(Color(0xFF8E2A22), Color(0xFF5A1712)), top + faceH - r.x, top + faceH + front),
+        topLeft = Offset(0f, top + faceH - r.x), size = Size(w, front + r.x), cornerRadius = r,
+    )
+    val shade = 0.14f * depth
+    drawRoundRect(
+        Brush.verticalGradient(
+            listOf(lerp(Color(0xFFF27A6C), Color.Black, shade), lerp(Color(0xFFD23B2E), Color.Black, shade), lerp(Color(0xFF9C241B), Color.Black, shade)),
+            top, top + faceH,
+        ),
+        topLeft = Offset(0f, top), size = Size(w, faceH), cornerRadius = r,
+    )
+    for (i in 1..4) {
+        val y = top + faceH * 0.08f * i
+        drawLine(Color.Black.copy(alpha = 0.12f), Offset(w * 0.12f, y), Offset(w * 0.88f, y), 1f)
+    }
+    drawRoundRect(Color.White.copy(alpha = 0.45f), topLeft = Offset(0.8f, top + 0.8f), size = Size(w - 1.6f, faceH - 1.6f), cornerRadius = r, style = Stroke(1.2f))
+    drawRoundRect(Color.White.copy(alpha = 0.75f), topLeft = Offset(w * 0.18f, top + faceH - h * 0.1f), size = Size(w * 0.64f, h * 0.035f), cornerRadius = CornerRadius(h))
+    drawSymbol(symbol, Offset(w / 2f, top + faceH * 0.48f), minOf(w, faceH) * 0.16f, Color(0xFFFFF4F0))
 }
 
 private fun DrawScope.drawKey(symbol: KeySymbol, depth: Float, accent: Boolean, latched: Boolean, mark: Color?) {

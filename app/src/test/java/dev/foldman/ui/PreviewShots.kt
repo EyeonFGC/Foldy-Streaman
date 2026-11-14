@@ -39,7 +39,7 @@ class PreviewShots {
     private val actions = ShelfActions(
         selectSource = {}, pickFolder = {}, playTrack = {}, openAccess = {}, openApp = {}, installApp = {},
         apple = AppleActions({}, {}, {}, {}, {}, {}, {}),
-        tapes = TapeActions({}, {}, {}),
+        tapes = TapeActions({}, {}, {}, {}),
     )
     private fun anim() = DeckAnimations().also { runBlocking { it.insert.snapTo(0f) } }
 
@@ -50,6 +50,15 @@ class PreviewShots {
             RackDeckLayout(ui, anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp))
         }
         rule.onRoot().captureRoboImage("build/shots/unfolded.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w740dp-h830dp-xhdpi")
+    fun unfoldedEmpty() {
+        rule.setContent {
+            RackDeckLayout(ui.copy(empty = true, tape = null), anim(), deck, actions, Modifier.fillMaxSize().background(DeckColors.Backdrop).padding(16.dp))
+        }
+        rule.onRoot().captureRoboImage("build/shots/unfolded-empty.png")
     }
 
     @Test

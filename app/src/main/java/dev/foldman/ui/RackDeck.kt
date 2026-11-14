@@ -7,7 +7,13 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
@@ -107,7 +113,7 @@ private fun RackItem.label(): Color = when (this) {
 }
 
 private fun RackItem.inDeck(ui: DeckUi): Boolean = when (this) {
-    is RackItem.Src -> ui.tape == null && ui.source == source
+    is RackItem.Src -> !ui.empty && ui.tape == null && ui.source == source
     is RackItem.Mine -> ui.tape?.id == tape.id
 }
 
@@ -139,6 +145,13 @@ internal fun RackDeckLayout(
     var editing by remember { mutableStateOf<CustomTape?>(null) }
     var creating by remember { mutableStateOf(false) }
     val overDeck = dragging != null && deckBounds.contains(dragPos)
+    val scope = rememberCoroutineScope()
+    val sounds = LocalMechSounds.current
+    /** How far the tape in the deck has been slid out to the right. */
+    val ejectX = remember { Animatable(0f) }
+    LaunchedEffect(ui.empty, ui.tape?.id, ui.source) { ejectX.snapTo(0f) }
+    // The tape's height in its slot, for sizing the held cassette (not state: no recompose loop).
+    val tapeHeight = remember { FloatArray(1) }
     // 0 = still a spine, 1 = flipped over into a whole cassette in your hand.
     val flip = remember { Animatable(0f) }
     LaunchedEffect(dragging?.key) {
@@ -232,20 +245,66 @@ internal fun RackDeckLayout(
 
             // The open deck.
             Column(Modifier.weight(0.54f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
+                // The deck floor, with a slot only a millimetre or so bigger than the tape.
+                BoxWithConstraints(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .deckGlow(glow)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Brush.verticalGradient(listOf(Color(0xFF1B1A19), Color(0xFF0B0B0B))))
-                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
-                        .onGloballyPositioned { deckBounds = it.boundsInRoot() }
-                        .deckGlowInside(glow)
-                        .padding(18.dp),
+                        .onGloballyPositioned { deckBounds = it.boundsInRoot() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    FullCassette(ui, anim, vertical = true)
+                    val gap = SlotGap
+                    // Stood on end the cassette is 64 wide by 100 tall.
+                    val tapeH = minOf(maxHeight - gap * 2, (maxWidth - gap * 2) * (100f / 64f))
+                    val tapeW = tapeH * (64f / 100f)
+                    tapeHeight[0] = with(density) { tapeH.toPx() }
+                    Box(
+                        Modifier
+                            .size(tapeW + gap * 2, tapeH + gap * 2)
+                            .deckGlow(glow)
+                            .background(Brush.verticalGradient(listOf(Color(0xFF151413), Color(0xFF050505))), RoundedCornerShape(SlotCorner))
+                            .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(SlotCorner))
+                            .deckGlowInside(glow),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (ui.empty) {
+                            Text(
+                                "EMPTY\n\nHOLD A TAPE IN THE RACK\nAND DRAG IT HERE",
+                                style = EngravedCaps.copy(color = Color(0xFF6E6860), fontSize = 10.sp, letterSpacing = 2.sp),
+                                textAlign = TextAlign.Center,
+                            )
+                        } else {
+                            FullCassette(
+                                ui, anim,
+                                modifier = Modifier
+                                    .size(tapeW, tapeH)
+                                    .offset { IntOffset(ejectX.value.roundToInt(), 0) }
+                                    .pointerInput(Unit) {
+                                        // Slide the tape to the right to eject it.
+                                        detectHorizontalDragGestures(
+                                            onHorizontalDrag = { change, dx ->
+                                                change.consume()
+                                                scope.launch { ejectX.snapTo((ejectX.value + dx).coerceAtLeast(0f)) }
+                                            },
+                                            onDragEnd = {
+                                                scope.launch {
+                                                    if (ejectX.value > size.width * 0.3f) {
+                                                        sounds?.tapeOut()
+                                                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                                                        ejectX.animateTo(ejectX.value + 2000f, tween(320, easing = FastOutSlowInEasing))
+                                                        actions.tapes.eject()
+                                                    } else {
+                                                        ejectX.animateTo(0f, spring(dampingRatio = 0.6f, stiffness = 500f))
+                                                    }
+                                                }
+                                            },
+                                            onDragCancel = { scope.launch { ejectX.animateTo(0f) } },
+                                        )
+                                    },
+                                vertical = true,
+                            )
+                        }
+                    }
                     if (overDeck) {
                         Text(
                             "DROP TO LOAD",
@@ -255,7 +314,7 @@ internal fun RackDeckLayout(
                     }
                 }
                 Spacer(Modifier.height(10.dp))
-                Text("LOAD A TAPE  ·  CLOSE LID TO PLAY", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 12.sp, letterSpacing = 2.sp))
+                Text(if (ui.empty) "DRAG A TAPE INTO THE DECK" else "CLOSE LID TO PLAY  ·  SWIPE RIGHT TO EJECT", style = EngravedCaps.copy(color = Color(0xFFD9D2C8), fontSize = 12.sp, letterSpacing = 2.sp))
                 Spacer(Modifier.height(3.dp))
                 Text(
                     deckStatus(ui),
@@ -297,7 +356,7 @@ internal fun RackDeckLayout(
                 val wPx = with(density) { HeldCassetteWidth.toPx() }
                 val hPx = wPx * 64f / 100f
                 // Over the deck it grows to the size of the slot, ready to drop in.
-                val fitTarget = if (overDeck) ((deckBounds.height - with(density) { 36.dp.toPx() }) * 0.8f / wPx).coerceAtLeast(1f) else 1.06f
+                val fitTarget = if (overDeck && tapeHeight[0] > 0f) (tapeHeight[0] / wPx).coerceAtLeast(1f) else 1.06f
                 val fit by animateFloatAsState(fitTarget, tween(260), label = "fit")
                 FullCassette(
                     heldUi, heldAnim,
@@ -333,6 +392,7 @@ internal fun RackDeckLayout(
 }
 
 private fun deckStatus(ui: DeckUi): String {
+    if (ui.empty) return "NO TAPE"
     val name = ui.tape?.title?.ifBlank { "my tape" }
     val time = if (ui.durationMs > 0) "${formatTime(ui.positionMs)} / ${formatTime(ui.durationMs)}" else null
     val state = when {
@@ -452,6 +512,9 @@ private fun TapeCardDialog(
 private val GlowBlue = Color(0xFF8CC4FF)
 private val GlowEdge = Color(0xFF4A9BFF)
 private val HeldCassetteWidth = 230.dp
+/** Room around the tape in its slot: about a millimetre on the Fold's screen. */
+private val SlotGap = 7.dp
+private val SlotCorner = 10.dp
 
 /** What the held cassette shows: the tape's own label, not the song that's playing. */
 private fun heldTapeUi(ui: DeckUi, item: RackItem): DeckUi = when (item) {
@@ -462,7 +525,7 @@ private fun heldTapeUi(ui: DeckUi, item: RackItem): DeckUi = when (item) {
 /** A soft light-blue halo around the deck, strongest when a tape is over it. */
 private fun Modifier.deckGlow(glow: Float): Modifier = drawBehind {
     if (glow <= 0f) return@drawBehind
-    val r = 14.dp.toPx()
+    val r = SlotCorner.toPx()
     for (i in 1..6) {
         val spread = i * 3.dp.toPx()
         drawRoundRect(
@@ -479,7 +542,7 @@ private fun Modifier.deckGlow(glow: Float): Modifier = drawBehind {
 private fun Modifier.deckGlowInside(glow: Float): Modifier = drawWithContent {
     drawContent()
     if (glow <= 0f) return@drawWithContent
-    val r = CornerRadius(14.dp.toPx())
+    val r = CornerRadius(SlotCorner.toPx())
     drawRoundRect(
         Brush.radialGradient(
             listOf(GlowBlue.copy(alpha = 0.5f * glow), GlowBlue.copy(alpha = 0.22f * glow)),

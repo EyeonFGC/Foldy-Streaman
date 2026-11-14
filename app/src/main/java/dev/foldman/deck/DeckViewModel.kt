@@ -71,6 +71,8 @@ data class DeckUi(
     val tape: CustomTape? = null,
     /** The tape was just put in: PLAY starts its playlist from the top. */
     val tapeCued: Boolean = false,
+    /** Nothing in the deck: the tape was swiped out. */
+    val empty: Boolean = false,
 ) {
     /** How far through the tape we are: the left reel empties into the right one as this grows. */
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -115,6 +117,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     private var loadedTape: CustomTape? =
         if (source == Source.YT_MUSIC) prefs.getString(KEY_TAPE, null)?.let { id -> tapes.firstOrNull { it.id == id } } else null
     private var tapeCued = false
+    private var deckEmpty = prefs.getBoolean(KEY_EMPTY, false)
     /** When PLAY last started a tape's playlist: YT Music takes a few seconds to open and start. */
     private var tapeStartAt = -1L
 
@@ -159,6 +162,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     // region Keys
 
     fun play() {
+        if (deckEmpty) return
         if (winding != 0) finishWinding()
         val tape = loadedTape
         if (tape != null && tapeCued && source == Source.YT_MUSIC) {
@@ -216,18 +220,21 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
 
     /** AMS back: to the top of this song, or the previous one when already near its start. */
     fun previous() {
+        if (deckEmpty) return
         if (winding != 0) finishWinding()
         if (backend.positionMs() > 3000 || !_ui.value.hasPrevious) backend.seekTo(0) else backend.skipToPrevious()
         tick()
     }
 
     fun next() {
+        if (deckEmpty) return
         if (winding != 0) finishWinding()
         backend.skipToNext()
         tick()
     }
 
     private fun startWinding(direction: Int) {
+        if (deckEmpty) return
         if (winding == direction) return
         if (_ui.value.status != SourceStatus.Ready) return
         if (winding == 0) {
@@ -305,8 +312,28 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             tapeCued = false
             prefs.edit { remove(KEY_TAPE) }
         }
+        setEmpty(false)
         switchSource(newSource)
-        if (hadTape) tick()
+        tick()
+    }
+
+    private fun setEmpty(empty: Boolean) {
+        if (deckEmpty == empty) return
+        deckEmpty = empty
+        prefs.edit { putBoolean(KEY_EMPTY, empty) }
+    }
+
+    /** Swipes the tape out of the deck: the music stops and the slot is left empty. */
+    fun ejectTape() {
+        if (winding != 0) finishWinding()
+        if (backend.state.value.isPlaying) backend.pause()
+        loadedTape = null
+        tapeCued = false
+        stopped = true
+        playRequestedAt = 0
+        prefs.edit { remove(KEY_TAPE) }
+        setEmpty(true)
+        tick()
     }
 
     // region Your tapes (Foldy Streaman)
@@ -316,6 +343,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         if (loadedTape?.id == tape.id) return
         if (winding != 0) finishWinding()
         if (backend.state.value.isPlaying) backend.pause()
+        setEmpty(false)
         switchSource(Source.YT_MUSIC)
         loadedTape = tape
         tapeCued = true
@@ -659,10 +687,10 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             source = source,
             transport = transport,
             status = state.status,
-            title = np.title.orEmpty(),
-            artist = np.artist.orEmpty(),
-            album = np.album.orEmpty(),
-            artwork = artBitmap,
+            title = if (deckEmpty) "" else np.title.orEmpty(),
+            artist = if (deckEmpty) "" else np.artist.orEmpty(),
+            album = if (deckEmpty) "" else np.album.orEmpty(),
+            artwork = if (deckEmpty) null else artBitmap,
             label = label,
             positionMs = if (winding != 0) windPosition else backend.positionMs(),
             durationMs = np.durationMs,
@@ -682,6 +710,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             tapes = tapes,
             tape = loadedTape,
             tapeCued = tapeCued,
+            empty = deckEmpty,
         )
     }
 
@@ -724,6 +753,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         private const val KEY_SOURCE = "source"
         private const val KEY_TAPE = "custom_tape_in_deck"
+        private const val KEY_EMPTY = "deck_empty"
         private const val KEY_FOLDER = "folder"
         private const val KEY_SOUNDS = "key_sounds"
         private const val KEY_HAPTICS = "haptics"

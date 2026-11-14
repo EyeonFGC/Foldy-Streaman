@@ -94,7 +94,7 @@ fun TapeWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier, 
                     translate(-CROP.left * u, -CROP.top * u)
                     scale(u, u, Offset.Zero)
                 }) {
-                    drawCassette(ui, anim.reels, shell, measurer, u)
+                    if (!ui.empty) drawCassette(ui, anim.reels, shell, measurer, u)
                 }
             }
             // Smoked glass: tint, a long diagonal reflection and a soft top glare.
@@ -349,7 +349,7 @@ fun FullCassette(ui: DeckUi, anim: DeckAnimations, modifier: Modifier = Modifier
         val slide = anim.insert.value
         translate(0f, -slide * size.height * 1.2f - anim.pop.value * u * 5f) {
             withTransform({ scale(u, u, Offset.Zero) }) {
-                drawCassette(ui, anim.reels, shell, measurer, u)
+                if (!ui.empty) drawCassette(ui, anim.reels, shell, measurer, u)
             }
         }
     }
