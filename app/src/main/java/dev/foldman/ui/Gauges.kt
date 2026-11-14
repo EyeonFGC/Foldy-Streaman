@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -116,8 +117,10 @@ fun StatusLed(transport: Transport, modifier: Modifier = Modifier, caption: Stri
         Transport.REWINDING, Transport.FAST_FORWARDING -> if ((slow * 6f).toInt() % 2 == 0) 1f else 0.25f
         Transport.STOPPED -> 0f
     }
+    val charging = rememberCharging()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Canvas(Modifier.size(14.dp)) {
+        if (charging) BattLed(false, on = DeckColors.Led, off = Color(0xFF2A0D08), size = 9.dp, modifier = Modifier.padding(2.5.dp))
+        else Canvas(Modifier.size(14.dp)) {
             val r = size.minDimension / 2f
             if (on > 0.05f) drawCircle(Brush.radialGradient(listOf(DeckColors.Led.copy(alpha = 0.55f * on), Color.Transparent), center, r * 1.0f), r)
             drawCircle(Color(0xFF2A0D08), r * 0.5f)

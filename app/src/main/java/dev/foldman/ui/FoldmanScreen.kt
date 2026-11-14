@@ -417,7 +417,7 @@ private fun SideStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Text("PHONES", style = EngravedCaps.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))
             // Foldy Streaman: a proper socket; a plug sits in it when the sound isn't on the phone.
-            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(34.dp))
+            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(40.dp))
         }
     }
 }

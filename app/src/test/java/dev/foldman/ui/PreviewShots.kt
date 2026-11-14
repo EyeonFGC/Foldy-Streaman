@@ -401,6 +401,11 @@ class PreviewShots {
     @Test
     @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun keysCherry() { val u = ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING, title = "I Don't Mind", artist = "Lloyd"); rule.setContent { CoverCherryRed(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-3.png") }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun chargingCherry() { val u = ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, audioElsewhere = true); rule.setContent { androidx.compose.runtime.CompositionLocalProvider(LocalPreviewCharging provides true) { CoverCherryRed(u, anim(), deck, {}, Modifier.fillMaxSize()) } }; rule.onRoot().captureRoboImage("build/shots/charging-cherry.png") }
+
     @Test
     @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun keysSilver() { val u = ui.copy(theme = DeckTheme.SILVER_BLUE, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING); rule.setContent { CoverSilverBlue(u, anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/keys-4.png") }

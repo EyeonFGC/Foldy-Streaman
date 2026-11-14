@@ -231,8 +231,9 @@ private fun SlantKeyStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val lit = ui.transport == Transport.PLAYING || ui.transport == Transport.REWINDING || ui.transport == Transport.FAST_FORWARDING
-            Box(Modifier.size(7.dp).clip(RoundedCornerShape(4.dp)).background(if (lit) Color(0xFFFF4A3A) else Color(0xFF5E4440)))
-            Text("BATT", style = caption.copy(fontSize = 6.sp))
+            BattLed(lit, on = Color(0xFFFF4A3A), off = Color(0xFF5E4440))
+            Spacer(Modifier.height(2.dp))
+            Text("BATT", style = caption.copy(fontSize = 12.sp))
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SlantKey(KeySymbol.PREV, "AMS", false, deck.previous, 22.dp, Modifier.weight(1f))
@@ -252,7 +253,7 @@ private fun SlantKeyStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Spacer(Modifier.height(6.dp))
             Text("PHONES", style = caption.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))
-            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(34.dp))
+            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(40.dp))
         }
         // The blue edge line down the strip, where it meets the body.
         Box(Modifier.fillMaxHeight().width(3.dp).background(SilverBlue.Blue))

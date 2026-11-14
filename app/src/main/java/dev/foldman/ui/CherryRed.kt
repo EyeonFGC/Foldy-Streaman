@@ -224,8 +224,9 @@ private fun KeyPanel(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
         ) {
             // A red running light, like the small LED on the original.
             val lit = ui.transport == Transport.PLAYING || ui.transport == Transport.REWINDING || ui.transport == Transport.FAST_FORWARDING
-            Box(Modifier.size(7.dp).clip(RoundedCornerShape(4.dp)).background(if (lit) Color(0xFFFF3B3B) else Color(0xFF3A1D20)))
-            Text("BATT / OPR", style = caption.copy(fontSize = 6.sp))
+            BattLed(lit, on = Color(0xFFFF3B3B), off = Color(0xFF3A1D20))
+            Spacer(Modifier.height(2.dp))
+            Text("BATT", style = caption.copy(fontSize = 12.sp))
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ChromeKey(KeySymbol.PREV, "AMS", false, deck.previous, 22.dp, Modifier.weight(1f))
@@ -245,7 +246,7 @@ private fun KeyPanel(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Spacer(Modifier.height(6.dp))
             Text("PHONES", style = caption.copy(fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))
-            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(34.dp), dark = true)
+            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(40.dp), dark = true)
         }
     }
 }

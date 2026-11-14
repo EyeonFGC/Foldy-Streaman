@@ -222,12 +222,7 @@ private fun GoldBand(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Spacer(Modifier.height(10.dp))
             // A small white dot that lights while the tape runs.
             val lit = ui.transport == Transport.PLAYING || ui.transport == Transport.REWINDING || ui.transport == Transport.FAST_FORWARDING
-            Box(
-                Modifier
-                    .size(7.dp)
-                    .clip(CircleShape)
-                    .background(if (lit) Color.White else Color(0xFF3A3326)),
-            )
+            BattLed(lit, on = Color.White, off = Color(0xFF3A3326))
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 KnobKey(KeySymbol.PREV, "Previous", deck.previous, 26.dp, latched = false, showSymbol = false)
@@ -248,7 +243,7 @@ private fun GoldBand(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             Spacer(Modifier.height(8.dp))
             Text("PHONES", style = EngravedCaps.copy(color = BlackGold.Ink, fontSize = 6.sp))
             Spacer(Modifier.height(3.dp))
-            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(34.dp), dark = true)
+            HeadphoneJack(ui.audioElsewhere, deck.output, Modifier.size(40.dp), dark = true)
         }
     }
 }

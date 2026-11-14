@@ -2,6 +2,15 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.24.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **The battery light pulses green while the phone is charging** (cable or wireless pad), on every theme. Off the charger it goes back to being the running light.
+
+### Changed
+- The battery light and the word BATT are about twice as big. Red Chrome gets a battery light above its BATT label; Cherry Red's label now just says BATT so it fits at the new size.
+- The headphone socket (and its plug and wire) is a little bigger.
+
 ## [0.23.1] — 2026-11-14 (Foldy Streaman)
 
 ### Fixed
