@@ -247,7 +247,7 @@ private fun DialStrip(top: String, bottom: String, modifier: Modifier) {
  * itself sits tight round the tape.
  */
 @Composable
-private fun WindowSurround(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
+internal fun WindowSurround(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
     BoxWithConstraints(modifier) {
         // The surround is sized round this much of the upright tape (in the tape's 64 x 100 units)...
         val frameL = 11f

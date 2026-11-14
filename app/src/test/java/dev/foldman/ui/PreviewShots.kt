@@ -396,6 +396,19 @@ class PreviewShots {
         rule.onRoot().captureRoboImage("build/shots/folded-sport.png")
     }
 
+    private fun logoPart(title: String, name: String) {
+        val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)
+        val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = listOf(t), tape = t, tapeCued = false)
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().background(SportYellow.Yellow).padding(top = 20.dp, bottom = 20.dp)) {
+                WindowSurround(u, anim(), Modifier.fillMaxSize())
+            }
+        }
+        rule.onRoot().captureRoboImage("build/shots/$name.png")
+    }
+    @Test @Config(qualifiers = "w360dp-h460dp-xxhdpi") fun logoFoldy() = logoPart("Foldy", "logo-part-foldy")
+    @Test @Config(qualifiers = "w360dp-h460dp-xxhdpi") fun logoStreaman() = logoPart("Streaman", "logo-part-streaman")
+
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideSport() = inside(DeckTheme.SPORT_YELLOW, "inside-sport")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideRedChrome() = inside(DeckTheme.RED_CHROME, "inside-redchrome")
 
