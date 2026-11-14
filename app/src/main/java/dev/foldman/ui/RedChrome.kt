@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -107,12 +108,10 @@ internal fun CoverRedChrome(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                 .weight(0.72f)
                 .fillMaxHeight()
                 .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Top + WindowInsetsSides.Start))
-                .padding(start = 16.dp, end = 12.dp, top = 20.dp, bottom = 18.dp),
+                .padding(start = 12.dp, end = 12.dp, top = 20.dp, bottom = 18.dp),
         ) {
-            // The maker's name, top left, in white serif capitals.
+            // Top line: the hint (or TAPES button) on the left, the maker's name on the right.
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("FOLDY", style = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 17.sp, letterSpacing = 3.sp))
-                Spacer(Modifier.weight(1f))
                 if (ui.frontShelf) {
                     Text(
                         "TAPES",
@@ -126,9 +125,32 @@ internal fun CoverRedChrome(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                 } else {
                     Text(changeTapesHint(ui), style = white.copy(fontSize = 6.sp, letterSpacing = 1.sp, color = Color.White.copy(alpha = 0.8f)))
                 }
+                Spacer(Modifier.weight(1f))
+                Text("FOLDY", style = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 17.sp, letterSpacing = 3.sp))
             }
             Spacer(Modifier.height(10.dp))
-            GlassPanel(ui, anim, Modifier.fillMaxWidth().weight(1f))
+            Row(Modifier.fillMaxWidth().weight(1f)) {
+                // The wordmark runs up the side, the song title beside it (under it, read sideways).
+                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+                    Column(Modifier.quarterTurn()) {
+                        Text(
+                            "STREAMAN",
+                            style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Black, color = Color.White, fontSize = 44.sp, letterSpacing = 2.sp),
+                            maxLines = 1, softWrap = false,
+                        )
+                        Text(
+                            listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ")
+                                .ifBlank { ui.tape?.title?.ifBlank { "my tape" } ?: "NO TAPE" }
+                                .let { if (ui.empty) "NO TAPE" else it }.uppercase(),
+                            style = white.copy(fontSize = 8.sp, letterSpacing = 1.5.sp, color = Color.White.copy(alpha = 0.9f)),
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.width(250.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                GlassPanel(ui, anim, Modifier.weight(1f).fillMaxHeight())
+            }
             Spacer(Modifier.height(10.dp))
             // The chrome band across the body, with the green button at its left end.
             Box(Modifier.fillMaxWidth().height(20.dp), contentAlignment = Alignment.CenterStart) {
@@ -149,20 +171,6 @@ internal fun CoverRedChrome(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
                         .border(1.dp, Color.Black.copy(alpha = 0.4f), CircleShape),
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            // The big white wordmark.
-            Text(
-                "STREAMAN",
-                style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Black, color = Color.White, fontSize = 38.sp, letterSpacing = 1.sp),
-                maxLines = 1,
-            )
-            Text(
-                listOf(ui.title, ui.artist).filter { it.isNotBlank() }.joinToString("  —  ")
-                    .ifBlank { ui.tape?.title?.ifBlank { "my tape" } ?: "NO TAPE" }
-                    .let { if (ui.empty) "NO TAPE" else it }.uppercase(),
-                style = white.copy(fontSize = 8.sp, letterSpacing = 1.5.sp, color = Color.White.copy(alpha = 0.9f)),
-                maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
             if (ui.status == SourceStatus.NeedsAccess) {
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -180,46 +188,37 @@ internal fun CoverRedChrome(ui: DeckUi, anim: DeckAnimations, deck: DeckControls
 }
 
 /**
- * The big black glass panel: the tape shows faintly behind dark glass, with a white printed label
- * top left and AUTO REVERSE lettered along the bottom.
+ * The black panel with its window: the window sits tight round the tape (title strip to the far
+ * edge), a white printed label above it, AUTO REVERSE below, and a white and a black triangle
+ * lined up with the two sides of the tape's own window.
  */
 @Composable
 private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
     BoxWithConstraints(modifier) {
         val shape = RoundedCornerShape(8.dp)
-        // The tape stood on end, sized to the panel.
-        val tw = minOf(maxWidth * 0.92f, maxHeight * 0.6f)
-        val th = tw * (100f / 64f)
-        Box(
+        // The part of the upright tape the window shows, in the tape's own 64 x 100 units.
+        val showL = 11f
+        val showR = 64f
+        val showT = 10f
+        val showB = 95f
+        val aspect = (showR - showL) / (showB - showT)
+        val winW = minOf(maxWidth - 16.dp, (maxHeight - 96.dp) * aspect)
+        val winH = winW / aspect
+        val u = winW / (showR - showL)
+        Column(
             Modifier
                 .fillMaxSize()
                 .clip(shape)
-                .background(RedChrome.Glass)
-                .border(1.5.dp, Color.Black.copy(alpha = 0.6f), shape),
-            contentAlignment = Alignment.Center,
+                .background(Brush.linearGradient(listOf(Color(0xFF1B1C21), RedChrome.Glass, Color(0xFF07080A))))
+                .border(1.5.dp, Color.Black.copy(alpha = 0.6f), shape)
+                .padding(vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (ui.empty) {
-                EmptyDeckInterior(Modifier.requiredSize(tw, th), metal = Color(0xFF5E5C60))
-            } else {
-                FullCassette(ui, anim, Modifier.requiredSize(tw, th), vertical = true)
-            }
-            // Dark glass over it, with a long reflection.
-            Canvas(Modifier.fillMaxSize()) {
-                drawRect(Color(0xFF0B0C10).copy(alpha = 0.72f))
-                drawPath(
-                    Path().apply {
-                        moveTo(size.width * 0.5f, 0f); lineTo(size.width * 0.8f, 0f)
-                        lineTo(size.width * 0.3f, size.height); lineTo(0f, size.height); close()
-                    },
-                    Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.09f), Color.Transparent), 0f, size.width * 0.8f),
-                )
-                drawRect(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.10f), Color.Transparent), 0f, size.height * 0.2f))
-            }
-            // The white printed label, top left, slightly askew like a sticker.
+            // The white printed label, slightly askew like a sticker.
             Column(
                 Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 12.dp, top = 12.dp)
+                    .align(Alignment.Start)
+                    .padding(start = 12.dp)
                     .rotate(-4f)
                     .background(Color(0xFFF4F4F2), RoundedCornerShape(1.dp))
                     .padding(horizontal = 6.dp, vertical = 3.dp),
@@ -227,10 +226,55 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                 Text("STEREO", style = TextStyle(color = Color(0xFF16171A), fontSize = 7.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp))
                 Text("CASSETTE PLAYER", style = TextStyle(color = Color(0xFF16171A), fontSize = 6.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
             }
+            Spacer(Modifier.weight(1f))
+            // The two triangles, lined up with the sides of the tape's own window (units 21 and 43).
+            Canvas(Modifier.size(winW, 11.dp)) {
+                val t = size.height * 0.85f
+                fun tri(cx: Float, down: Boolean) = Path().apply {
+                    if (down) { moveTo(cx - t * 0.6f, 0f); lineTo(cx + t * 0.6f, 0f); lineTo(cx, t) }
+                    else { moveTo(cx - t * 0.6f, t); lineTo(cx + t * 0.6f, t); lineTo(cx, 0f) }
+                    close()
+                }
+                val x1 = (21f - showL) * u.toPx()
+                val x2 = (43f - showL) * u.toPx()
+                drawPath(tri(x1, down = true), Color.White)
+                drawPath(tri(x2, down = true), Color.Black)
+                drawPath(tri(x2, down = true), Color.White.copy(alpha = 0.75f), style = Stroke(1.4f))
+            }
+            Spacer(Modifier.height(4.dp))
+            Box(
+                Modifier
+                    .size(winW, winH)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(Color(0xFF17181C))
+                    .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(5.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                val place = Modifier
+                    .requiredSize(u * 64f, u * 100f)
+                    .offset(x = u * (32f - (showL + showR) / 2f), y = u * (50f - (showT + showB) / 2f))
+                if (ui.empty) {
+                    EmptyDeckInterior(place, metal = Color(0xFF5E5C60))
+                } else {
+                    FullCassette(ui, anim, place, vertical = true)
+                }
+                // Tinted glass over it, with a long reflection.
+                Canvas(Modifier.fillMaxSize()) {
+                    drawRect(Color(0xFF0B0C10).copy(alpha = 0.5f))
+                    drawPath(
+                        Path().apply {
+                            moveTo(size.width * 0.5f, 0f); lineTo(size.width * 0.8f, 0f)
+                            lineTo(size.width * 0.3f, size.height); lineTo(0f, size.height); close()
+                        },
+                        Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.09f), Color.Transparent), 0f, size.width * 0.8f),
+                    )
+                }
+            }
+            Spacer(Modifier.weight(1f))
             Text(
                 "AUTO REVERSE",
-                style = TextStyle(fontFamily = FontFamily.Serif, color = Color.White.copy(alpha = 0.92f), fontSize = 13.sp, letterSpacing = 1.sp, fontStyle = FontStyle.Italic),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 10.dp),
+                style = TextStyle(fontFamily = FontFamily.Serif, color = Color.White.copy(alpha = 0.92f), fontSize = 12.sp, letterSpacing = 1.sp, fontStyle = FontStyle.Italic),
+                modifier = Modifier.align(Alignment.End).padding(end = 12.dp),
             )
         }
     }

@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.18.1] — 2026-11-14 (Foldy Streaman)
+
+### Changed
+- **Red Chrome front:** STREAMAN runs up the left side with the song title beside it; FOLDY moved to the top right and the "unfold to change tapes" hint to the top left; the window in the black panel sits tight round the tape; a white and a black triangle are lined up with the sides of the tape's window.
+
 ## [0.18.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
