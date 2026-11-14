@@ -54,6 +54,7 @@ class SettingsActions(
 fun accentFor(theme: DeckTheme): Color = when (theme) {
     DeckTheme.ORIGINAL -> DeckColors.Accent
     DeckTheme.BLACK_GOLD -> BlackGold.Gold
+    DeckTheme.CHERRY_RED -> Color(0xFFFF6F84)
 }
 
 private val Label = TextStyle(fontFamily = FontFamily.Monospace, color = Color(0xFFD9D2C8), fontSize = 13.sp)
@@ -152,6 +153,10 @@ private fun ThemeCard(theme: DeckTheme, selected: Boolean, accent: Color, onClic
                 DeckTheme.ORIGINAL -> {
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF5B92D0), Color(0xFF2F6FB5), Color(0xFF214F86)))))
                     Box(Modifier.weight(0.28f).fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xFFB7BABF), Color(0xFFE4E5E7), Color(0xFFB0B3B8)))))
+                }
+                DeckTheme.CHERRY_RED -> {
+                    Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(CherryRed.BodyHi, CherryRed.Body, CherryRed.BodyLo))))
+                    Box(Modifier.weight(0.28f).fillMaxSize().background(CherryRed.Trim))
                 }
                 DeckTheme.BLACK_GOLD -> {
                     Box(Modifier.weight(0.72f).fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF2A2A2D), Color(0xFF121214)))))

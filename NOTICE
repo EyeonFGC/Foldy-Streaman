@@ -24,7 +24,7 @@ app/src/main/res/values/strings.xml, deck/DeckViewModel.kt, deck/Tapes.kt, ui/Ca
 ui/Shelf.kt, ui/Panels.kt, ui/FoldmanScreen.kt, ui/TapeEditor.kt, ui/RackDeck.kt,
 app/src/test/java/dev/foldman/ui/PreviewShots.kt, remote/RemoteBackend.kt, MainActivity.kt,
 ui/BlackGold.kt, ui/Settings.kt, ui/Keys.kt, ui/MechSounds.kt, ui/Controls.kt,
-ui/JCard.kt, ui/TapeFonts.kt, ui/HeadphoneJack.kt, ui/HingeShade.kt, deck/AudioOutput.kt, deck/TapePhotos.kt
+ui/JCard.kt, ui/TapeFonts.kt, ui/HeadphoneJack.kt, ui/HingeShade.kt, ui/CherryRed.kt, deck/AudioOutput.kt, deck/TapePhotos.kt
 
 Fonts bundled in Foldy Streaman (app/src/main/res/font), from Google Fonts; licences in
 app/src/main/assets/font-licenses:

@@ -46,6 +46,7 @@ data class LabelPalette(val paper: Color, val stripe: Color, val stripe2: Color,
 enum class DeckTheme(val label: String) {
     ORIGINAL("Original"),
     BLACK_GOLD("Black & Gold"),
+    CHERRY_RED("Cherry Red"),
 }
 
 data class DeckUi(

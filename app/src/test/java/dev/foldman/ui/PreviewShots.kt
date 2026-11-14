@@ -306,4 +306,18 @@ class PreviewShots {
         repeat(5) { Thread.sleep(200); rule.mainClock.advanceTimeBy(200); rule.waitForIdle() }
         rule.onRoot().captureRoboImage("build/shots/jcard-gold.png")
     }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun foldedCherryRed() {
+        rule.setContent { CoverCherryRed(ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-cherry.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun foldedCherryRedPlugged() {
+        rule.setContent { CoverCherryRed(ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, audioElsewhere = true), anim(), deck, {}, Modifier.fillMaxSize()) }
+        rule.onRoot().captureRoboImage("build/shots/folded-cherry-plugged.png")
+    }
 }

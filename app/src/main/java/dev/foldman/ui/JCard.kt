@@ -330,7 +330,7 @@ internal fun CardButton(
             // with a coloured stripe along the bottom edge.
             JButtonStyle.METAL -> {
                 val cap = if (gold) listOf(Color(0xFF3A3A3E), Color(0xFF1C1C1F), Color(0xFF0E0E10)) else listOf(Color(0xFFF7F8F9), Color(0xFFD3D5D9), Color(0xFFA6A9AE))
-                val stripe = if (gold) BlackGold.Gold else DeckColors.Accent
+                val stripe = if (gold) BlackGold.Gold else accentFor(theme)
                 face = base.shadow(4.dp, shape).clip(shape)
                     .background(androidx.compose.ui.graphics.Brush.verticalGradient(cap))
                     .drawBehind {

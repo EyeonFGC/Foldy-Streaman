@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.13.0] — 2026-11-14 (Foldy Streaman)
+
+### Added
+- **New theme: Cherry Red** (Settings > Theme), after an early-80s auto-reverse player: glossy coral-red body with a black trim band, a dark smoked window, big outlined "AUTO REVERSE" lettering with a yellow "STEREO", and small chrome keys with black grip slits in a black side panel (PLAY on top, with its red dot).
+
 ## [0.12.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added
