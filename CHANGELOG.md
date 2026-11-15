@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.37.1] — 2026-11-15 (Foldy Streaman)
+
+### Changed
+- **The open deck has a tape-head plate**, like the inside of a real player: grey metal with the pinch rollers, capstans, play and erase heads, screws and CASSETTE PLAYER stamped in. It sits on the deck floor under the tape's open edge, so you see it with the deck empty or as a tape slides out.
+
 ## [0.37.0] — 2026-11-15 (Foldy Streaman)
 
 ### Added

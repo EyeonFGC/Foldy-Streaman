@@ -378,6 +378,9 @@ internal fun RackDeckLayout(
                     // Stood on end the cassette is 64 wide by 100 tall; lying flat (upright phones) 100 by 64.
                     val tapeH = if (portrait) minOf(maxHeight - gap * 2, (maxWidth - gap * 2) * (64f / 100f)) else minOf(maxHeight - gap * 2, (maxWidth - gap * 2) * (100f / 64f))
                     val tapeW = if (portrait) tapeH * (100f / 64f) else tapeH * (64f / 100f)
+                    // The head plate covers the tape's open edge (the right of a tape stood on end, the
+                    // bottom of one lying flat), as the heads do in a real deck.
+                    val heads = (if (portrait) tapeH else tapeW) * HeadShare
                     // The tape's long side: what the tape in your hand grows to as it nears the slot.
                     tapeHeight[0] = with(density) { (if (portrait) tapeW else tapeH).toPx() }
                     Box(
@@ -389,15 +392,29 @@ internal fun RackDeckLayout(
                             .deckGlowInside(glow, glowLight, glowEdge),
                         contentAlignment = Alignment.Center,
                     ) {
+                        // The head plate on the deck floor, under the tape's open edge: you see it with
+                        // the deck empty (over the floor's own pins), and the tape sits over it once loaded.
+                        val headPlate: @Composable () -> Unit = {
+                            HeadAssembly(
+                                Modifier
+                                    .align(if (portrait) Alignment.BottomCenter else Alignment.CenterEnd)
+                                    .padding(gap)
+                                    .size(if (portrait) tapeW else heads, if (portrait) heads else tapeH),
+                                facingLeft = !portrait,
+                            )
+                        }
                         if (ui.empty) {
                             // The bare inside of the deck: spindles, a screw, and a small hint.
                             if (portrait) EmptyDeckInterior(Modifier.requiredSize(tapeH, tapeW).rotate(-90f)) else EmptyDeckInterior(Modifier.size(tapeW, tapeH))
+                            headPlate()
                             Text(
                                 "DRAG A TAPE IN",
                                 style = EngravedCaps.copy(color = Color(0xFF5E5951), fontSize = 9.sp, letterSpacing = 2.sp),
-                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 34.dp),
+                                // Clear of the head plate (which runs along the bottom when the tape lies flat).
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (portrait) heads + gap + 10.dp else 34.dp),
                             )
                         } else {
+                            headPlate()
                             FullCassette(
                                 ui, anim,
                                 modifier = Modifier
