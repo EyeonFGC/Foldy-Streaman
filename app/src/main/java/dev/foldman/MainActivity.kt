@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
         // Foldy Streaman: phones that don't fold get EJECT-to-open and CLOSE-to-play instead.
         val foldable = isFoldable()
         vm.setPhoneMode(!foldable)
-        if (!foldable) applyPhoneOrientation(getSharedPreferences("foldman", MODE_PRIVATE).getBoolean("phone_deck_open", false))
+        if (!foldable) applyPhoneOrientation(getSharedPreferences("foldman", MODE_PRIVATE).let { it.getBoolean("phone_deck_open", false) && !it.getBoolean("phone_portrait", false) })
         // On a Fold the app never rotates: each screen (front and inside) stays upright, auto-rotate or not.
         else requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
         setContent {
@@ -60,8 +60,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
             val deckUi by vm.ui.collectAsStateWithLifecycle()
-            LaunchedEffect(deckUi.phoneMode, deckUi.deckOpen) {
-                if (deckUi.phoneMode) applyPhoneOrientation(deckUi.deckOpen)
+            LaunchedEffect(deckUi.phoneMode, deckUi.deckOpen, deckUi.phonePortrait) {
+                // The open deck turns the phone sideways, unless Settings says to keep it upright.
+                if (deckUi.phoneMode) applyPhoneOrientation(deckUi.deckOpen && !deckUi.phonePortrait)
             }
             // Foldy Streaman: with "Show the player on the lock screen" on, the front player stays
             // up over the lock screen. Only the player: the inside (tapes, settings) asks for the

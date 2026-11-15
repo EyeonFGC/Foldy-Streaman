@@ -167,6 +167,7 @@ fun FoldmanScreen(
             setStopOnOpen = vm::setStopOnOpen,
             setVolumeKeys = vm::setVolumeKeys,
             setLockScreen = vm::setLockScreen,
+            setPhonePortrait = vm::setPhonePortrait,
             setNoticeMode = vm::setNoticeMode,
             spotifyLogin = vm::spotifyLogin,
             youTubeLogin = onYouTubeLogin,
@@ -245,6 +246,7 @@ fun FoldmanScreen(
                         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
                         settings = settingsActions,
                         onClose = if (ui.phoneMode) vm::closeDeck else null,
+                        portrait = ui.phoneMode && ui.phonePortrait,
                     )
                 }
                 Posture.Tabletop -> {

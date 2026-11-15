@@ -427,6 +427,21 @@ class PreviewShots {
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun tapesBtnSilver() { rule.setContent { CoverSilverBlue(shelfBtn(DeckTheme.SILVER_BLUE), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/tapesbtn-4.png") }
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun tapesBtnRed() { rule.setContent { CoverRedChrome(shelfBtn(DeckTheme.RED_CHROME), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/tapesbtn-5.png") }
 
+    private fun upright(name: String, theme: DeckTheme, cardAt: Int? = null, empty: Boolean = false) {
+        val plain = tapes.map { it.copy(photoPath = null) } + CustomTape(title = "", playlistId = "", shell = 0xFFB8322A, label = 0xFFF2EBDC)
+        val u = ui.copy(theme = theme, tapes = plain, tape = if (empty) null else plain[0], empty = empty, tapeCued = false, phoneMode = true, deckOpen = true, phonePortrait = true, youTubeSignedIn = true, spotifyName = "Me")
+        rule.setContent {
+            androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(theme)) {
+                RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(start = 14.dp, end = 14.dp, top = 40.dp, bottom = 24.dp), onClose = {}, portrait = true, previewCard = cardAt)
+            }
+        }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/$name.png")
+    }
+    @Test @Config(qualifiers = "w412dp-h883dp-xxhdpi") fun uprightRack() = upright("upright-1", DeckTheme.SPORT_YELLOW)
+    @Test @Config(qualifiers = "w412dp-h883dp-xxhdpi") fun uprightCard() = upright("upright-2", DeckTheme.SPORT_YELLOW, cardAt = 5)
+    @Test @Config(qualifiers = "w412dp-h883dp-xxhdpi") fun uprightEmpty() = upright("upright-3", DeckTheme.BLACK_GOLD, empty = true)
+
     private fun logoPart(title: String, name: String) {
         val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)
         val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = listOf(t), tape = t, tapeCued = false)

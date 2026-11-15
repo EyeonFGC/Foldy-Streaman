@@ -49,6 +49,7 @@ class SettingsActions(
     val setStopOnOpen: (Boolean) -> Unit = {},
     val setVolumeKeys: (Boolean) -> Unit = {},
     val setLockScreen: (Boolean) -> Unit = {},
+    val setPhonePortrait: (Boolean) -> Unit = {},
     val setNoticeMode: (dev.foldman.deck.NoticeMode) -> Unit = {},
     val spotifyLogin: () -> Unit = {},
     val youTubeLogin: () -> Unit = {},
@@ -161,6 +162,13 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     "A TAPES button on the player, to change tapes without opening it",
                     ui.frontShelf, accent,
                 ) { actions.setFrontShelf(!ui.frontShelf) }
+                if (ui.phoneMode) {
+                    ToggleRow(
+                        "Open the deck upright",
+                        "EJECT keeps the phone upright: the tape lies across the top with the rack and J-card below (more room when the keyboard is up). Off = the deck opens sideways",
+                        ui.phonePortrait, accent,
+                    ) { actions.setPhonePortrait(!ui.phonePortrait) }
+                }
                 ToggleRow(
                     "Show the player on the lock screen",
                     "If Foldy is the app you had open, waking the phone shows the player and its keys work without unlocking. Opening the tapes or leaving Foldy asks you to unlock",

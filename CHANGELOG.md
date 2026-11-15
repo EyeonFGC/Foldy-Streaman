@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.37.0] — 2026-11-15 (Foldy Streaman)
+
+### Added
+- **Phones that don't fold: Settings > Open the deck upright.** With it on, EJECT keeps the phone upright instead of turning it sideways: the tape lies flat across the top, with the rack underneath, and a tape's J-card slides in over the rack. There is more room for the J-card when the keyboard is up. Off (as before) = the deck opens sideways. Folding phones are not affected.
+
 ## [0.36.0] — 2026-11-15 (Foldy Streaman)
 
 ### Changed

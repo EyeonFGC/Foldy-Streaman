@@ -55,6 +55,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -152,6 +153,11 @@ internal fun RackDeckLayout(
     previewCard: Int? = null,
     /** Screen previews only: drag rack item N to this spot over the rack (to show the marker line). */
     previewReorder: Pair<Int, Float>? = null,
+    /**
+     * Phones that don't fold, held upright: the deck (with the tape lying flat) across the top and
+     * the rack underneath, instead of side by side.
+     */
+    portrait: Boolean = false,
 ) {
     var showSettings by remember { mutableStateOf(previewSettings) }
     // Lettering on the body follows the theme (light on blue, black or red; dark blue on silver).
@@ -189,7 +195,8 @@ internal fun RackDeckLayout(
     val glowLight by animateColorAsState(if (blocked) BlockedLight else glowLightFor(ui.theme), tween(160), label = "glowLight")
     val glowEdge by animateColorAsState(if (blocked) BlockedEdge else glowEdgeFor(ui.theme), tween(160), label = "glowEdge")
     // Over the deck the cassette turns upright to match the one standing in it.
-    val turn by animateFloatAsState(if (overDeck && !blocked) -90f else -4f, tween(260), label = "turn")
+    // Over the deck the held tape turns to match the slot (which lies flat when the phone is upright).
+    val turn by animateFloatAsState(if (overDeck && !blocked && !portrait) -90f else if (overDeck && !blocked) 0f else -4f, tween(260), label = "turn")
 
     fun load(item: RackItem) {
         when (item) {
@@ -253,9 +260,9 @@ internal fun RackDeckLayout(
         // On a Fold the rack and the deck are equal halves either side of the fold, with hinges
         // down the gap between them. A phone that doesn't fold keeps the rack a little narrower.
         val hinges = !ui.phoneMode && ui.hingeStyle != dev.foldman.deck.HingeStyle.NONE
-        Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(if (hinges) 0.dp else 12.dp)) {
-            // The rack.
-            Column(Modifier.weight(if (hinges) 0.5f else 0.46f).fillMaxHeight()) {
+        // The rack and the deck are each built once, then set side by side (or one above the other).
+        val rackPane: @Composable (Modifier) -> Unit = { pane ->
+            Column(pane) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text("CASSETTE RACK", style = EngravedCaps.copy(color = look.label, fontSize = 13.sp, letterSpacing = 2.sp))
                     Spacer(Modifier.width(14.dp))
@@ -354,11 +361,11 @@ internal fun RackDeckLayout(
                 )
             }
 
-            // The gap down the fold; the hinge itself is drawn behind, the full height of the screen.
-            if (hinges) Spacer(Modifier.width(HingeGap))
+        }
 
-            // The open deck.
-            Column(Modifier.weight(if (hinges) 0.5f else 0.54f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+        // The open deck.
+        val deckPane: @Composable (Modifier) -> Unit = { pane ->
+            Column(pane, horizontalAlignment = Alignment.CenterHorizontally) {
                 // The deck floor, with a slot only a millimetre or so bigger than the tape.
                 BoxWithConstraints(
                     Modifier
@@ -368,10 +375,11 @@ internal fun RackDeckLayout(
                     contentAlignment = Alignment.Center,
                 ) {
                     val gap = SlotGap
-                    // Stood on end the cassette is 64 wide by 100 tall.
-                    val tapeH = minOf(maxHeight - gap * 2, (maxWidth - gap * 2) * (100f / 64f))
-                    val tapeW = tapeH * (64f / 100f)
-                    tapeHeight[0] = with(density) { tapeH.toPx() }
+                    // Stood on end the cassette is 64 wide by 100 tall; lying flat (upright phones) 100 by 64.
+                    val tapeH = if (portrait) minOf(maxHeight - gap * 2, (maxWidth - gap * 2) * (64f / 100f)) else minOf(maxHeight - gap * 2, (maxWidth - gap * 2) * (100f / 64f))
+                    val tapeW = if (portrait) tapeH * (100f / 64f) else tapeH * (64f / 100f)
+                    // The tape's long side: what the tape in your hand grows to as it nears the slot.
+                    tapeHeight[0] = with(density) { (if (portrait) tapeW else tapeH).toPx() }
                     Box(
                         Modifier
                             .size(tapeW + gap * 2, tapeH + gap * 2)
@@ -383,7 +391,7 @@ internal fun RackDeckLayout(
                     ) {
                         if (ui.empty) {
                             // The bare inside of the deck: spindles, a screw, and a small hint.
-                            EmptyDeckInterior(Modifier.size(tapeW, tapeH))
+                            if (portrait) EmptyDeckInterior(Modifier.requiredSize(tapeH, tapeW).rotate(-90f)) else EmptyDeckInterior(Modifier.size(tapeW, tapeH))
                             Text(
                                 "DRAG A TAPE IN",
                                 style = EngravedCaps.copy(color = Color(0xFF5E5951), fontSize = 9.sp, letterSpacing = 2.sp),
@@ -417,7 +425,7 @@ internal fun RackDeckLayout(
                                             onDragCancel = { scope.launch { ejectX.animateTo(0f) } },
                                         )
                                     },
-                                vertical = true,
+                                vertical = !portrait,
                             )
                         }
                     }
@@ -457,7 +465,7 @@ internal fun RackDeckLayout(
                                 onClose != null -> "CLOSE THE LID TO PLAY  ·  SWIPE RIGHT TO EJECT"
                                 else -> "CLOSE LID TO PLAY  ·  SWIPE RIGHT TO EJECT"
                             },
-                            style = EngravedCaps.copy(color = look.label, fontSize = if (onClose != null) 10.sp else 12.sp, letterSpacing = 2.sp),
+                            style = EngravedCaps.copy(color = look.label, fontSize = if (portrait) 8.sp else if (onClose != null) 10.sp else 12.sp, letterSpacing = if (portrait) 1.sp else 2.sp),
                             maxLines = 1, overflow = TextOverflow.Ellipsis,
                         )
                         Spacer(Modifier.height(3.dp))
@@ -477,6 +485,20 @@ internal fun RackDeckLayout(
             }
         }
 
+        if (portrait) {
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                deckPane(Modifier.fillMaxWidth().weight(PortraitDeckShare))
+                rackPane(Modifier.fillMaxWidth().weight(1f - PortraitDeckShare))
+            }
+        } else {
+            Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(if (hinges) 0.dp else 12.dp)) {
+                rackPane(Modifier.weight(if (hinges) 0.5f else 0.46f).fillMaxHeight())
+                // The gap down the fold; the hinge itself is drawn behind, the full height of the screen.
+                if (hinges) Spacer(Modifier.width(HingeGap))
+                deckPane(Modifier.weight(if (hinges) 0.5f else 0.54f).fillMaxHeight())
+            }
+        }
+
         // Tapping one of your tapes slides its J-card out over the rack.
         val cardTape = (card as? RackItem.Mine)?.let { m -> ui.tapes.firstOrNull { it.id == m.tape.id } }
         if (cardTape != null && cardTape.id == newTapeId) newTapeId = null
@@ -490,7 +512,8 @@ internal fun RackDeckLayout(
             enter = androidx.compose.animation.slideInHorizontally(tween(560, easing = CardEaseOut)) { -it - 40 } +
                 androidx.compose.animation.fadeIn(tween(160)),
             exit = androidx.compose.animation.slideOutHorizontally(tween(280, easing = androidx.compose.animation.core.FastOutLinearInEasing)) { -it - 40 },
-            modifier = Modifier.fillMaxHeight().fillMaxWidth(0.46f),
+            // Side by side it covers the rack; upright it covers the rack underneath the deck.
+            modifier = if (portrait) Modifier.align(Alignment.BottomCenter).fillMaxWidth().fillMaxHeight(1f - PortraitDeckShare) else Modifier.fillMaxHeight().fillMaxWidth(0.46f),
         ) {
             val t = shownTape[0]
             if (t != null) {
@@ -586,6 +609,9 @@ internal fun RackDeckLayout(
     if (creating) TapeEditorDialog(null, actions.tapes) { creating = false }
     editing?.let { t -> TapeEditorDialog(t, actions.tapes) { editing = null } }
 }
+
+/** Upright phones: how much of the height the deck takes; the rack (and the J-card) get the rest. */
+private const val PortraitDeckShare = 0.36f
 
 private fun deckStatus(ui: DeckUi): String {
     if (ui.empty) return "NO TAPE"

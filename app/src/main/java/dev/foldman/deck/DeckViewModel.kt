@@ -106,6 +106,8 @@ data class DeckUi(
     val stopOnOpen: Boolean = false,
     /** Front screen: the volume buttons work the player (play, pause, skip) instead of the volume. */
     val volumeKeys: Boolean = true,
+    /** Phones that don't fold: the open deck stays upright (tape across the top, rack below) instead of turning sideways. */
+    val phonePortrait: Boolean = false,
     /** Show the front player over the lock screen (Settings). */
     val lockScreen: Boolean = false,
     /** The folded front screen (the player) is what's showing, not the inside. */
@@ -240,6 +242,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     var volumeKeysOn = prefs.getBoolean(KEY_VOLUME_KEYS, true)
         private set
     private var lockScreen = prefs.getBoolean(KEY_LOCK_SCREEN, false)
+    private var phonePortrait = prefs.getBoolean(KEY_PHONE_PORTRAIT, false)
     private var spotifyName: String? = SpotifyApi.name(app)
     private var spotifyClientId: String = SpotifyApi.clientId(app)
     private var spotifyMessage: String? = null
@@ -501,6 +504,12 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
     fun setNoticeMode(mode: NoticeMode) {
         noticeMode = mode
         prefs.edit { putString(KEY_NOTICES, mode.name) }
+        tick()
+    }
+
+    fun setPhonePortrait(on: Boolean) {
+        phonePortrait = on
+        prefs.edit { putBoolean(KEY_PHONE_PORTRAIT, on) }
         tick()
     }
 
@@ -1296,6 +1305,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             stopOnOpen = stopOnOpen,
             volumeKeys = volumeKeysOn,
             lockScreen = lockScreen,
+            phonePortrait = phonePortrait,
             coverShown = coverShown,
             spotifyName = spotifyName,
             spotifyClientId = spotifyClientId,
@@ -1360,6 +1370,7 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_VOLUME_KEYS = "volume_keys"
         private const val KEY_YT_SIGNED_IN = "youtube_signed_in"
         private const val KEY_LOCK_SCREEN = "lock_screen"
+        private const val KEY_PHONE_PORTRAIT = "phone_portrait"
         private const val KEY_NOTICES = "notices_on_player"
         private const val KEY_FRONT_SHELF = "front_shelf"
         private const val KEY_JCARD_DARK = "jcard_dark"
