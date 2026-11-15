@@ -220,7 +220,8 @@ fun FoldmanScreen(
                     when (ui.theme) {
                         DeckTheme.ORIGINAL -> CoverWalkman(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                         DeckTheme.BLACK_GOLD -> CoverBlackGold(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
-                        DeckTheme.SPORT_YELLOW -> CoverSportYellow(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                        DeckTheme.CRYSTAL_CLEAR -> CoverCrystalClear(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
+                    DeckTheme.SPORT_YELLOW -> CoverSportYellow(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                         DeckTheme.RED_CHROME -> CoverRedChrome(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                         DeckTheme.SILVER_BLUE -> CoverSilverBlue(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })
                         DeckTheme.CHERRY_RED -> CoverCherryRed(ui, anim, deck, onFixAccess = vm::openAccessSettings, modifier = Modifier.fillMaxSize(), onTapes = { shelfOpen = true })

@@ -455,6 +455,8 @@ class PreviewShots {
     @Test @Config(qualifiers = "w360dp-h460dp-xxhdpi") fun logoFoldy() = logoPart("Foldy", "logo-part-foldy")
     @Test @Config(qualifiers = "w360dp-h460dp-xxhdpi") fun logoStreaman() = logoPart("Streaman", "logo-part-streaman")
 
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun foldedClear() { rule.setContent { CoverCrystalClear(ui.copy(theme = DeckTheme.CRYSTAL_CLEAR, tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING, title = "Fast Car", artist = "Tracy Chapman"), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/folded-clear.png") }
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideClear() = inside(DeckTheme.CRYSTAL_CLEAR, "inside-clear")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideSport() = inside(DeckTheme.SPORT_YELLOW, "inside-sport")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun insideRedChrome() = inside(DeckTheme.RED_CHROME, "inside-redchrome")
 

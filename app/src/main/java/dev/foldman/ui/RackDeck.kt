@@ -788,6 +788,7 @@ private fun glowLightFor(theme: DeckTheme) = when (theme) {
     DeckTheme.SILVER_BLUE -> Color(0xFF9DB4FF)
     DeckTheme.RED_CHROME -> Color(0xFFA6F5B4)
     DeckTheme.SPORT_YELLOW -> Color(0xFF9CC8FF)
+    DeckTheme.CRYSTAL_CLEAR -> Color(0xFFFFE58A)
 }
 
 private fun glowEdgeFor(theme: DeckTheme) = when (theme) {
@@ -797,6 +798,7 @@ private fun glowEdgeFor(theme: DeckTheme) = when (theme) {
     DeckTheme.SILVER_BLUE -> SilverBlue.Blue
     DeckTheme.RED_CHROME -> RedChrome.Green
     DeckTheme.SPORT_YELLOW -> SportYellow.Blue
+    DeckTheme.CRYSTAL_CLEAR -> CrystalClear.Warning
 }
 private val HeldCassetteWidth = 230.dp
 /** Room around the tape in its slot: about a millimetre on the Fold's screen. */

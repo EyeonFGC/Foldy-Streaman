@@ -16,6 +16,7 @@ internal fun insideLook(theme: DeckTheme): InsideLook = when (theme) {
     DeckTheme.CHERRY_RED -> InsideLook(Color.White, Color(0xFFFFD9DF), CherryRed.Yellow)
     DeckTheme.RED_CHROME -> InsideLook(Color.White, Color(0xFFFFD0D4), Color(0xFF8CFFA0))
     DeckTheme.SPORT_YELLOW -> InsideLook(SportYellow.Ink, Color(0xFF5E4C00), SportYellow.Blue)
+    DeckTheme.CRYSTAL_CLEAR -> InsideLook(CrystalClear.Ink, Color(0xFF4A5056), Color(0xFF8A6A00))
     DeckTheme.SILVER_BLUE -> InsideLook(SilverBlue.Ink, Color(0xFF4A5480), SilverBlue.Blue)
 }
 
@@ -26,6 +27,7 @@ internal fun Modifier.insideBody(theme: DeckTheme): Modifier = when (theme) {
     DeckTheme.CHERRY_RED -> glossyRed(trim = 0.dp)
     DeckTheme.RED_CHROME -> metallicRed()
     DeckTheme.SPORT_YELLOW -> sportYellow()
+    DeckTheme.CRYSTAL_CLEAR -> chassis(corner = 0.dp, screws = false)
     DeckTheme.SILVER_BLUE -> chassis(corner = 0.dp, screws = false)
 }
 
@@ -36,5 +38,6 @@ internal fun drawerColor(theme: DeckTheme): Color = when (theme) {
     DeckTheme.CHERRY_RED -> CherryRed.Body
     DeckTheme.RED_CHROME -> RedChrome.Red
     DeckTheme.SPORT_YELLOW -> SportYellow.Yellow
+    DeckTheme.CRYSTAL_CLEAR -> Color(0xFFC3C5C9)
     DeckTheme.SILVER_BLUE -> Color(0xFFC3C5C9)
 }

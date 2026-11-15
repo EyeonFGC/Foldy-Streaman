@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.38.0] — 2026-11-15 (Foldy Streaman)
+
+### Added
+- **New theme: Crystal Clear** (Settings > Theme), after a see-through player from the 90s. A matte silver cover with a glass window showing the whole tape over a perforated silver mechanism, FOLDY and a big STREAMAN up the right-hand side in frosted lettering, a serial tag, and a yellow warning sticker ("highly contagious, may cause sudden dancing"). The side strip is brushed silver with metallic keys set in white: round previous/next, PLAY, PAUSE and STOP as tall pills, REW and FF round.
+- The inside, hinge, tape drawer and J-card buttons follow the new theme.
+
 ## [0.37.1] — 2026-11-15 (Foldy Streaman)
 
 ### Changed
