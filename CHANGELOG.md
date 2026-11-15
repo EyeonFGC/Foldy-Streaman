@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.38.2] — 2026-11-15 (Foldy Streaman)
+
+### Changed
+- Crystal Clear: FOLDY sits centred between the top of the screen and the tape window; "unfold to change tapes" starts just past it.
+
 ## [0.38.1] — 2026-11-15 (Foldy Streaman)
 
 ### Changed

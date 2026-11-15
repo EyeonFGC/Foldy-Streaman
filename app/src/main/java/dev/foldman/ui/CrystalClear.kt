@@ -151,7 +151,8 @@ internal fun CoverCrystalClear(ui: DeckUi, anim: DeckAnimations, deck: DeckContr
                         val centre = (26.dp + maxWidth + 10.dp) / 2
                         TapesButton(Color(0xFFD9DDE0), CrystalClear.Ink, onTapes, Modifier.align(Alignment.CenterStart).offset(x = centre - 33.dp))
                     } else {
-                        Text(changeTapesHint(ui), style = ink.copy(fontSize = 7.sp, letterSpacing = 2.sp, color = CrystalClear.Ink.copy(alpha = 0.7f)), modifier = Modifier.align(Alignment.CenterStart))
+                        // Starts just past FOLDY, which now reaches up into this line.
+                        Text(changeTapesHint(ui), style = ink.copy(fontSize = 7.sp, letterSpacing = 2.sp, color = CrystalClear.Ink.copy(alpha = 0.7f)), modifier = Modifier.align(Alignment.CenterStart).padding(start = 32.dp))
                     }
                     // A small serial-number tag, like the one on the real thing.
                     Column(
@@ -214,10 +215,11 @@ internal fun CoverCrystalClear(ui: DeckUi, anim: DeckAnimations, deck: DeckContr
                     }
                     // FOLDY up the left, where the maker's name goes.
                     // In the same frosted lettering as STREAMAN.
-                    // Centred up and down in the gap between the top line's lettering (about 20dp above this box)
-                    // and the window's top edge.
+                    // Centred up and down between the top of the screen and the window's top edge. This
+                    // box starts 60dp below the cover's top (plus any camera cut-out).
                     val winTop = (maxHeight - tapeH - rim * 2) / 2 + WindowDrop
-                    FillLettering("FOLDY", Modifier.align(Alignment.TopStart).offset(x = (-2).dp, y = (winTop - 20.dp) / 2 - 41.dp).size(28.dp, 82.dp))
+                    val above = 60.dp + with(androidx.compose.ui.platform.LocalDensity.current) { WindowInsets.displayCutout.getTop(this).toDp() }
+                    FillLettering("FOLDY", Modifier.align(Alignment.TopStart).offset(x = (-2).dp, y = (winTop - above) / 2 - 41.dp).size(28.dp, 82.dp))
                     // STREAMAN, big and frosted, printed up the right-hand side and over the window's edge.
                     FillLettering(
                         "STREAMAN",
