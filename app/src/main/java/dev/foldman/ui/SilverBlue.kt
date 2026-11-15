@@ -182,7 +182,7 @@ private fun PillWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                 val dy = u * (50f - (showT + showB) / 2f)
                 val place = Modifier.requiredSize(tw, th).offset(x = dx, y = dy)
                 if (ui.empty) {
-                    EmptyDeckInterior(place, metal = Color(0xFF9A9EA6))
+                    EmptyDeckFront(place, metal = Color(0xFF9A9EA6))
                 } else {
                     FullCassette(ui, anim, place, vertical = true)
                 }

@@ -182,7 +182,7 @@ private fun SmokedWindow(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
             val tw = w * 1.04f
             val th = tw * (100f / 64f)
             if (ui.empty) {
-                EmptyDeckInterior(Modifier.requiredSize(tw, th), metal = Color(0xFF5E5C60))
+                EmptyDeckFront(Modifier.requiredSize(tw, th), metal = Color(0xFF5E5C60))
             } else {
                 FullCassette(ui, anim, Modifier.requiredSize(tw, th), vertical = true)
             }

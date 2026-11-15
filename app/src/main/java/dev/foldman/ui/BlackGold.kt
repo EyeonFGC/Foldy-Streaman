@@ -175,7 +175,7 @@ private fun Porthole(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
             val w = d * 1.02f
             val h = w * (100f / 64f)
             if (ui.empty) {
-                EmptyDeckInterior(Modifier.requiredSize(w, h), metal = Color(0xFF6B6B70))
+                EmptyDeckFront(Modifier.requiredSize(w, h), metal = Color(0xFF6B6B70))
             } else {
                 FullCassette(ui, anim, Modifier.requiredSize(w, h), vertical = true)
             }

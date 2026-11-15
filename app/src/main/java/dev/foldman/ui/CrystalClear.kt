@@ -75,6 +75,9 @@ import dev.foldman.deck.SourceStatus
 import dev.foldman.deck.Transport
 import kotlin.random.Random
 
+/** How far below centre the tape window sits on the cover. */
+private val WindowDrop = 16.dp
+
 /** Crystal Clear palette. */
 object CrystalClear {
     val Metal = Color(0xFF8E9498)
@@ -142,13 +145,17 @@ internal fun CoverCrystalClear(ui: DeckUi, anim: DeckAnimations, deck: DeckContr
                     .windowInsetsPadding(WindowInsets.displayCutout.only(WindowInsetsSides.Top))
                     .padding(start = 12.dp, end = 10.dp, top = 18.dp, bottom = 14.dp),
             ) {
-                Row(Modifier.fillMaxWidth().height(34.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (ui.frontShelf) TapesButton(Color(0xFFD9DDE0), CrystalClear.Ink, onTapes)
-                    else Text(changeTapesHint(ui), style = ink.copy(fontSize = 7.sp, letterSpacing = 2.sp, color = CrystalClear.Ink.copy(alpha = 0.7f)))
-                    Spacer(Modifier.weight(1f))
+                BoxWithConstraints(Modifier.fillMaxWidth().height(34.dp)) {
+                    if (ui.frontShelf) {
+                        // Centred between FOLDY (about 26dp in) and the cover's right-hand edge.
+                        val centre = (26.dp + maxWidth + 10.dp) / 2
+                        TapesButton(Color(0xFFD9DDE0), CrystalClear.Ink, onTapes, Modifier.align(Alignment.CenterStart).offset(x = centre - 33.dp))
+                    } else {
+                        Text(changeTapesHint(ui), style = ink.copy(fontSize = 7.sp, letterSpacing = 2.sp, color = CrystalClear.Ink.copy(alpha = 0.7f)), modifier = Modifier.align(Alignment.CenterStart))
+                    }
                     // A small serial-number tag, like the one on the real thing.
                     Column(
-                        Modifier.background(Color(0xFFF4F4EF), RoundedCornerShape(2.dp)).border(0.8.dp, Color.Black.copy(alpha = 0.25f), RoundedCornerShape(2.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
+                        Modifier.align(Alignment.CenterEnd).background(Color(0xFFF4F4EF), RoundedCornerShape(2.dp)).border(0.8.dp, Color.Black.copy(alpha = 0.25f), RoundedCornerShape(2.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
                         horizontalAlignment = Alignment.End,
                     ) {
                         Text("SERIAL", style = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 6.sp, color = CrystalClear.Ink))
@@ -159,13 +166,14 @@ internal fun CoverCrystalClear(ui: DeckUi, anim: DeckAnimations, deck: DeckContr
                 BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                     // The window: just bigger than the whole tape, stood on end.
                     val rim = 8.dp
-                    val tapeW = minOf(maxWidth * 0.8f, (maxHeight * 0.88f - rim * 2) * 64f / 100f)
+                    // As wide as the cover allows (it runs under STREAMAN), and nearly the full height.
+                    val tapeW = minOf(maxWidth - rim * 2 - 6.dp, (maxHeight * 0.86f - rim * 2) * 64f / 100f)
                     val tapeH = tapeW * 100f / 64f
                     val winShape = RoundedCornerShape(14.dp)
                     Box(
                         Modifier
                             .align(Alignment.CenterStart)
-                            .padding(start = 8.dp)
+                            .offset(y = WindowDrop)
                             .requiredSize(tapeW + rim * 2, tapeH + rim * 2)
                             .drawBehind {
                                 // Set into the cover: a shadow under its top edge, a light edge below.
@@ -178,7 +186,7 @@ internal fun CoverCrystalClear(ui: DeckUi, anim: DeckAnimations, deck: DeckContr
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(Modifier.requiredSize(tapeW, tapeH)) {
-                            if (ui.empty) EmptyDeckInterior(Modifier.fillMaxSize(), metal = Color(0xFFA7ADB1))
+                            if (ui.empty) EmptyDeckFront(Modifier.fillMaxSize(), metal = Color(0xFFA7ADB1))
                             else FullCassette(ui, anim, Modifier.fillMaxSize(), vertical = true)
                         }
                         // The glass: a faint tint, a long glare across it, and a brighter streak at the top.
@@ -208,7 +216,7 @@ internal fun CoverCrystalClear(ui: DeckUi, anim: DeckAnimations, deck: DeckContr
                     // In the same frosted lettering as STREAMAN.
                     // Centred up and down in the gap between the top line's lettering (about 20dp above this box)
                     // and the window's top edge.
-                    val winTop = (maxHeight - tapeH - rim * 2) / 2
+                    val winTop = (maxHeight - tapeH - rim * 2) / 2 + WindowDrop
                     FillLettering("FOLDY", Modifier.align(Alignment.TopStart).offset(x = (-2).dp, y = (winTop - 20.dp) / 2 - 41.dp).size(28.dp, 82.dp))
                     // STREAMAN, big and frosted, printed up the right-hand side and over the window's edge.
                     FillLettering(

@@ -442,6 +442,16 @@ class PreviewShots {
     @Test @Config(qualifiers = "w412dp-h883dp-xxhdpi") fun uprightCard() = upright("upright-2", DeckTheme.SPORT_YELLOW, cardAt = 5)
     @Test @Config(qualifiers = "w412dp-h883dp-xxhdpi") fun uprightEmpty() = upright("upright-3", DeckTheme.BLACK_GOLD, empty = true)
 
+    private fun emptyFront(name: String, content: @androidx.compose.runtime.Composable () -> Unit) { rule.setContent { content() }; rule.onRoot().captureRoboImage("build/shots/empty-$name.png") }
+    private fun emptyUi(theme: DeckTheme) = ui.copy(theme = theme, empty = true, tape = null, tapeCued = false)
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptyGold() = emptyFront("2") { CoverBlackGold(emptyUi(DeckTheme.BLACK_GOLD), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptyCherry() = emptyFront("3") { CoverCherryRed(emptyUi(DeckTheme.CHERRY_RED), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptySilver() = emptyFront("4") { CoverSilverBlue(emptyUi(DeckTheme.SILVER_BLUE), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptyRed() = emptyFront("5") { CoverRedChrome(emptyUi(DeckTheme.RED_CHROME), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptySport() = emptyFront("6") { CoverSportYellow(emptyUi(DeckTheme.SPORT_YELLOW), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptyClear() = emptyFront("7") { CoverCrystalClear(emptyUi(DeckTheme.CRYSTAL_CLEAR), anim(), deck, {}, Modifier.fillMaxSize()) }
+    @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun clearShelf() { rule.setContent { CoverCrystalClear(ui.copy(theme = DeckTheme.CRYSTAL_CLEAR, tapeCued = false, frontShelf = true, title = "Champion", artist = "Kanye West"), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/clear-shelf.png") }
+
     private fun logoPart(title: String, name: String) {
         val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)
         val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = listOf(t), tape = t, tapeCued = false)

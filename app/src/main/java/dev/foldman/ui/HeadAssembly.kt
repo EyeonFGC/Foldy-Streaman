@@ -6,6 +6,10 @@ package dev.foldman.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -151,4 +155,16 @@ private fun DrawScope.screw(c: Offset, r: Float) {
     drawCircle(Brush.radialGradient(listOf(Color(0xFFD5DADD), Color(0xFF6E7579)), c - Offset(r * 0.3f, r * 0.3f), r * 1.4f), r, c)
     drawLine(Color(0xFF3A3E41), Offset(c.x - r * 0.6f, c.y), Offset(c.x + r * 0.6f, c.y), r * 0.22f)
     drawLine(Color(0xFF3A3E41), Offset(c.x, c.y - r * 0.6f), Offset(c.x, c.y + r * 0.6f), r * 0.22f)
+}
+
+/**
+ * The bare inside of an empty deck as seen through a front window: the spindles and screw, with the
+ * head plate along the tape's open edge (the right, the tape being stood on end), just as inside.
+ */
+@Composable
+fun EmptyDeckFront(modifier: Modifier = Modifier, metal: Color = Color(0xFF8A8A90)) {
+    BoxWithConstraints(modifier) {
+        EmptyDeckInterior(Modifier.fillMaxSize(), metal = metal)
+        HeadAssembly(Modifier.align(Alignment.CenterEnd).size(maxWidth * HeadShare, maxHeight), facingLeft = true)
+    }
 }

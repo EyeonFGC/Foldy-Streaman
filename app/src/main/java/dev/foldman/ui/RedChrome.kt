@@ -236,7 +236,7 @@ private fun GlassPanel(ui: DeckUi, anim: DeckAnimations, modifier: Modifier) {
                     .requiredSize(u * 64f, u * 100f)
                     .offset(x = u * (32f - (showL + showR) / 2f), y = u * (50f - (showT + showB) / 2f))
                 if (ui.empty) {
-                    EmptyDeckInterior(place, metal = Color(0xFF5E5C60))
+                    EmptyDeckFront(place, metal = Color(0xFF5E5C60))
                 } else {
                     FullCassette(ui, anim, place, vertical = true)
                 }

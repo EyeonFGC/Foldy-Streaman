@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.38.1] — 2026-11-15 (Foldy Streaman)
+
+### Changed
+- Crystal Clear: the tape window is bigger (it runs under STREAMAN), and the TAPES button sits in the middle of the top, clear of FOLDY.
+- With the deck empty, the front window now shows the tape-head plate too, like the inside (Black & Gold, Cherry Red, Red Chrome, Sport Yellow, Crystal Clear; on Original and Silver & Blue that part of the deck is outside the window).
+
 ## [0.38.0] — 2026-11-15 (Foldy Streaman)
 
 ### Added
