@@ -206,19 +206,6 @@ internal fun SettingsPanel(ui: DeckUi, actions: SettingsActions, onClose: () -> 
                     if (name != null) actions.spotifyLogout else actions.spotifyLogin,
                 )
                 ui.spotifyMessage?.let { Text(it, style = Note.copy(color = Color(0xFFFF8A80))) }
-                if (name == null) {
-                    // The ID of the Spotify "app" this login goes through (from developer.spotify.com).
-                    var id by remember(ui.spotifyClientId) { mutableStateOf(ui.spotifyClientId) }
-                    Text("Client ID (from the Spotify developer dashboard)", style = Note)
-                    androidx.compose.foundation.text.BasicTextField(
-                        value = id,
-                        onValueChange = { id = it.trim().take(64); actions.setSpotifyClientId(id) },
-                        singleLine = true,
-                        textStyle = Label.copy(fontSize = 13.sp),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(accent),
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp).border(1.dp, accent.copy(alpha = 0.6f), RoundedCornerShape(4.dp)).padding(horizontal = 8.dp, vertical = 8.dp),
-                    )
-                }
             }
             Section("ADAPTERS ON THE RACK") {
                 Text("Switch off the ones you don't use. Your own playlist tapes stay either way.", style = Note)

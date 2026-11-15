@@ -2,6 +2,14 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.36.0] — 2026-11-15 (Foldy Streaman)
+
+### Changed
+- **J-card: choosing a tape's music.** The two "pick from my playlists" buttons are now stamped buttons like the six below them (YT MUSIC and SPOTIFY, each only when you're logged in), with a new SEARCH button beside them. SEARCH slides a box open under the buttons, pushing the rest of the card down. The PLAYLIST button now opens this row on the card instead of a pop-up.
+- **Search Spotify from the J-card** (when logged in to Spotify): type an album, artist or playlist in the SEARCH box and press search on the keyboard. Albums and playlists are listed; either can be a tape. Pasting a YouTube Music or Spotify link in the same box still works.
+- **Spotify albums can be tapes** and start from inside Foldy like playlists.
+- Settings > Spotify no longer shows the Client ID box. The ID is built into the app, so it can't be deleted by mistake (and a damaged one typed earlier is ignored).
+
 ## [0.35.0] — 2026-11-14 (Foldy Streaman)
 
 ### Added

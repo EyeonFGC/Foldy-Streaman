@@ -480,9 +480,9 @@ class PreviewShots {
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerRedChrome() = drawer(DeckTheme.RED_CHROME, "drawer-5")
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerSport() = drawer(DeckTheme.SPORT_YELLOW, "drawer-6")
 
-    private fun card(theme: DeckTheme, dark: Boolean, name: String, blank: Boolean = false) {
+    private fun card(theme: DeckTheme, dark: Boolean, name: String, blank: Boolean = false, loggedIn: Boolean = false) {
         val plain = tapes.map { it.copy(photoPath = null) } + CustomTape(title = "", playlistId = "", shell = 0xFFB8322A, label = 0xFFF2EBDC)
-        val u = ui.copy(theme = theme, tapes = plain, tape = plain[0], tapeCued = false, jcardDark = dark)
+        val u = ui.copy(theme = theme, tapes = plain, tape = plain[0], tapeCued = false, jcardDark = dark, youTubeSignedIn = loggedIn, spotifyName = if (loggedIn) "Me" else null)
         rule.setContent {
             androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(theme)) {
                 RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp), previewCard = if (blank) 7 else 5)
@@ -494,5 +494,6 @@ class PreviewShots {
 
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun cardLight() = card(DeckTheme.ORIGINAL, false, "card-light")
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun cardDark() = card(DeckTheme.BLACK_GOLD, true, "card-dark")
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun cardBlankLoggedIn() = card(DeckTheme.SPORT_YELLOW, false, "card-blank-in", blank = true, loggedIn = true)
     @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun cardBlank() = card(DeckTheme.CHERRY_RED, false, "card-blank", blank = true)
 }

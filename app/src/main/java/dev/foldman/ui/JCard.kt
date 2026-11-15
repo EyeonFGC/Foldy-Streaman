@@ -229,6 +229,10 @@ fun JCardSheet(
     modifier: Modifier = Modifier,
 ) {
     var edit by remember { mutableStateOf<JEdit?>(null) }
+    // Choosing what's on the tape: a blank tape starts here, and PLAYLIST brings it back.
+    var choosing by remember(tape.id) { mutableStateOf(tape.playlistId.isBlank()) }
+    // What was typed into the search box and sent off to Spotify, while its results are showing.
+    var spotifySearch by remember { mutableStateOf<String?>(null) }
     // Moving the picture: a working copy, saved on DONE.
     var moving by remember { mutableStateOf(false) }
     var mx by remember { mutableFloatStateOf(tape.photoX) }
@@ -246,11 +250,33 @@ fun JCardSheet(
             heading = "MY YT MUSIC PLAYLISTS",
             load = { dev.foldman.deck.YouTubeApi.playlists(context).map { PickItem(it.id, it.name, it.imageUrl, it.tracks) } },
             onPick = { p ->
-                actions.save(tape.copy(playlistId = p.id, service = dev.foldman.deck.TapeService.YT_MUSIC, title = tape.title.ifBlank { p.name.take(40) }))
+                actions.save(tape.copy(playlistId = p.id, service = dev.foldman.deck.TapeService.YT_MUSIC, album = false, title = tape.title.ifBlank { p.name.take(40) }))
                 if (tape.photoPath == null && p.imageUrl != null) actions.pickCover(tape.id, p.imageUrl)
                 pickingYouTube = false
+                choosing = false
             },
             onBack = { pickingYouTube = false },
+            modifier = modifier.shadow(18.dp, card).clip(card).paper(ui.jcardDark).padding(horizontal = 20.dp, vertical = 16.dp),
+        )
+        return
+    }
+    // Results of a Spotify search: albums first, then playlists.
+    spotifySearch?.let { q ->
+        val context = androidx.compose.ui.platform.LocalContext.current
+        PlaylistPickCard(
+            heading = "SPOTIFY: " + q.uppercase().take(18),
+            load = {
+                dev.foldman.deck.SpotifyApi.search(context, q).map {
+                    PickItem(it.id, it.name, it.imageUrl, it.tracks, by = it.by, album = it.album, section = if (it.album) "ALBUMS" else "PLAYLISTS")
+                }
+            },
+            onPick = { p ->
+                actions.save(tape.copy(playlistId = p.id, service = dev.foldman.deck.TapeService.SPOTIFY, album = p.album, title = tape.title.ifBlank { p.name.take(40) }))
+                if (tape.photoPath == null && p.imageUrl != null) actions.pickCover(tape.id, p.imageUrl)
+                spotifySearch = null
+                choosing = false
+            },
+            onBack = { spotifySearch = null },
             modifier = modifier.shadow(18.dp, card).clip(card).paper(ui.jcardDark).padding(horizontal = 20.dp, vertical = 16.dp),
         )
         return
@@ -260,10 +286,11 @@ fun JCardSheet(
     if (pickingSpotify) {
         SpotifyPickCard(
             onPick = { p ->
-                actions.save(tape.copy(playlistId = p.id, service = dev.foldman.deck.TapeService.SPOTIFY, title = tape.title.ifBlank { p.name.take(40) }))
+                actions.save(tape.copy(playlistId = p.id, service = dev.foldman.deck.TapeService.SPOTIFY, album = false, title = tape.title.ifBlank { p.name.take(40) }))
                 // A tape with no picture yet takes the playlist's own cover.
                 if (tape.photoPath == null && p.imageUrl != null) actions.pickCover(tape.id, p.imageUrl)
                 pickingSpotify = false
+                choosing = false
             },
             onBack = { pickingSpotify = false },
             modifier = modifier.shadow(18.dp, card).clip(card).paper(ui.jcardDark).padding(horizontal = 20.dp, vertical = 16.dp),
@@ -329,46 +356,67 @@ fun JCardSheet(
         Spacer(Modifier.height(12.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Text("SIDE A", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp))
-            if (tape.playlistId.isBlank()) {
-                // A blank tape: paste its playlist link right here on the card.
+            if (tape.playlistId.isNotBlank()) {
+                Text("${tape.service.label} ${if (tape.album) "album" else "playlist"}", style = Typed.copy(fontSize = 13.sp))
+            }
+            if (choosing || tape.playlistId.isBlank()) {
+                // Where the tape's music comes from: one button for each account that's logged in
+                // (your own playlists there), and SEARCH, which opens a box to search or paste a link.
+                val loggedIn = ui.youTubeSignedIn || ui.spotifyName != null
+                var searchOpen by remember { mutableStateOf(!loggedIn) }
                 var link by remember { mutableStateOf("") }
-                if (ui.youTubeSignedIn) {
-                    Text(
-                        "PICK FROM MY YT MUSIC PLAYLISTS",
-                        style = Typed.copy(color = JPaper, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp),
-                        modifier = Modifier.padding(vertical = 6.dp).clip(RoundedCornerShape(3.dp)).background(JInk).clickable { pickingYouTube = true }.padding(horizontal = 12.dp, vertical = 9.dp),
-                    )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    var shown = 1
+                    if (ui.youTubeSignedIn) { CardButton("▶", "YT MUSIC", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { pickingYouTube = true }; shown++ }
+                    if (ui.spotifyName != null) { CardButton("◉", "SPOTIFY", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { pickingSpotify = true }; shown++ }
+                    CardButton("⌕", "SEARCH", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { searchOpen = !searchOpen }
+                    // Keep them the size of the six buttons below: three to a row.
+                    repeat(3 - shown) { Spacer(Modifier.weight(1f)) }
                 }
-                if (ui.spotifyName != null) {
-                    Text(
-                        "PICK FROM MY SPOTIFY PLAYLISTS",
-                        style = Typed.copy(color = JPaper, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.sp),
-                        modifier = Modifier.padding(vertical = 6.dp).clip(RoundedCornerShape(3.dp)).background(JInk).clickable { pickingSpotify = true }.padding(horizontal = 12.dp, vertical = 9.dp),
-                    )
-                    Text("or", style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)))
+                // The box slides open under the buttons, pushing the rest of the card down.
+                androidx.compose.animation.AnimatedVisibility(
+                    searchOpen,
+                    enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut(),
+                ) {
+                    Column {
+                        val canSearch = ui.spotifyName != null
+                        val isLink = parsePlaylist(link) != null
+                        Spacer(Modifier.height(8.dp))
+                        Text(if (canSearch) "Search Spotify, or paste a YouTube Music or Spotify link:" else "Paste a YouTube Music or Spotify playlist link:", style = Typed.copy(fontSize = 12.sp))
+                        Spacer(Modifier.height(4.dp))
+                        androidx.compose.foundation.text.BasicTextField(
+                            value = link,
+                            onValueChange = { v ->
+                                link = v
+                                parsePlaylist(v)?.let { ref ->
+                                    actions.save(tape.copy(playlistId = ref.id, service = ref.service, album = false))
+                                    choosing = false
+                                }
+                            },
+                            singleLine = true,
+                            textStyle = Typed.copy(fontSize = 13.sp),
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(JRed),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { if (canSearch && !isLink && link.isNotBlank()) spotifySearch = link.trim() }),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.5.dp, JRed, RoundedCornerShape(3.dp))
+                                .padding(horizontal = 8.dp, vertical = 9.dp),
+                        )
+                        Text(
+                            when {
+                                link.isBlank() && canSearch -> "Type an album, artist or playlist and press search on the keyboard."
+                                link.isBlank() -> "In the music app: open the playlist → Share → Copy link."
+                                canSearch -> "Press search on the keyboard to look this up on Spotify."
+                                else -> "That doesn't look like a playlist link yet."
+                            },
+                            style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)),
+                        )
+                    }
                 }
-                Text("Paste a YouTube Music or Spotify playlist link:", style = Typed.copy(fontSize = 12.sp))
-                Spacer(Modifier.height(4.dp))
-                androidx.compose.foundation.text.BasicTextField(
-                    value = link,
-                    onValueChange = { v ->
-                        link = v
-                        parsePlaylist(v)?.let { ref -> actions.save(tape.copy(playlistId = ref.id, service = ref.service)) }
-                    },
-                    singleLine = true,
-                    textStyle = Typed.copy(fontSize = 13.sp),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(JRed),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.5.dp, JRed, RoundedCornerShape(3.dp))
-                        .padding(horizontal = 8.dp, vertical = 9.dp),
-                )
-                Text(
-                    if (link.isNotBlank()) "That doesn't look like a playlist link yet." else "In the music app: open the playlist → Share → Copy link.",
-                    style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)),
-                )
-            } else {
-                Text("${tape.service.label} playlist", style = Typed.copy(fontSize = 13.sp))
+                Spacer(Modifier.height(6.dp))
             }
             Text(
                 when {
@@ -392,7 +440,7 @@ fun JCardSheet(
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CardButton("◐", "COLOURS", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.COLOURS }
-                CardButton("♫", "PLAYLIST", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.PLAYLIST }
+                CardButton("♫", "PLAYLIST", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { choosing = !choosing }
                 CardButton("✕", "DELETE", Modifier.weight(1f), JButtonStyle.STAMP, ui.theme) { edit = JEdit.DELETE }
             }
             // Show the picture on the cassette itself, where the label colour normally goes.
@@ -450,7 +498,7 @@ fun JCardSheet(
 
     when (edit) {
         JEdit.LABEL -> TextDialog("Write on the label", tape.title, onDismiss = { edit = null }) { actions.save(tape.copy(title = it.trim().take(40))) }
-        JEdit.PLAYLIST -> PlaylistDialog(tape, onDismiss = { edit = null }, onSpotify = if (ui.spotifyName != null) ({ edit = null; pickingSpotify = true }) else null, onYouTube = if (ui.youTubeSignedIn) ({ edit = null; pickingYouTube = true }) else null) { ref -> actions.save(tape.copy(playlistId = ref.id, service = ref.service)) }
+        JEdit.PLAYLIST -> Unit
         JEdit.FONT -> FontDialog(tape, onDismiss = { edit = null }) { f -> actions.save(tape.copy(font = f)) }
         JEdit.COLOURS -> ColoursDialog(tape, onDismiss = { edit = null }) { s, l -> actions.save(tape.copy(shell = s, label = l)) }
         JEdit.PHOTO_MENU -> AlertDialog(
@@ -886,7 +934,11 @@ private fun SpotifyPickCard(onPick: (dev.foldman.deck.SpotifyPlaylist) -> Unit, 
 }
 
 /** One playlist in a pick list. */
-internal class PickItem(val id: String, val name: String, val imageUrl: String?, val tracks: Int)
+internal class PickItem(
+    val id: String, val name: String, val imageUrl: String?, val tracks: Int,
+    /** Who it's by, an album rather than a playlist, and the heading it is listed under (all optional). */
+    val by: String = "", val album: Boolean = false, val section: String = "",
+)
 
 /** A logged-in account's playlists, on the same paper as the J-card: tap one to use it. */
 @Composable
@@ -909,12 +961,19 @@ private fun PlaylistPickCard(heading: String, load: suspend () -> List<PickItem>
         androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             items(lists.size, key = { lists[it].id }) { i ->
                 val p = lists[i]
-                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(3.dp)).clickable { onPick(p) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                    UrlThumb(p.imageUrl, Modifier.size(44.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(p.name, style = Typed.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (p.tracks > 0) Text("${p.tracks} songs", style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.65f)))
+                Column {
+                    // A heading where a new group (albums, playlists) starts.
+                    if (p.section.isNotBlank() && (i == 0 || lists[i - 1].section != p.section)) {
+                        Text(p.section, style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 2.sp), modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp, bottom = 4.dp))
+                    }
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(3.dp)).clickable { onPick(p) }.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        UrlThumb(p.imageUrl, Modifier.size(44.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(p.name, style = Typed.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            val detail = listOfNotNull(p.by.takeIf { it.isNotBlank() }, if (p.tracks > 0) "${p.tracks} songs" else null).joinToString("  ·  ")
+                            if (detail.isNotBlank()) Text(detail, style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.65f)), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
             }

@@ -867,14 +867,14 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
             val app = getApplication<Application>()
             if (backend.state.value.isPlaying) backend.pause()
             viewModelScope.launch {
-                var r = SpotifyApi.play(app, tape.playlistId)
+                var r = SpotifyApi.play(app, tape.playlistId, tape.album)
                 if (r.noDevice) {
                     // Spotify is asleep: wake it quietly in the background and keep asking.
                     wakeSpotify()
                     repeat(7) {
                         if (!r.ok && r.noDevice) {
                             delay(1200)
-                            r = SpotifyApi.play(app, tape.playlistId)
+                            r = SpotifyApi.play(app, tape.playlistId, tape.album)
                         }
                     }
                 }

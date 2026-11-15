@@ -35,8 +35,8 @@ object SpotifyApi {
 
     private fun prefs(c: Context) = c.getSharedPreferences("foldman", Context.MODE_PRIVATE)
 
-    /** The Spotify app's Client ID (not a secret): typed into Settings, or built into the app. */
-    fun clientId(c: Context): String = prefs(c).getString(K_CLIENT, null)?.takeIf { it.isNotBlank() } ?: dev.foldman.BuildConfig.SPOTIFY_CLIENT_ID
+    /** The Spotify app's Client ID (not a secret), built into the app. (A typed one is only used by builds without it.) */
+    fun clientId(c: Context): String = dev.foldman.BuildConfig.SPOTIFY_CLIENT_ID.ifBlank { prefs(c).getString(K_CLIENT, null).orEmpty() }
 
     fun setClientId(c: Context, id: String) = prefs(c).edit().putString(K_CLIENT, id.trim()).apply()
 
@@ -103,11 +103,41 @@ object SpotifyApi {
         out.filter { it.id.isNotBlank() }
     }
 
+    /** Something found by [search]: a playlist or an album, and who it is by. */
+    class Found(val id: String, val name: String, val by: String, val imageUrl: String?, val tracks: Int, val album: Boolean)
+
+    /** Searches all of Spotify for playlists and albums matching [query] (an artist's name finds their albums). */
+    suspend fun search(c: Context, query: String): List<Found> = withContext(Dispatchers.IO) {
+        val (status, body) = call(c, "GET", "https://api.spotify.com/v1/search?type=album,playlist&limit=10&q=" + URLEncoder.encode(query.trim(), "UTF-8"))
+        if (status != 200) error(reason(status, body))
+        val o = JSONObject(body)
+        fun image(p: JSONObject) = p.optJSONArray("images")?.optJSONObject(0)?.optString("url")?.takeIf { it.isNotBlank() }
+        val out = ArrayList<Found>()
+        o.optJSONObject("albums")?.optJSONArray("items")?.let { items ->
+            for (i in 0 until items.length()) {
+                val p = items.optJSONObject(i) ?: continue
+                val artists = p.optJSONArray("artists")
+                val by = (0 until (artists?.length() ?: 0)).mapNotNull { artists?.optJSONObject(it)?.optString("name") }.joinToString(", ")
+                out += Found(p.optString("id"), p.optString("name"), by, image(p), p.optInt("total_tracks"), album = true)
+            }
+        }
+        o.optJSONObject("playlists")?.optJSONArray("items")?.let { items ->
+            for (i in 0 until items.length()) {
+                val p = items.optJSONObject(i) ?: continue
+                out += Found(
+                    p.optString("id"), p.optString("name"), p.optJSONObject("owner")?.optString("display_name").orEmpty(), image(p),
+                    (p.optJSONObject("tracks") ?: p.optJSONObject("items"))?.optInt("total") ?: 0, album = false,
+                )
+            }
+        }
+        out.filter { it.id.isNotBlank() }
+    }
+
     /** How asking Spotify to play went. [noDevice] = Spotify on this phone wasn't awake to hear it. */
     class PlayResult(val ok: Boolean, val noDevice: Boolean = false, val message: String = "")
 
     /** Tells Spotify to play a playlist from the top on this phone. */
-    suspend fun play(c: Context, playlistId: String): PlayResult = withContext(Dispatchers.IO) {
+    suspend fun play(c: Context, playlistId: String, album: Boolean = false): PlayResult = withContext(Dispatchers.IO) {
         runCatching {
             val (dStatus, dBody) = call(c, "GET", "https://api.spotify.com/v1/me/player/devices")
             if (dStatus != 200) return@runCatching PlayResult(false, message = "Spotify wouldn't list its devices (${reason(dStatus, dBody)})")
@@ -117,7 +147,7 @@ object SpotifyApi {
                     false, noDevice = true,
                     message = if (all.isEmpty()) "Spotify isn't awake on this phone" else "Spotify is only awake on: " + all.joinToString { it.optString("name") },
                 )
-            val body = JSONObject().put("context_uri", "spotify:playlist:$playlistId").put("offset", JSONObject().put("position", 0)).put("position_ms", 0)
+            val body = JSONObject().put("context_uri", "spotify:${if (album) "album" else "playlist"}:$playlistId").put("offset", JSONObject().put("position", 0)).put("position_ms", 0)
             val (status, text) = call(c, "PUT", "https://api.spotify.com/v1/me/player/play?device_id=" + URLEncoder.encode(device, "UTF-8"), body.toString())
             when {
                 status in 200..299 -> PlayResult(true)

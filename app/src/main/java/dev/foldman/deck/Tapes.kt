@@ -30,17 +30,19 @@ data class CustomTape(
     val photoZoom: Float = 1f,
     /** Show the J-card picture on the cassette's label too, where the label colour goes. */
     val photoOnLabel: Boolean = false,
+    /** Spotify only: the tape plays an album rather than a playlist ([playlistId] is then the album's ID). */
+    val album: Boolean = false,
 ) {
     /** The link that opens and plays the playlist in its app. */
     val playUrl: String get() = when (service) {
         TapeService.YT_MUSIC -> "https://music.youtube.com/watch?list=$playlistId"
-        TapeService.SPOTIFY -> "spotify:playlist:$playlistId"
+        TapeService.SPOTIFY -> "spotify:${if (album) "album" else "playlist"}:$playlistId"
     }
 
     /** A normal web link to the playlist (what the editor shows). */
     val shareUrl: String get() = when (service) {
         TapeService.YT_MUSIC -> "https://music.youtube.com/playlist?list=$playlistId"
-        TapeService.SPOTIFY -> "https://open.spotify.com/playlist/$playlistId"
+        TapeService.SPOTIFY -> "https://open.spotify.com/${if (album) "album" else "playlist"}/$playlistId"
     }
 
     val source: Source get() = service.source
@@ -114,6 +116,7 @@ fun CustomTape.toJson(): JSONObject = JSONObject()
     .put("photoY", photoY.toDouble())
     .put("photoZoom", photoZoom.toDouble())
     .put("photoOnLabel", photoOnLabel)
+    .put("album", album)
 
 fun tapeFromJson(o: JSONObject): CustomTape = CustomTape(
     id = o.getString("id"),
@@ -128,6 +131,7 @@ fun tapeFromJson(o: JSONObject): CustomTape = CustomTape(
     photoY = o.optDouble("photoY", 0.0).toFloat(),
     photoZoom = o.optDouble("photoZoom", 1.0).toFloat(),
     photoOnLabel = o.optBoolean("photoOnLabel", false),
+    album = o.optBoolean("album", false),
 )
 
 /** Keeps the tapes in the app's settings as JSON. */
