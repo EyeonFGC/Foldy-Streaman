@@ -137,7 +137,7 @@ object SpotifyApi {
     class PlayResult(val ok: Boolean, val noDevice: Boolean = false, val message: String = "")
 
     /** Tells Spotify to play a playlist from the top on this phone. */
-    suspend fun play(c: Context, playlistId: String, album: Boolean = false): PlayResult = withContext(Dispatchers.IO) {
+    suspend fun play(c: Context, playlistId: String, album: Boolean = false, startAt: String? = null): PlayResult = withContext(Dispatchers.IO) {
         runCatching {
             val (dStatus, dBody) = call(c, "GET", "https://api.spotify.com/v1/me/player/devices")
             if (dStatus != 200) return@runCatching PlayResult(false, message = "Spotify wouldn't list its devices (${reason(dStatus, dBody)})")
@@ -147,7 +147,7 @@ object SpotifyApi {
                     false, noDevice = true,
                     message = if (all.isEmpty()) "Spotify isn't awake on this phone" else "Spotify is only awake on: " + all.joinToString { it.optString("name") },
                 )
-            val body = JSONObject().put("context_uri", "spotify:${if (album) "album" else "playlist"}:$playlistId").put("offset", JSONObject().put("position", 0)).put("position_ms", 0)
+            val body = JSONObject().put("context_uri", "spotify:${if (album) "album" else "playlist"}:$playlistId").put("offset", if (startAt != null) JSONObject().put("uri", startAt) else JSONObject().put("position", 0)).put("position_ms", 0)
             val (status, text) = call(c, "PUT", "https://api.spotify.com/v1/me/player/play?device_id=" + URLEncoder.encode(device, "UTF-8"), body.toString())
             when {
                 status in 200..299 -> PlayResult(true)
@@ -157,6 +157,35 @@ object SpotifyApi {
                 else -> PlayResult(false, message = "Spotify wouldn't start it (${reason(status, text)})")
             }
         }.getOrElse { PlayResult(false, message = "Couldn't reach Spotify (${it.message ?: "no internet?"})") }
+    }
+
+    /** The songs on a playlist or album (up to 500), in order. */
+    suspend fun tracks(c: Context, id: String, album: Boolean): List<TapeTrack> = withContext(Dispatchers.IO) {
+        val out = ArrayList<TapeTrack>()
+        // Newer accounts' apps read a playlist's songs from /items, older ones from /tracks.
+        var url: String? = if (album) "https://api.spotify.com/v1/albums/$id/tracks?limit=50" else "https://api.spotify.com/v1/playlists/$id/items?limit=50"
+        var triedOld = album
+        while (url != null && out.size < 500) {
+            val (status, body) = call(c, "GET", url)
+            if (status == 404 && !triedOld) {
+                triedOld = true
+                url = "https://api.spotify.com/v1/playlists/$id/tracks?limit=50"
+                continue
+            }
+            if (status != 200) error("Spotify wouldn't share the songs (${reason(status, body)})")
+            val page = JSONObject(body)
+            val items = page.optJSONArray("items")
+            for (i in 0 until (items?.length() ?: 0)) {
+                val row = items!!.optJSONObject(i) ?: continue
+                val t = if (album) row else (row.optJSONObject("item") ?: row.optJSONObject("track")) ?: continue
+                val artists = t.optJSONArray("artists")
+                val by = (0 until (artists?.length() ?: 0)).mapNotNull { artists?.optJSONObject(it)?.optString("name") }.joinToString(", ")
+                val tid = t.optString("id")
+                if (tid.isNotBlank()) out += TapeTrack(tid, t.optString("name"), by, t.optString("uri").ifBlank { "spotify:track:$tid" })
+            }
+            url = page.optString("next").takeIf { it.startsWith("https://") }
+        }
+        out
     }
 
     /** Spotify's own words for why it said no. */

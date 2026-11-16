@@ -929,6 +929,60 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         remotes[Source.SPOTIFY]?.pause()
     }
 
+    /**
+     * Plays [track] of the tape in the deck: straight from the music app's own queue when it's there,
+     * through Spotify's connection when logged in, or by opening the song (within the playlist) in
+     * the music app.
+     */
+    fun playTapeTrack(tape: CustomTape, track: TapeTrack) {
+        if (loadedTape?.id != tape.id || deckEmpty) return
+        if (winding != 0) finishWinding()
+        stopRequestedAt = 0
+        tapeCued = false
+        stopped = false
+        playRequestedAt = SystemClock.elapsedRealtime()
+        tapeStartAt = playRequestedAt
+        val hit = backend.state.value.queue.firstOrNull { TrackLists.sameSong(it.title, track.title) }
+        if (hit != null) {
+            backend.playQueueItem(hit.id)
+            tick()
+            return
+        }
+        val app = getApplication<Application>()
+        when (tape.service) {
+            TapeService.SPOTIFY -> {
+                if (backend.state.value.isPlaying) backend.pause()
+                viewModelScope.launch {
+                    var r = if (spotifyName != null && track.uri != null) SpotifyApi.play(app, tape.playlistId, tape.album, track.uri) else null
+                    if (r != null && r.noDevice) {
+                        wakeSpotify()
+                        repeat(5) {
+                            if (r?.ok != true && r?.noDevice == true) {
+                                delay(1200)
+                                r = SpotifyApi.play(app, tape.playlistId, tape.album, track.uri)
+                            }
+                        }
+                    }
+                    if (r?.ok != true) openLinkInApp(tape, "spotify:track:${track.id}:play")
+                }
+            }
+            TapeService.YT_MUSIC -> {
+                val link = "https://music.youtube.com/watch?v=${track.id}&list=${tape.playlistId}"
+                if (remotes[tape.source]?.playFromUri(Uri.parse(link)) != true) openLinkInApp(tape, link)
+            }
+        }
+        tick()
+    }
+
+    /** Opens [link] in the tape's music app, then comes back here once it plays. */
+    private fun openLinkInApp(tape: CustomTape, link: String) {
+        val app = getApplication<Application>()
+        val base = Intent(Intent.ACTION_VIEW, Uri.parse(link)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
+        runCatching { app.startActivity(Intent(base).setPackage(tape.source.packageName)) }
+            .recoverCatching { app.startActivity(base) }
+        comeBackWhenPlaying()
+    }
+
     /** Opens the tape's playlist in its own app and has it play, then comes back here. */
     private fun openPlaylistInApp(tape: CustomTape) {
         val spotify = tape.service == TapeService.SPOTIFY

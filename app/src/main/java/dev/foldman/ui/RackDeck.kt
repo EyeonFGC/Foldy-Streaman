@@ -551,6 +551,7 @@ internal fun RackDeckLayout(
                         pickPhoto = actions.tapes.pickPhoto,
                         removePhoto = actions.tapes.removePhoto,
                         pickCover = actions.tapes.setCover,
+                        playTrack = actions.tapes.playTrack,
                     ),
                     onLoad = { if (ui.empty) load(RackItem.Mine(t)); card = null },
                     onClose = closeCard,

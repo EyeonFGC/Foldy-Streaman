@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.foldman.deck.CustomTape
@@ -451,6 +453,35 @@ class PreviewShots {
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptySport() = emptyFront("6") { CoverSportYellow(emptyUi(DeckTheme.SPORT_YELLOW), anim(), deck, {}, Modifier.fillMaxSize()) }
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun emptyClear() = emptyFront("7") { CoverCrystalClear(emptyUi(DeckTheme.CRYSTAL_CLEAR), anim(), deck, {}, Modifier.fillMaxSize()) }
     @Test @Config(qualifiers = "w411dp-h650dp-xxhdpi") fun clearShelf() { rule.setContent { CoverCrystalClear(ui.copy(theme = DeckTheme.CRYSTAL_CLEAR, tapeCued = false, frontShelf = true, title = "Champion", artist = "Kanye West"), anim(), deck, {}, Modifier.fillMaxSize()) }; rule.onRoot().captureRoboImage("build/shots/clear-shelf.png") }
+
+    private val sampleTracks = listOf(
+        dev.foldman.deck.TapeTrack("a", "Fast Car", "Tracy Chapman"),
+        dev.foldman.deck.TapeTrack("b", "Running Up That Hill", "Kate Bush"),
+        dev.foldman.deck.TapeTrack("c", "Champion", "Kanye West"),
+        dev.foldman.deck.TapeTrack("d", "Dreams", "Fleetwood Mac"),
+        dev.foldman.deck.TapeTrack("e", "Africa", "Toto"),
+        dev.foldman.deck.TapeTrack("f", "Take On Me", "a-ha"),
+        dev.foldman.deck.TapeTrack("g", "Everybody Wants to Rule the World", "Tears for Fears"),
+    )
+    private fun trackCard(name: String, cardAt: Int, scrolled: Boolean) {
+        val plain = tapes.map { it.copy(photoPath = null) }
+        val u = ui.copy(theme = DeckTheme.SPORT_YELLOW, tapes = plain, tape = plain[0], tapeCued = false, transport = dev.foldman.deck.Transport.PLAYING, title = "Champion", artist = "Kanye West")
+        rule.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(LocalPreviewTracks provides sampleTracks) {
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().insideBody(DeckTheme.SPORT_YELLOW)) {
+                    RackDeckLayout(u, anim(), deck, actions, Modifier.fillMaxSize().padding(16.dp), previewCard = cardAt)
+                }
+            }
+        }
+        rule.waitForIdle()
+        if (scrolled) {
+            rule.onNodeWithText("Everybody Wants to Rule the World").performScrollTo()
+            rule.waitForIdle()
+        }
+        rule.onRoot().captureRoboImage("build/shots/$name.png")
+    }
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun tracksInDeck() = trackCard("tracks-in-deck", 4, scrolled = true)
+    @Test @Config(qualifiers = "w832dp-h628dp-xxhdpi") fun tracksOnRack() = trackCard("tracks-on-rack", 5, scrolled = true)
 
     private fun logoPart(title: String, name: String) {
         val t = CustomTape(title = title, playlistId = "PLabc1234567", shell = 0xFFB8322A, label = 0xFFF2EBDC, font = TapeFont.MARKER)

@@ -55,6 +55,8 @@ class TapeActions(
     val removePhoto: (String) -> Unit = {},
     val move: (id: String, beforeId: String?) -> Unit = { _, _ -> },
     val setCover: (id: String, url: String) -> Unit = { _, _ -> },
+    /** Plays one song of the tape in the deck. */
+    val playTrack: (CustomTape, dev.foldman.deck.TapeTrack) -> Unit = { _, _ -> },
 )
 
 private val HandFont = TextStyle(fontFamily = FontFamily.Cursive, fontWeight = FontWeight.Bold)

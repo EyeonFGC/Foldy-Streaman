@@ -4,6 +4,7 @@
 package dev.foldman.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -212,6 +213,7 @@ class JCardActions(
     val pickPhoto: (String) -> Unit,
     val removePhoto: (String) -> Unit,
     val pickCover: (tapeId: String, url: String) -> Unit = { _, _ -> },
+    val playTrack: (CustomTape, dev.foldman.deck.TapeTrack) -> Unit = { _, _ -> },
 )
 
 private enum class JEdit { LABEL, PHOTO_MENU, FONT, COLOURS, PLAYLIST, DELETE }
@@ -327,6 +329,9 @@ fun JCardSheet(
             Text("✕", style = Typed.copy(fontSize = 18.sp), modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable(onClick = onClose).padding(6.dp))
         }
         Spacer(Modifier.height(8.dp))
+        // Everything between the title and the button at the bottom scrolls: the picture, the
+        // buttons, and the track list under them.
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
         // The picture strip under the title.
         TapePhoto(
             tape.photoPath,
@@ -355,7 +360,7 @@ fun JCardSheet(
             }
         }
         Spacer(Modifier.height(12.dp))
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column {
             Text("SIDE A", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp))
             if (tape.playlistId.isNotBlank()) {
                 Text("${tape.service.label} ${if (tape.album) "album" else "playlist"}", style = Typed.copy(fontSize = 13.sp))
@@ -473,6 +478,11 @@ fun JCardSheet(
                     Box(Modifier.padding(3.dp).size(18.dp).clip(RoundedCornerShape(9.dp)).background(JPaper))
                 }
             }
+            if (tape.playlistId.isNotBlank()) {
+                Spacer(Modifier.height(16.dp))
+                TrackListSection(tape, ui, inDeck, onPick = { actions.playTrack(tape, it) })
+            }
+        }
         }
         Spacer(Modifier.height(10.dp))
         val canLoad = !inDeck && ui.empty && tape.playlistId.isNotBlank()
@@ -978,6 +988,82 @@ private fun PlaylistPickCard(heading: String, load: suspend () -> List<PickItem>
                     }
                 }
             }
+        }
+    }
+}
+
+/** Screen previews only: a track list to show without asking the internet. */
+val LocalPreviewTracks = androidx.compose.runtime.staticCompositionLocalOf<List<dev.foldman.deck.TapeTrack>?> { null }
+
+/**
+ * The tape's songs, written on the card like a real J-card's track listing. Anyone can read them;
+ * only with the tape in the deck can a song be tapped to play it. The one playing has a little
+ * equaliser bouncing beside it.
+ */
+@Composable
+private fun TrackListSection(tape: CustomTape, ui: DeckUi, inDeck: Boolean, onPick: (dev.foldman.deck.TapeTrack) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val preview = LocalPreviewTracks.current
+    var tracks by remember(tape.id, tape.playlistId) { mutableStateOf(preview) }
+    var note by remember(tape.id, tape.playlistId) { mutableStateOf<String?>(if (preview == null) "Reading the track list…" else null) }
+    androidx.compose.runtime.LaunchedEffect(tape.id, tape.playlistId, ui.youTubeSignedIn, ui.spotifyName) {
+        if (preview != null) return@LaunchedEffect
+        runCatching { dev.foldman.deck.TrackLists.load(context, tape, ui.youTubeSignedIn, ui.spotifyName != null) }
+            .onSuccess { tracks = it; note = if (it.isEmpty()) "No songs on this playlist yet." else null }
+            .onFailure { note = it.message ?: "Couldn't read the track list." }
+    }
+    // While it plays, the music app's own queue is a stand-in when the list can't be read.
+    val shown = tracks ?: if (inDeck && ui.queue.isNotEmpty()) ui.queue.map { dev.foldman.deck.TapeTrack(it.id.toString(), it.title, it.subtitle.orEmpty()) } else null
+    Text("TRACKS", style = Typed.copy(color = JRed, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.sp))
+    Text(
+        when {
+            shown.isNullOrEmpty() -> note ?: ""
+            inDeck -> "Tap a song to play it."
+            else -> "Put this tape in the deck to pick a song."
+        },
+        style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)),
+    )
+    Spacer(Modifier.height(6.dp))
+    shown?.forEachIndexed { i, t ->
+        val playingThis = inDeck && dev.foldman.deck.TrackLists.sameSong(ui.title, t.title)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(3.dp))
+                .then(if (playingThis) Modifier.background(JRed.copy(alpha = 0.10f)) else Modifier)
+                .clickable(enabled = inDeck) { onPick(t) }
+                .padding(vertical = 5.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text((i + 1).toString().padStart(2, '0'), style = Typed.copy(fontSize = 11.sp, color = JInk.copy(alpha = 0.5f)), modifier = Modifier.width(24.dp))
+            Column(Modifier.weight(1f)) {
+                Text(t.title, style = Typed.copy(fontSize = 13.sp, fontWeight = if (playingThis) FontWeight.Bold else FontWeight.Normal, color = if (playingThis) JRed else JInk), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (t.artist.isNotBlank()) Text(t.artist, style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (playingThis) {
+                Spacer(Modifier.width(8.dp))
+                Equaliser(ui.transport == Transport.PLAYING, JRed, Modifier.size(18.dp, 14.dp))
+            }
+        }
+    }
+}
+
+/** Three little bars bouncing to the music (still while paused). */
+@Composable
+private fun Equaliser(moving: Boolean, color: Color, modifier: Modifier) {
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "eq")
+    val bars = listOf(420, 300, 520).mapIndexed { i, ms ->
+        t.animateFloat(
+            0.25f, 1f,
+            androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(ms, easing = androidx.compose.animation.core.LinearEasing), androidx.compose.animation.core.RepeatMode.Reverse, androidx.compose.animation.core.StartOffset(i * 130)),
+            label = "bar$i",
+        )
+    }
+    Canvas(modifier) {
+        val w = size.width / 5f
+        bars.forEachIndexed { i, b ->
+            val hgt = size.height * (if (moving) b.value else listOf(0.5f, 0.8f, 0.4f)[i])
+            drawRect(color, topLeft = Offset(w * (i * 2), size.height - hgt), size = androidx.compose.ui.geometry.Size(w, hgt))
         }
     }
 }

@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.40.0] — 2026-11-16 (Foldy Streaman)
+
+### Added
+- **Track list on the J-card.** Under the buttons, every tape lists its songs (read from your YouTube or Spotify account when logged in, or from the music app's queue while the tape plays). Anyone can read it; with the tape in the deck, tap a song to play it. The song playing is highlighted, with a little equaliser bouncing beside it.
+- The J-card's title and the button at the bottom stay put; everything in between scrolls.
+
 ## [0.39.0] — 2026-11-16 (Foldy Streaman)
 
 ### Added

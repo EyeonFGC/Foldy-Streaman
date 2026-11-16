@@ -32,6 +32,46 @@ object YouTubeApi {
             .addOnFailureListener { if (cont.isActive) cont.resume(null) }
     }
 
+    /** The songs on a playlist (up to 500), in order. Costs 1 unit of the daily allowance per 50 songs. */
+    suspend fun playlistItems(c: Context, playlistId: String): List<TapeTrack> {
+        val key = token(c) ?: error("Log in with Google again in Settings")
+        return withContext(Dispatchers.IO) {
+            val out = ArrayList<TapeTrack>()
+            var page: String? = null
+            do {
+                val url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" +
+                    java.net.URLEncoder.encode(playlistId, "UTF-8") + (page?.let { "&pageToken=$it" } ?: "")
+                val conn = URL(url).openConnection() as HttpURLConnection
+                val body = try {
+                    conn.connectTimeout = 8000
+                    conn.readTimeout = 12000
+                    conn.setRequestProperty("Authorization", "Bearer $key")
+                    val status = conn.responseCode
+                    val text = (if (status in 200..299) conn.inputStream else conn.errorStream)?.use { it.readBytes().toString(Charsets.UTF_8) } ?: ""
+                    if (status !in 200..299) {
+                        if (status == 404 && playlistId == "LM") error("YouTube doesn't share the Liked music list with other apps")
+                        error(runCatching { JSONObject(text).getJSONObject("error").optString("message") }.getOrNull()?.takeIf { it.isNotBlank() } ?: "YouTube answered $status")
+                    }
+                    JSONObject(text)
+                } finally {
+                    conn.disconnect()
+                }
+                val items = body.optJSONArray("items")
+                for (i in 0 until (items?.length() ?: 0)) {
+                    val s = items!!.optJSONObject(i)?.optJSONObject("snippet") ?: continue
+                    val title = s.optString("title")
+                    if (title == "Deleted video" || title == "Private video") continue
+                    val video = s.optJSONObject("resourceId")?.optString("videoId").orEmpty()
+                    // Song uploads come from an "Artist - Topic" channel.
+                    val artist = s.optString("videoOwnerChannelTitle").removeSuffix(" - Topic")
+                    if (video.isNotBlank()) out += TapeTrack(video, title, artist)
+                }
+                page = body.optString("nextPageToken").takeIf { it.isNotBlank() }
+            } while (page != null && out.size < 500)
+            out
+        }
+    }
+
     /** The account's own playlists (up to 200), with "Liked music" first. */
     suspend fun playlists(c: Context): List<YouTubePlaylist> {
         val key = token(c) ?: error("Log in with Google again in Settings")
