@@ -232,8 +232,8 @@ private fun KeyPanel(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             val t = ui.transport
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ChromeKey(KeySymbol.PLAY, "PLAY", t == Transport.PLAYING || t == Transport.PAUSED, deck.play, keyH, Modifier.fillMaxWidth(), play = true)
-                ChromeKey(KeySymbol.REW, "REW", t == Transport.REWINDING, deck.rewind, keyH, Modifier.fillMaxWidth())
                 ChromeKey(KeySymbol.FF, "FF", t == Transport.FAST_FORWARDING, deck.fastForward, keyH, Modifier.fillMaxWidth())
+                ChromeKey(KeySymbol.REW, "REW", t == Transport.REWINDING, deck.rewind, keyH, Modifier.fillMaxWidth())
                 ChromeKey(KeySymbol.PAUSE, "PAUSE", t == Transport.PAUSED, deck.pause, keyH, Modifier.fillMaxWidth())
                 ChromeKey(KeySymbol.STOP, "STOP·EJ", false, deck.stop, keyH, Modifier.fillMaxWidth())
             }

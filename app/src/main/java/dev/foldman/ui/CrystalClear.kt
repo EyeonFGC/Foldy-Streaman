@@ -361,11 +361,11 @@ private fun ClearKeyStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
                 ClearKey(KeySymbol.NEXT, "", "Next", false, deck.next, 30.dp, 30.dp)
             }
             Spacer(Modifier.height(12.dp))
-            // PLAY, PAUSE and STOP are tall pills; REW and FF are round, in between.
+            // PLAY, PAUSE and STOP are tall pills; FF and REW are round, in between.
             Column(verticalArrangement = Arrangement.spacedBy(9.dp), horizontalAlignment = Alignment.End) {
                 ClearKey(KeySymbol.PLAY, "PLAY", "Play", t == Transport.PLAYING || t == Transport.PAUSED, deck.play, 34.dp, keyH)
-                ClearKey(KeySymbol.REW, "REW", "Rewind", t == Transport.REWINDING, deck.rewind, 34.dp, 34.dp)
                 ClearKey(KeySymbol.FF, "FF", "Fast forward", t == Transport.FAST_FORWARDING, deck.fastForward, 34.dp, 34.dp)
+                ClearKey(KeySymbol.REW, "REW", "Rewind", t == Transport.REWINDING, deck.rewind, 34.dp, 34.dp)
                 ClearKey(KeySymbol.PAUSE, "PAUSE", "Pause", t == Transport.PAUSED, deck.pause, 34.dp, keyH)
                 ClearKey(KeySymbol.STOP, "STOP", "Stop and eject", false, deck.stop, 34.dp, keyH)
             }
@@ -458,7 +458,8 @@ private fun DrawScope.drawClearKey(symbol: KeySymbol, depth: Float) {
     )
     drawRoundRect(Color.White.copy(alpha = 0.7f), faceTop + Offset(1f, 1f), Size(cw - 2f, ch - 2f), CornerRadius(cw / 2f - 1f), style = Stroke(1.2f))
     val c = Offset(w / 2f, faceTop.y + ch / 2f)
-    val turned = symbol == KeySymbol.PLAY
+    // PLAY and FF point up the strip, REW points down it.
+    val turned = symbol == KeySymbol.PLAY || symbol == KeySymbol.FF || symbol == KeySymbol.REW
     rotate(if (turned) -90f else 0f, pivot = c) { drawSymbol(symbol, c, cw * 0.22f, Color(0xFF2B2E31)) }
     if (depth > 0f) drawRoundRect(Color.Black.copy(alpha = (0.18f * depth).coerceIn(0f, 1f)), faceTop, Size(cw, ch), r)
 }

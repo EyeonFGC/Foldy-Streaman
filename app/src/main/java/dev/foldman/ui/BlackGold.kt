@@ -226,8 +226,8 @@ private fun GoldBand(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             val t = ui.transport
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.End, modifier = Modifier.fillMaxWidth()) {
                 KnobKey(KeySymbol.PLAY, "Play", deck.play, knob, latched = t == Transport.PLAYING || t == Transport.PAUSED, gold = true)
-                KnobKey(KeySymbol.REW, "Rewind", deck.rewind, knob, latched = t == Transport.REWINDING)
                 KnobKey(KeySymbol.FF, "Fast forward", deck.fastForward, knob, latched = t == Transport.FAST_FORWARDING)
+                KnobKey(KeySymbol.REW, "Rewind", deck.rewind, knob, latched = t == Transport.REWINDING)
                 KnobKey(KeySymbol.PAUSE, "Pause", deck.pause, knob, latched = t == Transport.PAUSED)
                 KnobKey(KeySymbol.STOP, "Stop", deck.stop, knob, latched = false)
             }

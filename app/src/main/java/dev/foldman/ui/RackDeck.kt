@@ -534,6 +534,15 @@ internal fun RackDeckLayout(
         ) {
             val t = shownTape[0]
             if (t != null) {
+                val closeCard = {
+                    // A blank tape closed without a playlist link is thrown away.
+                    if (t.playlistId.isBlank()) actions.tapes.delete(t.id)
+                    card = null
+                }
+                // Swipe the J-card away to the left: it follows your finger, and let go past a third
+                // of the way (or with a quick flick) it carries on off the screen; otherwise it springs back.
+                val swipe = remember { Animatable(0f) }
+                val swipeScope = rememberCoroutineScope()
                 JCardSheet(
                     t, ui,
                     JCardActions(
@@ -544,12 +553,33 @@ internal fun RackDeckLayout(
                         pickCover = actions.tapes.setCover,
                     ),
                     onLoad = { if (ui.empty) load(RackItem.Mine(t)); card = null },
-                    onClose = {
-                        // A blank tape closed without a playlist link is thrown away.
-                        if (t.playlistId.isBlank()) actions.tapes.delete(t.id)
-                        card = null
-                    },
-                    modifier = Modifier.fillMaxSize(),
+                    onClose = closeCard,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset { IntOffset(swipe.value.roundToInt(), 0) }
+                        .pointerInput(t.id) {
+                            val flick = androidx.compose.ui.input.pointer.util.VelocityTracker()
+                            detectHorizontalDragGestures(
+                                onDragStart = { flick.resetTracking() },
+                                onHorizontalDrag = { change, dx ->
+                                    flick.addPosition(change.uptimeMillis, change.position)
+                                    change.consume()
+                                    swipeScope.launch { swipe.snapTo((swipe.value + dx).coerceAtMost(0f)) }
+                                },
+                                onDragEnd = {
+                                    val speed = flick.calculateVelocity().x
+                                    swipeScope.launch {
+                                        if (swipe.value < -size.width * 0.3f || speed < -1500f) {
+                                            swipe.animateTo(-size.width * 1.15f, tween(220, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+                                            closeCard()
+                                        } else {
+                                            swipe.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 600f))
+                                        }
+                                    }
+                                },
+                                onDragCancel = { swipeScope.launch { swipe.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 600f)) } },
+                            )
+                        },
                 )
             }
         }

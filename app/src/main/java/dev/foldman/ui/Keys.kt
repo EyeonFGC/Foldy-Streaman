@@ -77,10 +77,15 @@ fun TransportKeys(
                 modifier = play, height = keyHeight, captionColor = cc, accent = true, red = redPlay,
             )
         }
-        if (redPlay && vertical) playKey()
-        DeckKey(KeySymbol.REW, "REW", latched = t == Transport.REWINDING, onPress = onRewind, modifier = k, height = keyHeight, captionColor = cc)
-        if (!(redPlay && vertical)) playKey()
-        DeckKey(KeySymbol.FF, "FF", latched = t == Transport.FAST_FORWARDING, onPress = onFastForward, modifier = k, height = keyHeight, captionColor = cc)
+        val rewKey: @Composable () -> Unit = { DeckKey(KeySymbol.REW, "REW", latched = t == Transport.REWINDING, onPress = onRewind, modifier = k, height = keyHeight, captionColor = cc) }
+        val ffKey: @Composable () -> Unit = { DeckKey(KeySymbol.FF, "FF", latched = t == Transport.FAST_FORWARDING, onPress = onFastForward, modifier = k, height = keyHeight, captionColor = cc) }
+        if (redPlay && vertical) {
+            // Down the side: PLAY at the top, then FF (it runs the same way as PLAY), then REW.
+            playKey(); ffKey(); rewKey()
+        } else {
+            // Across, like a real player's row of keys: REW, PLAY, FF.
+            rewKey(); playKey(); ffKey()
+        }
         DeckKey(KeySymbol.PAUSE, "PAUSE", latched = t == Transport.PAUSED, onPress = onPause, modifier = k, height = keyHeight, captionColor = cc, mark = Color(0xFF3E9C5A))
         DeckKey(KeySymbol.STOP, "STOP·EJECT", latched = false, onPress = onStop, modifier = k, height = keyHeight, captionColor = cc, mark = Color(0xFFC8352B))
     }

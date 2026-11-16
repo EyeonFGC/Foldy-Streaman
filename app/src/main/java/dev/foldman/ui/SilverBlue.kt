@@ -239,8 +239,8 @@ private fun SlantKeyStrip(ui: DeckUi, deck: DeckControls, modifier: Modifier) {
             val t = ui.transport
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SlantKey(KeySymbol.PLAY, "PLAY", t == Transport.PLAYING || t == Transport.PAUSED, deck.play, keyH, Modifier.fillMaxWidth(), edge = SilverBlue.Green)
-                SlantKey(KeySymbol.REW, "REW", t == Transport.REWINDING, deck.rewind, keyH, Modifier.fillMaxWidth())
                 SlantKey(KeySymbol.FF, "FF", t == Transport.FAST_FORWARDING, deck.fastForward, keyH, Modifier.fillMaxWidth())
+                SlantKey(KeySymbol.REW, "REW", t == Transport.REWINDING, deck.rewind, keyH, Modifier.fillMaxWidth())
                 SlantKey(KeySymbol.PAUSE, "PAUSE", t == Transport.PAUSED, deck.pause, keyH, Modifier.fillMaxWidth())
                 SlantKey(KeySymbol.STOP, "STOP·EJECT", false, deck.stop, keyH, Modifier.fillMaxWidth(), edge = SilverBlue.Blue)
             }

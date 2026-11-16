@@ -2,6 +2,15 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.39.0] — 2026-11-16 (Foldy Streaman)
+
+### Added
+- **Swipe a J-card away:** drag it to the left and let go (or flick it) to close it. Let go before a third of the way and it springs back. The X still works too.
+
+### Changed
+- On every theme the keys down the side now go PLAY, FF, REW, PAUSE, STOP: fast forward sits next to play, since they run the same way.
+- Crystal Clear: the FF arrows point up the strip and the REW arrows point down.
+
 ## [0.38.2] — 2026-11-15 (Foldy Streaman)
 
 ### Changed
