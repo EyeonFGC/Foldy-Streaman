@@ -25,9 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -277,12 +275,8 @@ fun FoldmanScreen(
             }
             // Foldy Streaman: the front-screen tape shelf, only when it's switched on in Settings.
             val sheetHeight = maxHeight * 0.8f
-            if (shelfOpen && ui.frontShelf && posture == Posture.Cover) {
-                ModalBottomSheet(
-                    onDismissRequest = { shelfOpen = false },
-                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    containerColor = drawerColor(ui.theme),
-                ) {
+            if (ui.frontShelf && posture == Posture.Cover) {
+                FrontDrawer(open = shelfOpen, onClose = { shelfOpen = false }, color = drawerColor(ui.theme), height = sheetHeight) {
                     TapeShelf(
                         ui,
                         ShelfActions(
@@ -295,7 +289,7 @@ fun FoldmanScreen(
                             apple = appleActions,
                             tapes = tapeActions,
                         ),
-                        Modifier.fillMaxWidth().height(sheetHeight),
+                        Modifier.fillMaxSize(),
                         settings = settingsActions,
                     )
                 }
