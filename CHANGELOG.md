@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.42.0] — 2026-11-16 (Foldy Streaman)
+
+### Changed
+- Front-screen tape drawer: only the handle strip at the top drags it away. Scrolling the tapes or the track list, or dragging anywhere else on the drawer, no longer closes it by accident. Tapping outside the drawer or pressing back still closes it.
+
 ## [0.41.1] — 2026-11-16 (Foldy Streaman)
 
 ### Changed
