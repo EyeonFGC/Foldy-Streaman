@@ -1001,7 +1001,7 @@ val LocalPreviewTracks = androidx.compose.runtime.staticCompositionLocalOf<List<
  * equaliser bouncing beside it.
  */
 @Composable
-private fun TrackListSection(tape: CustomTape, ui: DeckUi, inDeck: Boolean, onPick: (dev.foldman.deck.TapeTrack) -> Unit) {
+internal fun TrackListSection(tape: CustomTape, ui: DeckUi, inDeck: Boolean, onPick: (dev.foldman.deck.TapeTrack) -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val preview = LocalPreviewTracks.current
     var tracks by remember(tape.id, tape.playlistId) { mutableStateOf(preview) }

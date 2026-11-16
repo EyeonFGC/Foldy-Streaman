@@ -531,6 +531,15 @@ class PreviewShots {
         rule.onRoot().captureRoboImage("build/shots/$name.png")
     }
 
+    @Test @Config(qualifiers = "w412dp-h883dp-xxhdpi")
+    fun drawerTracks() {
+        val plain = tapes.map { it.copy(photoPath = null) }
+        val u = ui.copy(theme = DeckTheme.ORIGINAL, tapes = plain, tape = plain[0], tapeCued = false, frontShelf = true, transport = dev.foldman.deck.Transport.PLAYING, title = "Champion", artist = "Kanye West")
+        rule.setContent { androidx.compose.runtime.CompositionLocalProvider(LocalPreviewTracks provides sampleTracks) { TapeShelf(u, actions, Modifier.fillMaxSize(), settings = SettingsActions.None) } }
+        rule.waitForIdle()
+        rule.onRoot().captureRoboImage("build/shots/drawer-tracks.png")
+    }
+
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerOriginal() = drawer(DeckTheme.ORIGINAL, "drawer-1")
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerGold() = drawer(DeckTheme.BLACK_GOLD, "drawer-2")
     @Test @Config(qualifiers = "w411dp-h520dp-xxhdpi") fun drawerCherry() = drawer(DeckTheme.CHERRY_RED, "drawer-3")

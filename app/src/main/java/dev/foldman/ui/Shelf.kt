@@ -99,9 +99,11 @@ fun TapeShelf(ui: DeckUi, actions: ShelfActions, modifier: Modifier = Modifier, 
         // Foldy Streaman: the rack scrolls once you have more tapes than fit.
         var editing by remember { mutableStateOf<CustomTape?>(null) }
         var creating by remember { mutableStateOf(false) }
+        // About three and a half tapes tall (the half one shows there are more to scroll to),
+        // leaving the card underneath room for its track list.
         Column(
             Modifier
-                .heightIn(max = 300.dp)
+                .heightIn(max = 205.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(Color(0xFF0E0D0C))
                 .verticalScroll(rememberScrollState())
@@ -249,6 +251,12 @@ private fun JCard(ui: DeckUi, actions: ShelfActions, modifier: Modifier) {
                 Spacer(Modifier.height(4.dp))
                 Text("${formatTime(ui.positionMs)} / ${formatTime(ui.durationMs)}", style = Typed.copy(fontSize = 11.sp, color = DeckColors.Ink.copy(alpha = 0.6f)))
             }
+            // With one of your tapes playing, the button for the music app moves up here, leaving the
+            // rest of the card for the tape's track list.
+            if (showsTrackList(ui)) {
+                Spacer(Modifier.width(6.dp))
+                PaperButton("Open ${ui.source.label}", actions.openApp, small = true)
+            }
         }
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().height(2.dp).background(DeckColors.Accent))
@@ -258,10 +266,27 @@ private fun JCard(ui: DeckUi, actions: ShelfActions, modifier: Modifier) {
         when (ui.source) {
             Source.LOCAL -> LocalCard(ui, actions)
             Source.APPLE_MUSIC -> AppleBrowser(ui.apple, actions.apple, fallback = { RemoteCard(ui, actions) }, light = true)
-            else -> RemoteCard(ui, actions)
+            else -> if (showsTrackList(ui)) {
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                    val tape = ui.tape!!
+                    Text(
+                        if (ui.tapeCued) "Tape \"${tape.title.ifBlank { "my tape" }}\" is in. Press PLAY, or pick a song." else "Playing tape \"${tape.title.ifBlank { "my tape" }}\" through ${ui.source.label}.",
+                        style = Hand,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    TrackListSection(tape, ui, inDeck = true, onPick = { actions.tapes.playTrack(tape, it) })
+                }
+            } else {
+                RemoteCard(ui, actions)
+            }
         }
     }
 }
+
+/** One of your own tapes is in and its music app is ready: the card shows the tape's track list. */
+private fun showsTrackList(ui: DeckUi): Boolean =
+    ui.tape != null && ui.source != Source.LOCAL && ui.source != Source.APPLE_MUSIC &&
+        ui.status != SourceStatus.NeedsAccess && ui.status != SourceStatus.NotInstalled && ui.status != SourceStatus.AppNotRunning
 
 @Composable
 private fun CoverArt(ui: DeckUi, modifier: Modifier) {
@@ -381,15 +406,15 @@ private fun Prompt(text: String, button: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun PaperButton(text: String, onClick: () -> Unit) {
+private fun PaperButton(text: String, onClick: () -> Unit, small: Boolean = false) {
     Box(
         Modifier
             .clip(RoundedCornerShape(3.dp))
             .border(1.5.dp, DeckColors.Ink, RoundedCornerShape(3.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = if (small) 8.dp else 14.dp, vertical = if (small) 6.dp else 8.dp),
     ) {
-        Text(text.uppercase(), style = EngravedCaps.copy(color = DeckColors.Ink, fontSize = 11.sp))
+        Text(text.uppercase(), style = EngravedCaps.copy(color = DeckColors.Ink, fontSize = if (small) 9.sp else 11.sp), maxLines = 1)
     }
 }
 

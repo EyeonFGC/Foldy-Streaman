@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.41.0] — 2026-11-16 (Foldy Streaman)
+
+### Changed
+- **Front-screen tape drawer:** the rack is shorter (about four tapes, scroll for the rest), giving the card underneath more room.
+- With one of your tapes playing, that card shows the tape's **track list**: tap a song to play it, with the equaliser beside the one playing. The OPEN SPOTIFY / OPEN YT MUSIC button moved to the card's top-right corner.
+
 ## [0.40.0] — 2026-11-16 (Foldy Streaman)
 
 ### Added
