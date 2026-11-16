@@ -942,7 +942,8 @@ class DeckViewModel(app: Application) : AndroidViewModel(app) {
         stopped = false
         playRequestedAt = SystemClock.elapsedRealtime()
         tapeStartAt = playRequestedAt
-        val hit = backend.state.value.queue.firstOrNull { TrackLists.sameSong(it.title, track.title) }
+        val queue = backend.state.value.queue
+        val hit = queue.getOrNull(TrackLists.bestMatch(queue.map { it.title }, track.title))
         if (hit != null) {
             backend.playQueueItem(hit.id)
             tick()

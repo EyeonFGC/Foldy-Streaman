@@ -55,6 +55,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -559,15 +562,32 @@ internal fun RackDeckLayout(
                         .fillMaxSize()
                         .offset { IntOffset(swipe.value.roundToInt(), 0) }
                         .pointerInput(t.id) {
-                            val flick = androidx.compose.ui.input.pointer.util.VelocityTracker()
-                            detectHorizontalDragGestures(
-                                onDragStart = { flick.resetTracking() },
-                                onHorizontalDrag = { change, dx ->
-                                    flick.addPosition(change.uptimeMillis, change.position)
-                                    change.consume()
-                                    swipeScope.launch { swipe.snapTo((swipe.value + dx).coerceAtMost(0f)) }
-                                },
-                                onDragEnd = {
+                            // Only a clearly sideways swipe to the left moves the card: anything more
+                            // up-and-down than that is left to the track list to scroll.
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
+                                val flick = androidx.compose.ui.input.pointer.util.VelocityTracker()
+                                var total = Offset.Zero
+                                var dragging = false
+                                while (true) {
+                                    val e = awaitPointerEvent()
+                                    val c = e.changes.firstOrNull { it.id == down.id } ?: break
+                                    if (!c.pressed) break
+                                    val d = c.positionChange()
+                                    if (!dragging) {
+                                        if (c.isConsumed) break
+                                        total += d
+                                        val slop = viewConfiguration.touchSlop
+                                        if (kotlin.math.abs(total.x) > slop || kotlin.math.abs(total.y) > slop) {
+                                            if (total.x < 0 && kotlin.math.abs(total.x) > kotlin.math.abs(total.y) * 2) dragging = true else break
+                                        }
+                                    } else {
+                                        c.consume()
+                                        flick.addPosition(c.uptimeMillis, c.position)
+                                        swipeScope.launch { swipe.snapTo((swipe.value + d.x).coerceAtMost(0f)) }
+                                    }
+                                }
+                                if (dragging) {
                                     val speed = flick.calculateVelocity().x
                                     swipeScope.launch {
                                         if (swipe.value < -size.width * 0.3f || speed < -1500f) {
@@ -577,9 +597,8 @@ internal fun RackDeckLayout(
                                             swipe.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 600f))
                                         }
                                     }
-                                },
-                                onDragCancel = { swipeScope.launch { swipe.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = 600f)) } },
-                            )
+                                }
+                            }
                         },
                 )
             }

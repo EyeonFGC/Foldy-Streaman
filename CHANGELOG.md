@@ -2,6 +2,12 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.42.2] — 2026-11-16 (Foldy Streaman)
+
+### Fixed
+- **Track list highlighted two songs, and tapping one could play the other** (tapping "You" played "Take You Home"). Songs are now matched by their whole title.
+- **Scrolling the track list on the inside J-card could freeze.** A slightly sideways scroll was being taken as a swipe to close the card; the card now only moves for a clearly leftward swipe.
+
 ## [0.42.1] — 2026-11-16 (Foldy Streaman)
 
 ### Changed

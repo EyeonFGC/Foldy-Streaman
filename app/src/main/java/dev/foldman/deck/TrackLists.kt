@@ -34,13 +34,35 @@ object TrackLists {
         return tracks
     }
 
-    /** Whether two song titles are the same song (YouTube titles often carry the artist and extras). */
+    /** A title boiled down for comparing: no "Artist - " in front, no (extras), no punctuation. */
+    private fun clean(s: String): String {
+        val title = s.substringAfter(" - ", s)
+        return title.lowercase().replace(Regex("\\(.*?\\)|\\[.*?]"), "").replace(Regex("feat\\..*|ft\\..*"), "").replace(Regex("[^a-z0-9]"), "")
+    }
+
+    /** Whether two song titles are the same song (whole titles only: "You" is not "Take You Home"). */
     fun sameSong(a: String?, b: String?): Boolean {
-        fun clean(s: String) = s.lowercase().replace(Regex("\\(.*?\\)|\\[.*?]"), "").replace(Regex("[^a-z0-9]"), "")
         val x = clean(a ?: return false)
-        val y = clean(b ?: return false)
-        if (x.length < 3 || y.length < 3) return x == y && x.isNotEmpty()
-        return x == y || x.contains(y) || y.contains(x)
+        return x.isNotEmpty() && x == clean(b ?: return false)
+    }
+
+    /**
+     * Which of [titles] is [now]: an exact match if there is one, otherwise the closest title that
+     * contains it (or is contained in it) and is nearly the same length. -1 when none fits.
+     */
+    fun bestMatch(titles: List<String>, now: String?): Int {
+        val n = clean(now ?: return -1)
+        if (n.isEmpty()) return -1
+        titles.indexOfFirst { clean(it) == n }.let { if (it >= 0) return it }
+        var best = -1
+        var bestRatio = 0.7f
+        titles.forEachIndexed { i, t ->
+            val c = clean(t)
+            if (c.isEmpty() || !(c.contains(n) || n.contains(c))) return@forEachIndexed
+            val ratio = minOf(c.length, n.length).toFloat() / maxOf(c.length, n.length)
+            if (ratio > bestRatio) { bestRatio = ratio; best = i }
+        }
+        return best
     }
 
     internal suspend fun <T> io(block: () -> T): T = withContext(Dispatchers.IO) { block() }

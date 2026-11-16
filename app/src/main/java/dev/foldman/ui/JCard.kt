@@ -1024,8 +1024,10 @@ internal fun TrackListSection(tape: CustomTape, ui: DeckUi, inDeck: Boolean, onP
         style = Typed.copy(fontSize = 10.sp, color = JInk.copy(alpha = 0.6f)),
     )
     Spacer(Modifier.height(6.dp))
+    // Just the one song playing gets the highlight.
+    val playingIndex = if (inDeck && shown != null) dev.foldman.deck.TrackLists.bestMatch(shown.map { it.title }, ui.title) else -1
     shown?.forEachIndexed { i, t ->
-        val playingThis = inDeck && dev.foldman.deck.TrackLists.sameSong(ui.title, t.title)
+        val playingThis = i == playingIndex
         Row(
             Modifier
                 .fillMaxWidth()
