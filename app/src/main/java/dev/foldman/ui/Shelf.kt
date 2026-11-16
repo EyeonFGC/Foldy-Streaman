@@ -234,11 +234,14 @@ private fun NewTapeButton(onClick: () -> Unit) {
 
 @Composable
 private fun JCard(ui: DeckUi, actions: ShelfActions, modifier: Modifier) {
+    // With a track list on it, the whole card scrolls as one (cover, song and list alike).
+    val scrolls = showsTrackList(ui)
     Column(
         modifier
             .shadow(8.dp, RoundedCornerShape(3.dp))
             .clip(RoundedCornerShape(3.dp))
             .background(DeckColors.Paper)
+            .then(if (scrolls) Modifier.verticalScroll(rememberScrollState()) else Modifier)
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
@@ -267,7 +270,7 @@ private fun JCard(ui: DeckUi, actions: ShelfActions, modifier: Modifier) {
             Source.LOCAL -> LocalCard(ui, actions)
             Source.APPLE_MUSIC -> AppleBrowser(ui.apple, actions.apple, fallback = { RemoteCard(ui, actions) }, light = true)
             else -> if (showsTrackList(ui)) {
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Column {
                     val tape = ui.tape!!
                     Text(
                         if (ui.tapeCued) "Tape \"${tape.title.ifBlank { "my tape" }}\" is in. Press PLAY, or pick a song." else "Playing tape \"${tape.title.ifBlank { "my tape" }}\" through ${ui.source.label}.",
