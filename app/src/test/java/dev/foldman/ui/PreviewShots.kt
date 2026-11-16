@@ -514,6 +514,10 @@ class PreviewShots {
 
     @Test
     @Config(qualifiers = "w411dp-h650dp-xxhdpi")
+    fun lowCherry() { rule.setContent { androidx.compose.runtime.CompositionLocalProvider(LocalPreviewLowBattery provides true) { CoverCherryRed(ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false), anim(), deck, {}, Modifier.fillMaxSize()) } }; rule.onRoot().captureRoboImage("build/shots/low-cherry.png") }
+
+    @Test
+    @Config(qualifiers = "w411dp-h650dp-xxhdpi")
     fun chargingCherry() { val u = ui.copy(theme = DeckTheme.CHERRY_RED, tapeCued = false, audioElsewhere = true); rule.setContent { androidx.compose.runtime.CompositionLocalProvider(LocalPreviewCharging provides true) { CoverCherryRed(u, anim(), deck, {}, Modifier.fillMaxSize()) } }; rule.onRoot().captureRoboImage("build/shots/charging-cherry.png") }
 
     @Test

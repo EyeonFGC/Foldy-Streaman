@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.44.0] — 2026-11-16 (Foldy Streaman)
+
+### Added
+- **Low battery warning:** at 15% or less (and not charging), the battery light pulses red, quickly and smoothly, on every theme. Plug in and it goes back to its slow green charging pulse.
+
 ## [0.43.0] — 2026-11-16 (Foldy Streaman)
 
 ### Changed

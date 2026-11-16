@@ -117,7 +117,8 @@ fun StatusLed(transport: Transport, modifier: Modifier = Modifier, caption: Stri
         Transport.REWINDING, Transport.FAST_FORWARDING -> if ((slow * 6f).toInt() % 2 == 0) 1f else 0.25f
         Transport.STOPPED -> 0f
     }
-    val charging = rememberCharging()
+    // On charge or with a low battery, the battery light's own pulse takes over.
+    val charging = rememberCharging() || rememberLowBattery()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (charging) BattLed(false, on = DeckColors.Led, off = Color(0xFF2A0D08), size = 9.dp, modifier = Modifier.padding(2.5.dp))
         else Canvas(Modifier.size(14.dp)) {
