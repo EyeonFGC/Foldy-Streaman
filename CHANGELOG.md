@@ -2,6 +2,11 @@
 
 All notable changes to Foldman. Versions follow [semantic versioning](https://semver.org); downloads are on the [releases page](https://github.com/deveshrai/Foldman/releases).
 
+## [0.42.1] — 2026-11-16 (Foldy Streaman)
+
+### Changed
+- Undid 0.42.0's drawer change (only the handle drags it away): scrolling the track list on the front could freeze with it. The drawer drags away from anywhere again, as before.
+
 ## [0.42.0] — 2026-11-16 (Foldy Streaman)
 
 ### Changed

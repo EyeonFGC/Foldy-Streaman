@@ -41,10 +41,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.positionChanged
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -287,27 +283,6 @@ fun FoldmanScreen(
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                     containerColor = drawerColor(ui.theme),
                 ) {
-                    // Only the handle strip at the top drags the drawer away: scrolling the tapes or the
-                    // track list (and dragging anywhere else on it) stays inside the drawer.
-                    val keepScrollsInside = remember {
-                        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-                            override fun onPostScroll(consumed: androidx.compose.ui.geometry.Offset, available: androidx.compose.ui.geometry.Offset, source: androidx.compose.ui.input.nestedscroll.NestedScrollSource) = available
-                            override suspend fun onPostFling(consumed: androidx.compose.ui.unit.Velocity, available: androidx.compose.ui.unit.Velocity) = available
-                        }
-                    }
-                    Box(
-                        Modifier
-                            .nestedScroll(keepScrollsInside)
-                            .pointerInput(Unit) {
-                                awaitEachGesture {
-                                    while (true) {
-                                        val e = awaitPointerEvent()
-                                        e.changes.forEach { if (it.positionChanged()) it.consume() }
-                                        if (e.changes.none { it.pressed }) break
-                                    }
-                                }
-                            },
-                    ) {
                     TapeShelf(
                         ui,
                         ShelfActions(
@@ -323,7 +298,6 @@ fun FoldmanScreen(
                         Modifier.fillMaxWidth().height(sheetHeight),
                         settings = settingsActions,
                     )
-                    }
                 }
             }
             // The inside screen darkens from the fold out as the phone closes (and clears as it opens).
